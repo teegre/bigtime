@@ -1,0 +1,446 @@
+#! /usr/bin/env bash
+######################################
+#  _     _       _   _
+# | |__ (_) __ _| |_(_)_ __ ___   ___
+# | '_ \| |/ _` | __| | '_ ` _ \ / _ \
+# | |_) | | (_| | |_| | | | | | |  __/
+# |_.__/|_|\__, |\__|_|_| |_| |_|\___|
+#          |___/ version 0.1
+# customizable digital clock
+# ∎ █ ● ♥ 
+
+progname="$(basename "$0")"
+PROGNAME="${progname^^}"
+VERSION="20200616-0.1"
+
+DIGITS_PATH="$HOME/.config/bigtime/digits"
+DIGITS_DEFAULT_FILE="standard.json"
+
+TERMH="$(tput lines)"
+TERMW="$(tput cols)"
+
+declare -i CLOCKH
+declare -i CLOCKW
+
+PRESETS=("∎" " " "▮" " " "●" " " "◆" " " "▓" "█")
+
+__help() {
+
+cat << 'EOB' >&2
+BIGTIME - customizable digital clock
+
+USAGE:
+bigtime [OPTIONS] [VALUE]
+
+OPTIONS:
+-c, --char <char>        - character for digits (default is █)
+-p, --space <char>       - character for whitespaces (default is " ")
+-f                       - display time in 24h format
+--offset <hours>         - hours to be added to current time
+-s, --small-seconds      - show seconds (normal size)
+-S, --big-seconds        - show seconds (big size)
+-d, --date               - show date
+-D, --date-format        - date format(1)
+-b, --blink              - blinking separators
+-v, --vertical           - display clock vertically
+--file <filename>        - use a custom digits file
+--list                   - print available digits files
+--preset <1..5>          - use predefined characters (override -c and -p options)
+-F, --foreground <color> - set foreground color(2)
+-B, --background <color> - set background color(2)
+-h, --help               - print this help message and exit
+-V, --version            - print program's version and exit
+
+(1) date format: W:abbr. weekday name M:abbr. month name D:day of month Y: year
+(2) color values: 0:black 1:red 2:green 3:yellow 4:blue 5:magenta 6:cyan 7:white
+
+EOB
+}
+
+__err() {
+    local color off
+    off="$(tput sgr0)"
+
+    case "$2" in
+	-l) color="$(tput setaf 2)" ;;
+	-n) color="$(tput setaf 3)" ;;
+	-u) color="$(tput setaf 1)"
+    esac
+
+    ( >&2 echo -e "$progname: ${color}$2${off}" )
+}
+
+clock_size() {
+	local height width
+	if ! [[ $_VERTICAL ]]; then
+		((height=dh))
+		((width=dw*4+sw+4))
+		[[ $_F24 ]] && [[ $_SSEC ]] && ((width+=3))
+		[[ $_BSEC ]] && ((width+=dw*2+sw+3))
+	    ! [[ $_F24 ]] && ! [[ $_SSEC ]] && ((width+=3))
+		[[ $_DATE ]] && ((height+=1))
+		[[ $_OFFSET -gt 0 ]] && ((height+=1))
+		((CLOCKH=height))
+		((CLOCKW=width))
+	fi
+}
+
+redraw() {
+	clear
+	TERMH="$(tput lines)"
+	TERMW="$(tput cols)"
+	if [[ $TERMH -le $CLOCKH || $TERMW -le $CLOCKW ]]; then
+		exit_clock
+		__err -u "error: clock doesn't fit"
+	exit 1
+fi
+	clear
+}
+
+exit_clock() {
+	tput cnorm
+	tput rmcup
+	echo "-- bye!"
+	exit
+}
+
+_opts=$(LC_ALL=C getopt                        \
+	--long "help"                              \
+	--long "version"                           \
+	--long "preset:"                           \
+	--long "char:"                             \
+	--long "space:"                            \
+	--long "offset:"                           \
+	--long "small-seconds"                     \
+	--long "big-seconds"                       \
+	--long "date"                              \
+	--long "date-format:"                      \
+	--long "blink"                             \
+	--long "vertical"                          \
+	--long "file:"                             \
+	--long "list"                              \
+	--long "foreground:"                       \
+	--long "background:"                       \
+	--options "h,V,c:,p:,f,s,S,d,D:,b,v,F:,B:" \
+	--name "$progname"                         \
+	-- "$@"                                    \
+) || { __err -u "failed to parse options"; exit 1;}
+
+eval set -- "$_opts"
+
+while :; do
+	case "$1" in
+		-h | --help)
+			__help
+			exit 0
+			;;
+		-V | --version)
+			__err -l "$PROGNAME version $VERSION"
+			exit 0
+			;;
+		-c | --char)
+			shift
+			[[ ${#1} != 1 ]] && {
+				__err -u "error: --char only 1 character allowed"
+			    exit 1
+			}
+			_CHR="$1"
+			shift
+			;;
+		-p | --space)
+			shift
+			[[ ${#1} != 1 ]] && {
+				__err -u "error: --space only 1 character allowed"
+				exit 1
+			}
+			_SPC="$1"
+			shift
+			;;
+		-f)
+			_F24=1
+			shift
+			;;
+		--offset)
+			shift
+			if [[ $1 -ge -12 && $1 -le 12 ]]; then
+				_OFFSET=$1
+				shift
+			else
+				__err -u "error: --offset should be a numeric value between -12 and 12"
+				exit 1
+			fi
+			;;
+		-s | --small-seconds)
+			unset _BSEC
+			_SSEC=1
+			shift
+			;;
+		-S | --big-seconds)
+			unset _SSEC
+			_BSEC=1
+			shift
+			;;
+		-d | --date)
+			_DATE=1
+			shift
+			;;
+		-D | --date-format)
+			shift
+			_FDATE="$1"
+			_FDATE="${_FDATE//D/%-d}"
+			_FDATE="${_FDATE//m/%b}"
+			_FDATE="${_FDATE//M/%m}"
+			_FDATE="${_FDATE//W/%a}"
+			_FDATE="${_FDATE//Y/%Y}"
+			shift
+			;;
+		-b | --blink)
+			_BLINK=1
+			shift
+			;;
+		-v | --vertical)
+			unset _BLINK
+			_VERTICAL=1
+			shift
+			;;
+		--file)
+			shift
+			[[ $1 =~ [[:alnum:]]+ ]] && {
+				[[ $1 =~ \.json$ ]] && _FILE="$1" || _FILE="$1.json"
+				! [[ -a "$DIGITS_PATH/$_FILE" ]] && {
+					__err -u "error: --file $_FILE not found"
+					exit 1
+				} || _FILE="$DIGITS_PATH/$_FILE"
+			}
+		    shift
+			;;
+		--list)
+			find "$DIGITS_PATH" -name "*.json"
+			exit 0
+			;;
+		--preset)
+			shift
+			if [[ $1 =~ [0-4] && $1 -ge 0 && $1 -le 4 ]]; then
+				index=$1
+				_CHR="${PRESETS[$((index*2))]}"
+				_SPC="${PRESETS[$((index*2+1))]}"
+				unset index
+				shift
+			else
+				__err -u "error: --preset should be a numeric value between 0 and 3"
+				exit 1
+			fi
+			;;
+		-F | --foreground)
+			shift
+			if [[ $1 =~ ^[0-7]$ ]]; then
+				_FG="$1"
+			else
+				__err -u "error: --foreground should be a numeric value between 0 and 7"
+				exit 1
+			fi
+			shift
+			;;
+		-B | --background)
+			shift
+			if [[ $1 =~ ^[0-7]$ ]]; then
+				_BG="$1"
+			else
+				__err -u "error: --background should be a numeric value between 0 and 7"
+				exit 1
+			fi
+			shift
+			;;
+		--)
+			shift
+			break
+			;;
+		*)
+			[[ -z $1 ]] && break
+			__err -u "error: invalid option '$1'"
+			exit 1
+	esac
+done
+
+_FILE="${_FILE:-$DIGITS_DEFAULT_FILE}"
+digits="$(<"$_FILE")"
+
+dw="$(jq -r '.width' <<< "$digits")"
+dh="$(jq -r '.height' <<< "$digits")"
+sw="$(jq -r '.sep_width' <<< "$digits")"
+
+[[ $dw == "null" ]] && { __err -u "error: $_FILE: missing width value"; exit 1; }
+[[ $dh == "null" ]] && { __err -u "error: $_FILE: missing height value"; exit 1; }
+[[ $sw == "null" ]] && { __err -u "error: $_FILE: missing sep_width value"; exit 1; }
+
+_SPC="${_SPC:-" "}"
+_CHR="${_CHR:-"█"}"
+
+_OFFSET="${_OFFSET:-0}"
+
+echo "now loading file '$(basename "$_FILE")'..."
+
+for ((i=0;i<10;i++)); do
+	for ((j=0;j<dh;j++)); do
+		p="$(jq -r ".\"$i\"[$j]" <<< "$digits")"
+		[[ $p == "null" ]] && { __err -u "error: $_FILE: digit $i, line $((j+1))"; exit 1; }
+		p="${p//0/"$_SPC"}"
+		p="${p//1/"$_CHR"}"
+		declare -a "_D$i+=(\"$p\")"
+	done
+done
+
+for ((i=0;i<dh;i++)); do
+	p="$(jq -r ".\"separator\"[$i]" <<< "$digits")"
+	[[ $p == "null" ]] && { __err -u "error: $_FILE: separator, line $i"; exit 1; }
+	p="${p//0/"$_SPC"}"
+	p="${p//1/"$_CHR"}"
+	declare -a $"_P+=(\"$p\")"
+	p="$(jq -r ".\"blank\"[$i]" <<< "$digits")"
+	[[ $p == "null" ]] && { __err -u "error: $_FILE: blank, line $i"; exit 1; }
+	p="${p//0/"$_SPC"}"
+	p="${p//1/"$_CHR"}"
+	declare -a $"_W+=(\"$p\")"
+done
+
+clock_size
+
+if [[ $TERMH -le $CLOCKH || $TERMW -le $CLOCKW ]]; then
+	__err -u "error: clock doesn't fit"
+	exit 1
+fi
+
+_sync() {
+	n=1
+	while [ ${n:0:1} != 9 ]; do
+		n="$(date "+%N")"
+		[[ $n =~ 0*(.*) ]] && n="${BASH_REMATCH[1]}"
+		sleep 0.05
+	done
+}
+
+tput smcup
+tput civis
+
+[[ -n $_FG ]] && tput setaf "$_FG"
+[[ -n $_BG ]] && tput setab "$_BG"
+
+tput clear
+
+trap exit_clock INT QUIT
+trap redraw WINCH
+
+while :; do
+
+	#date
+	[[ $_DATE ]] && {
+		_date="$(date -d "now + $_OFFSET hours" "+${_FDATE:-%F}")"
+	    _date="${_date^^}"
+	}
+
+	# time
+	if [[ $_F24 ]]; then
+		_H="$(date -d "now + $_OFFSET hours" "+%H")"
+	else
+		_H="$(date -d "now + $_OFFSET hours" "+%I")"
+		H="$(date -d "now + $_OFFSET hours" "+%H")"
+		[[ ${H:0:1} == 0 ]] && H="${H:1:1}"
+		[[ $H -ge 12 ]] && _AMPM="PM" || _AMPM="AM" 
+	fi
+
+	_M="$(date "+%M")"
+	_S="$(date "+%S")"
+
+	[[ $_BLINK && $((${_S:1:1} % 2)) == 0 ]] && index=0 || index=1
+
+	h1=${_H:0:1}
+	h2=${_H:1:1}
+	m1=${_M:0:1}
+	m2=${_M:1:1}
+	s1=${_S:0:1}
+	s2=${_S:1:1}
+
+	((_x=(TERMW-CLOCKW)/2))
+	((_y=(TERMH-CLOCKH)/2))
+
+	#tput cup 0 0
+	#printf "x=%d y=%d ch=%d cw=%d dh=%d dw=%d sw=%d" "$_x" "$_y" "$CLOCKH" "$CLOCKW" "$dh" "$dw" "$sw"
+
+	tput cup $((_y-1)) $((_x))
+	echo $"$_date"
+	#echo $" $_weekday $_day $_month $_year"
+
+	_sync
+
+	for ((i=0;i<dh;i++)); do
+
+		H1=$"_D"$h1"[$i]"     # hours
+		H2=$"_D"$h2"[$i]"     #
+		M1=$"_D"$m1"[$i]"     # minutes
+		M2=$"_D"$m2"[$i]"     #
+		[[ $_BSEC ]] && {
+			S1=$"_D"$s1"[$i]" # seconds
+			S2=$"_D"$s2"[$i]"
+		}
+		SP=$"${_P[$i]}"       # separator
+		WS=$"${_W[$i]}"       # whitespace
+	    
+		[[ $_BLINK ]] && {
+			blink_array=("$SP" "$WS")
+			sp="${blink_array[$index]}"
+		} || sp="$SP"
+
+		tput cup $((i+_y)) $((_x))
+		case $i in
+			0)
+				if [[ $_SSEC && $i -eq 0 ]]; then
+					printf "%s%s%s%s%s%s%s%s%s %s"                 \
+					$"${!H1}" $"$_SPC" $"${!H2}" $"$_SPC" $"$sp"   \
+					$"$_SPC" $"${!M1}" $"$_SPC" $"${!M2}" "$s1$s2"
+				elif [[ $_BSEC ]]; then
+					printf "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s"        \
+					$"${!H1}" $"$_SPC" $"${!H2}" $"$_SPC" $"$sp"   \
+					$"$_SPC" $"${!M1}" $"$_SPC" $"${!M2}" $"$_SPC" \
+					$"$sp" $"$_SPC" $"${!S1}" $"$_SPC" $"${!S2}"
+				else
+					printf "%s%s%s%s%s%s%s%s%s"                    \
+					$"${!H1}" $"$_SPC" $"${!H2}" $"$_SPC" $"$sp"   \
+					$"$_SPC" $"${!M1}" $"$_SPC" $"${!M2}"
+				fi
+				;;
+			$((dh-1)))
+				if [[ $_BSEC ]]; then
+					printf "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s %s"     \
+					$"${!H1}" $"$_SPC" $"${!H2}" $"$_SPC" $"$sp"   \
+					$"$_SPC" $"${!M1}" $"$_SPC" $"${!M2}" $"$_SPC" \
+					$"$sp" $"$_SPC" $"${!S1}" $"$_SPC" $"${!S2}"   \
+					"$_AMPM"
+				else
+					printf "%s%s%s%s%s%s%s%s%s %s"                 \
+					$"${!H1}" $"$_SPC" $"${!H2}" $"$_SPC" $"$sp"   \
+					$"$_SPC" $"${!M1}" $"$_SPC" $"${!M2}" "$_AMPM"
+				fi
+				;;
+			*)
+				if [[ $_BSEC ]]; then
+					printf "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s"        \
+					$"${!H1}" $"$_SPC" $"${!H2}" $"$_SPC" $"$sp"   \
+					$"$_SPC" $"${!M1}" $"$_SPC" $"${!M2}" $"$_SPC" \
+					$"$sp" $"$_SPC" $"${!S1}" $"$_SPC" $"${!S2}"
+				else
+					printf "%s%s%s%s%s%s%s%s%s"                    \
+					$"${!H1}" $"$_SPC" $"${!H2}" $"$_SPC" $"$sp"   \
+					$"$_SPC" $"${!M1}" $"$_SPC" $"${!M2}"
+				fi
+		esac
+	done
+
+	tput cup $((_y+dh)) $((_x))
+	(( _OFFSET > 0 )) && echo "[+$_OFFSET]"
+	(( _OFFSET < 0 )) && echo "[$_OFFSET]"
+
+	sleep 0.25
+	#((index++))
+	#((index == 2)) && ((index=0))
+done
+

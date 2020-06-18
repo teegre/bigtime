@@ -14,7 +14,7 @@ PROGNAME="${progname^^}"
 VERSION="20200616-0.1"
 
 DIGITS_PATH="$HOME/.config/bigtime/digits"
-DIGITS_DEFAULT_FILE="standard.json"
+DIGITS_DEFAULT_FILE="$DIGITS_PATH/standard.json"
 
 TERMH="$(tput lines)"
 TERMW="$(tput cols)"
@@ -45,7 +45,7 @@ OPTIONS:
 -v, --vertical           - display clock vertically
 --file <filename>        - use a custom digits file
 --list                   - print available digits files
---preset <1..5>          - use predefined characters (override -c and -p options)
+--preset <0..4>          - use predefined characters (override -c and -p options)
 -F, --foreground <color> - set foreground color(2)
 -B, --background <color> - set background color(2)
 -h, --help               - print this help message and exit

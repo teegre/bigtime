@@ -53,7 +53,7 @@ OPTIONS:
 -h, --help               - print this help message and exit
 -V, --version            - print program's version and exit
 
-(1) date format: W:abbr. weekday name M:abbr. month name D:day of month Y: year
+(1) date format: %W:abbr. weekday name %M:abbr. month name %m: month %D:day of month %Y: year
 (2) color values: 0:black 1:red 2:green 3:yellow 4:blue 5:magenta 6:cyan 7:white
 
 EOB

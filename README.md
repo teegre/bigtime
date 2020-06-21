@@ -9,8 +9,6 @@
 ![alt text](img/bigtime4.png)  
 ![alt text](img/bigtime6.png)  
 
-**/!\ this is work in progress!**
-
 ## 1. Installation
 
 ### 1.1 Clone this repository:

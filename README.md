@@ -48,13 +48,15 @@ OPTIONS:
 * -V, --version            - print program's version and exit
 
 (1): date format:
-* %W: abbr. weekday name 
+
+* %W: abbr. weekday name
 * %m: abbr. month name
 * %M: month
 * %D: day of month
 * %Y: year
 
-(2): color values (actual color may vary:
+(2): color values:
+
 * 0: black
 * 1: red
 * 2: green

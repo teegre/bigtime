@@ -53,6 +53,12 @@ OPTIONS:
 -h, --help               - print this help message and exit
 -V, --version            - print program's version and exit
 
+KEYS BINDINGS:
+c                        - toggle foreground color
+b                        - toggle background color
+R                        - reset to default terminal colors
+r                        - refresh screen
+
 (1) date format: %W:abbr. weekday name %m:abbr. month name %M: month %D:day of month %Y: year
 (2) color values: 0:black 1:red 2:green 3:yellow 4:blue 5:magenta 6:cyan 7:white
 
@@ -64,9 +70,9 @@ __err() {
     off="$(tput sgr0)"
 
     case "$2" in
-	-l) color="$(tput setaf 2)" ;;
-	-n) color="$(tput setaf 3)" ;;
-	-u) color="$(tput setaf 1)"
+		-l) color="$(tput setaf 2)" ;;
+		-n) color="$(tput setaf 3)" ;;
+		-u) color="$(tput setaf 1)"
     esac
 
     ( >&2 echo -e "$progname: ${color}$2${off}" )
@@ -96,7 +102,7 @@ clock_size() {
 
 # redraw clock
 # FIXME: doesn't work as expected!
-redraw() {
+redraw_clock() {
 	clear
 	TERMH="$(tput lines)"
 	TERMW="$(tput cols)"
@@ -111,6 +117,7 @@ fi
 exit_clock() {
 	tput cnorm
 	tput rmcup
+	stty sane
 	echo "-- bye!"
 	exit
 }
@@ -329,8 +336,6 @@ _CHR="${_CHR:-"█"}"
 
 _OFFSET="${_OFFSET:-0}"
 
-echo "now loading file '$(basename "$_FILE")'..."
-
 # read file and dynamically declare an array
 # for each digit (_D0, _D1... _D9) where 1s are replaced by _CHR
 # and 0s by _SPC
@@ -391,8 +396,30 @@ _sync() {
 	done
 }
 
+toggle_color() {
+	case "$1" in
+		-b)
+			((_BG++))
+            ((_BG>7)) && _BG=0
+			tput setab "$_BG"
+			redraw_clock
+			;;
+		-f)
+			((_FG++))
+			((_FG>7)) && _FG=0
+			tput setaf "$_FG"
+			;;
+		-r)
+			tput reset
+			tput civis
+			stty -echo -icanon time 0 min 0
+			redraw_clock
+	esac
+}
+
 tput smcup
 tput civis
+stty -echo -icanon time 0 min 0
 
 [[ -n $_FG ]] && tput setaf "$_FG"
 [[ -n $_BG ]] && tput setab "$_BG"
@@ -400,9 +427,18 @@ tput civis
 tput clear
 
 trap exit_clock INT QUIT
-trap redraw WINCH
+trap redraw_clock WINCH
 
 while :; do
+
+	read char
+	case "$char" in
+		b) toggle_color -b ;;
+		c) toggle_color -f ;;
+		q) exit_clock ;;
+		r) redraw_clock ;;
+		R) toggle_color -r
+	esac
 
 	#date
 	[[ $_DATE ]] && {
@@ -422,6 +458,10 @@ while :; do
 
 	_M="$(date "+%M")"
 	_S="$(date "+%S")"
+
+	# change terminal title
+	# FIXME original title is not restored in a tmux session
+	((_T != _M)) && { ((_T=_M)); echo -ne "\033]0;bigtime: $_H:$_M\007"; }
 
 	[[ $_BLINK && $((${_S:1:1} % 2)) == 0 ]] && index=0 || index=1
 

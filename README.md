@@ -6,16 +6,10 @@
 ![alt text](img/bigtime2.png)  
 ![alt text](img/bigtime3.png)  
 ![alt text](img/bigtime5.png)  
-`bigtime -bsd -D "%W, %Y %m %D" --offset 6 --preset 0 --file digits`  
 ![alt text](img/bigtime4.png)  
-`bigtime -fS -c1 -p0 --file digits`  
 ![alt text](img/bigtime6.png)  
-`bigtime -sv --file shape -F1 -B0`  
-
 
 **/!\ this is work in progress!**
-
-*Dependencies: jq*
 
 ## 1. Installation
 
@@ -45,7 +39,7 @@ OPTIONS:
 * -v, --vertical           - display clock vertically
 * --file [filename]        - use a custom digits file (filename only)
 * --list-files             - print available digits files
-* --preset [0..4]          - use predefined characters (override -c and -p options)
+* --preset [0..n]          - use predefined characters (override -c and -p options)
 * --list-presets           - print available presets
 * -F, --foreground [color] - set foreground color(2)
 * -B, --background [color] - set background color(2)
@@ -60,7 +54,7 @@ OPTIONS:
 * %D: day of month
 * %Y: year
 
-(2): color values:
+(2): color values (actual color may vary:
 * 0: black
 * 1: red
 * 2: green
@@ -70,6 +64,64 @@ OPTIONS:
 * 6: cyan
 * 7: white
 
-## 3. TODO
+## 3. Key bindings
 
-* Fix redraw issue when resizing terminal
+* c - cycle through available foreground colors
+* b - cycle through available background colors
+* R - restore default terminal colors
+* r - refresh screen
+
+## 4. Custom digits file
+
+Basically a digit file contains instructions on how to draw digits on the screen.  
+They have the *.digits* extension.
+
+### 4.1 Size
+
+All digits must have the same size (in characters) which is defined as follow:  
+`height=5`  
+`width=5`
+
+The separator can have a different width but must have the same height as digits:  
+`sep_width=2`
+
+### 4.2 Digits, separator and blank
+
+They are sequences of 0s and 1s, for instance:  
+
+```
+11111
+11011
+11011
+11011
+11111
+```  
+represents digit 0, and it is stored as:  
+`0=11111;11011;11011;11011;11111`  
+
+By default, when launched, **bigtime** replaces 0 by whitespace and 1 by █ 
+
+## 4.3 Example: narrow.digits file
+
+```
+width=3
+height=5
+sep_width=1
+0=111;101;101;101;111
+1=110;010;010;010;010
+2=111;001;111;100;111
+3=111;001;111;001;111
+4=101;101;111;001;001
+5=111;100;111;001;111
+6=111;100;111;101;111
+7=111;001;001;001;001
+8=111;101;111;101;111
+9=111;101;111;001;111
+separator=0;0;0;0;1
+blank=0;0;0;0;0
+```
+
+## 4. TODO
+
+* Fix redraw issue in tmux
+* Fix original title not restored in tmux

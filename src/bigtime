@@ -13,8 +13,8 @@ progname="$(basename "$0")"
 PROGNAME="${progname^^}"
 VERSION="20200616-0.1"
 
-DIGITS_PATH="$HOME/.config/bigtime/digits"
-DIGITS_DEFAULT_FILE="$DIGITS_PATH/standard.json"
+DIGITS_PATH="$HOME/.config/bigtime/"
+DIGITS_DEFAULT_FILE="$DIGITS_PATH/standard.digits"
 
 TERMH="$(tput lines)"
 TERMW="$(tput cols)"
@@ -22,7 +22,7 @@ TERMW="$(tput cols)"
 declare -i CLOCKH
 declare -i CLOCKW
 
-PRESETS=("∎" " " "▮" " " "●" " " "◆" " " "▓" "█")
+PRESETS=("∎" " " "▮" " " "●" " " "◆" " " "▓" "█" "♥" " ")
 
 __help() {
 
@@ -113,6 +113,11 @@ exit_clock() {
 	tput rmcup
 	echo "-- bye!"
 	exit
+}
+
+! [[ -a "$DIGITS_DEFAULT_FILE" ]] && {
+	__err -u "error: $DIGITS_DEFAULT_FILE not found"
+    exit
 }
 
 # options
@@ -222,7 +227,7 @@ while :; do
 			;;
 		--file)
 			shift
-			[[ $1 =~ \.json$ ]] && _FILE="$1" || _FILE="$1.json"
+			[[ $1 =~ \.digits$ ]] && _FILE="$1" || _FILE="$1.digits"
 			! [[ -a "$DIGITS_PATH/$_FILE" ]] && {
 					__err -u "error: --file $_FILE not found"
 					exit 1
@@ -230,19 +235,20 @@ while :; do
 		    shift
 			;;
 		--list-files)
-			find "$DIGITS_PATH" -name "*.json"
+			find "$DIGITS_PATH" -name "*.digits"
 			exit 0
 			;;
 		--preset)
 			shift
-			if [[ $1 =~ [0-4] && $1 -ge 0 && $1 -le 4 ]]; then
+			((plen=(${#PRESETS[@]}-1)/2))
+			if [[ $1 =~ [0-$plen] && $1 -ge 0 && $1 -le $plen ]]; then
 				index=$1
 				_CHR="${PRESETS[$((index*2))]}"
 				_SPC="${PRESETS[$((index*2+1))]}"
 				unset index
 				shift
 			else
-				__err -u "error: --preset should be a numeric value between 0 and 4"
+				__err -u "error: --preset should be a numeric value between 0 and $plen"
 				exit 1
 			fi
 			;;
@@ -293,12 +299,26 @@ while :; do
 	esac
 done
 
-_FILE="${_FILE:-$DIGITS_DEFAULT_FILE}"
-digits="$(<"$_FILE")"
+ readoption() {
+	local file option
+	file="$_FILE"
+	option="$1"
+	while read -r line; do
+		if [[ $line =~ ^$1=.*$ ]]; then
+			IFS=$'\n' read -d "" -a array <<< "${line//=/$'\n'}"
+			echo "${array[1]}"
+			return 0
+		fi
+	done < <(cat "$file")
+	echo "null"
+	return 1
+}
 
-dw="$(jq -r '.width' <<< "$digits")"
-dh="$(jq -r '.height' <<< "$digits")"
-sw="$(jq -r '.sep_width' <<< "$digits")"
+_FILE="${_FILE:-$DIGITS_DEFAULT_FILE}"
+
+dh="$(readoption "height")"
+dw="$(readoption "width")"
+sw="$(readoption "sep_width")"
 
 [[ $dw == "null" ]] && { __err -u "error: $_FILE: missing width value"; exit 1; }
 [[ $dh == "null" ]] && { __err -u "error: $_FILE: missing height value"; exit 1; }
@@ -311,34 +331,46 @@ _OFFSET="${_OFFSET:-0}"
 
 echo "now loading file '$(basename "$_FILE")'..."
 
-# parse json file and dynamically declare an array
+# read file and dynamically declare an array
 # for each digit (_D0, _D1... _D9) where 1s are replaced by _CHR
 # and 0s by _SPC
 
 for ((i=0;i<10;i++)); do
+	digit="$(readoption "$i")"
+	[[ $digit == "null" ]] && { echo "error: $_FILE: missing digit $i"; exit 1; }
+	IFS=$'\n' read -d "" -a digit <<< "${digit//$';'/$'\n'}"
+	((${#digit[@]}!=dh)) && { echo "error: $_FILE: digit $i, height mismatch"; exit 1; }
 	for ((j=0;j<dh;j++)); do
-		p="$(jq -r ".\"$i\"[$j]" <<< "$digits")"
-		[[ $p == "null" ]] && { __err -u "error: $_FILE: digit $i, line $((j+1))"; exit 1; }
-		p="${p//0/"$_SPC"}"
-		p="${p//1/"$_CHR"}"
-		declare -a "_D$i+=(\"$p\")"
+		((${#digit[$j]}!=dw)) &&{ echo "error: $_FILE: digit $i, width mismatch: col $((j+1))"; exit 1; }
+		digit[$j]=${digit[$j]//0/"$_SPC"}
+		digit[$j]=${digit[$j]//1/"$_CHR"}
+		declare -a "_D$i+=(\"${digit[$j]}\")"
 	done
+	unset digit
 done
 
 # same as above for separator and blank space
-# (may have a different size than digits)
+# (may have a different width than digits)
 
-for ((i=0;i<dh;i++)); do
-	p="$(jq -r ".\"separator\"[$i]" <<< "$digits")"
-	[[ $p == "null" ]] && { __err -u "error: $_FILE: separator, line $i"; exit 1; }
-	p="${p//0/"$_SPC"}"
-	p="${p//1/"$_CHR"}"
-	declare -a $"_P+=(\"$p\")"
-	p="$(jq -r ".\"blank\"[$i]" <<< "$digits")"
-	[[ $p == "null" ]] && { __err -u "error: $_FILE: blank, line $i"; exit 1; }
-	p="${p//0/"$_SPC"}"
-	p="${p//1/"$_CHR"}"
-	declare -a $"_W+=(\"$p\")"
+options=("separator" "blank")
+for option in "${options[@]}"; do
+	opt="$(readoption "$option")"
+	[[ $opt == "null" ]] && { echo "error: $_FILE: missing $option"; exit 1; }
+	IFS=$'\n' read -d "" -a opt <<< "${opt//$';'/$'\n'}"
+	# check whether width matches declared one
+	((${#opt[@]}!=dh)) && { echo "error: $option: height mismatch"; exit 1; }
+	# replace 0s and 1s
+	for ((i=0;i<dh;i++)); do
+		# check whether height matches declared one
+		((${#opt[$i]}!=sw)) &&{ echo "error: $option, width mismatch: col $((i+1))"; exit 1; }
+		opt[$i]=${opt[$i]//0/"$_SPC"}
+		opt[$i]=${opt[$i]//1/"$_CHR"}
+		case "$option" in
+			separator) declare -a "_P+=(\"${opt[$i]}\")" ;;
+			blank    ) declare -a "_W+=(\"${opt[$i]}\")"
+		esac
+	done
+	unset opt
 done
 
 clock_size

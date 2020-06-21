@@ -5,9 +5,8 @@
 # | '_ \| |/ _` | __| | '_ ` _ \ / _ \
 # | |_) | | (_| | |_| | | | | | |  __/
 # |_.__/|_|\__, |\__|_|_| |_| |_|\___|
-#          |___/ version 0.1
-# customizable digital clock
-# ∎ █ ● ♥ 
+#          |___/ version 20200621-0.2
+# ♥ ##################################
 
 progname="$(basename "$0")"
 PROGNAME="${progname^^}"
@@ -59,8 +58,22 @@ b                        - toggle background color
 R                        - reset to default terminal colors
 r                        - refresh screen
 
-(1) date format: %W:abbr. weekday name %m:abbr. month name %M: month %D:day of month %Y: year
-(2) color values: 0:black 1:red 2:green 3:yellow 4:blue 5:magenta 6:cyan 7:white
+(1) date format:
+--- %W:abbr. weekday name
+--- %m:abbr. month name
+--- %M: month
+--- %D:day of month
+--- %Y: year
+
+(2) color values:
+--- 0:black
+--- 1:red
+--- 2:green
+--- 3:yellow
+--- 4:blue
+--- 5:magenta
+--- 6:cyan
+--- 7:white
 
 EOB
 }

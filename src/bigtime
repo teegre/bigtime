@@ -45,12 +45,12 @@ OPTIONS:
 -b, --blink              - blinking separators
 -v, --vertical           - display clock vertically
 --file <filename>        - use a custom digits file (filename only)
---list-files             - print available digits files
+-l, --list-files         - print available digits files
 --preset <0..4>          - use predefined characters (override -c and -p options)
---list-presets           - print preset characters
+-P, --list-presets       - print preset characters
 -F, --foreground <0..n>  - set foreground color
 -B, --background <0..n>  - set background color
---list-colors            - print available colors
+-C, --list-colors        - print available colors
 -h, --help               - print this help message and exit
 -V, --version            - print program's version and exit
 
@@ -133,29 +133,29 @@ exit_clock() {
 
 # options
 
-_opts=$(LC_ALL=C getopt                        \
-	--long "help"                              \
-	--long "version"                           \
-	--long "preset:"                           \
-	--long "list-presets"                      \
-	--long "char:"                             \
-	--long "space:"                            \
-	--long "offset:"                           \
-	--long "small-seconds"                     \
-	--long "big-seconds"                       \
-	--long "date"                              \
-	--long "date-format:"                      \
-	--long "blink"                             \
-	--long "vertical"                          \
-	--long "file:"                             \
-	--long "list-files"                        \
-	--long "foreground:"                       \
-	--long "background:"                       \
-	--long "list-colors"                       \
-	--options "h,V,c:,p:,f,s,S,d,D:,b,v,F:,B:" \
-	--name "$progname"                         \
-	-- "$@"                                    \
-) || { __err -u "failed to parse options"; exit 1;}
+_opts=$(LC_ALL=C getopt                              \
+	--long "help"                                    \
+	--long "version"                                 \
+	--long "preset:"                                 \
+	--long "list-presets"                            \
+	--long "char:"                                   \
+	--long "space:"                                  \
+	--long "offset:"                                 \
+	--long "small-seconds"                           \
+	--long "big-seconds"                             \
+	--long "date"                                    \
+	--long "date-format:"                            \
+	--long "blink"                                   \
+	--long "vertical"                                \
+	--long "file:"                                   \
+	--long "list-files"                              \
+	--long "foreground:"                             \
+	--long "background:"                             \
+	--long "list-colors"                             \
+	--options "h,V,c:,p:,f,s,S,d,D:,b,v,F:,B:,P,C,l" \
+	--name "$progname"                               \
+	-- "$@"                                          \
+) || exit 1
 
 eval set -- "$_opts"
 
@@ -245,7 +245,7 @@ while :; do
 			} || _FILE="$DIGITS_PATH/$_FILE"
 		    shift
 			;;
-		--list-files)
+		-l | --list-files)
 			find "$DIGITS_PATH" -name "*.digits"
 			exit 0
 			;;
@@ -264,7 +264,7 @@ while :; do
 			fi
 			unset plen
 			;;
-		--list-presets)
+		-P | --list-presets)
 			j=0
 			for ((i=1;i<${#PRESETS[@]};((i+=2)))); do
 				echo "$j: '${PRESETS[$((i-1))]}' '${PRESETS[$i]}'"
@@ -302,7 +302,7 @@ while :; do
 			fi
 			shift
 			;;
-		--list-colors)
+		-C | --list-colors)
 			tc="$(tput setaf 0)"
 			for ((i=0;i<COLORS;i++)); do
 				on="$(tput setab $((i)))"
@@ -329,7 +329,7 @@ done
 	option="$1"
 	while read -r line; do
 		if [[ $line =~ ^$1=.*$ ]]; then
-			IFS=$'\n' read -d "" -a array <<< "${line//=/$'\n'}"
+			IFS=$'\n' read -d "" -ra array <<< "${line//=/$'\n'}"
 			if [[ -z ${array[1]} ]]; then
 				echo "null"
 				return 1
@@ -365,7 +365,7 @@ _OFFSET="${_OFFSET:-0}"
 for ((i=0;i<10;i++)); do
 	digit="$(readoption "$i")"
 	[[ $digit == "null" ]] && { echo "error: $_FILE: missing digit $i"; exit 1; }
-	IFS=$'\n' read -d "" -a digit <<< "${digit//$';'/$'\n'}"
+	IFS=$'\n' read -d "" -ra digit <<< "${digit//$';'/$'\n'}"
 	((${#digit[@]}!=dh)) && { echo "error: $_FILE: digit $i, height mismatch"; exit 1; }
 	for ((j=0;j<dh;j++)); do
 		((${#digit[$j]}!=dw)) &&{ echo "error: $_FILE: digit $i, width mismatch: col $((j+1))"; exit 1; }
@@ -383,7 +383,7 @@ options=("separator" "blank")
 for option in "${options[@]}"; do
 	opt="$(readoption "$option")"
 	[[ $opt == "null" ]] && { echo "error: $_FILE: missing $option"; exit 1; }
-	IFS=$'\n' read -d "" -a opt <<< "${opt//$';'/$'\n'}"
+	IFS=$'\n' read -d "" -ra opt <<< "${opt//$';'/$'\n'}"
 	# check whether width matches declared one
 	((${#opt[@]}!=dh)) && { echo "error: $option: height mismatch"; exit 1; }
 	# replace 0s and 1s
@@ -437,6 +437,7 @@ trap redraw_clock WINCH
 
 while :; do
 
+	#shellcheck disable=SC2162
 	read char
 	case "$char" in
 		q) exit_clock ;;
@@ -446,6 +447,8 @@ while :; do
 
 	#date
 	[[ $_DATE ]] && {
+		#TODO: use distinct variable for each element of the date (?)
+	    #(if it makes any sense)
 		_date="$(date -d "now + $_OFFSET hours" "+${_FDATE:-%F}")"
 	    _date="${_date^^}"
 	}
@@ -633,4 +636,3 @@ while :; do
 	sleep 0.5
 
 done
-

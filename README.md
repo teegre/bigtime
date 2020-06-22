@@ -36,12 +36,12 @@ OPTIONS:
 * -b, --blink              - blinking separators
 * -v, --vertical           - display clock vertically
 * --file [filename]        - use a custom digits file (filename only)
-* --list-files             - print available digits files
+* -l, --list-files         - print available digits files
 * --preset [0..n]          - use predefined characters (override -c and -p options)
-* --list-presets           - print available presets
+* -P, --list-presets       - print available presets
 * -F, --foreground [0..n]  - set foreground color(2)
 * -B, --background [0..n]  - set background color(2)
-* --list-colors            - print available colors
+* -C, --list-colors        - print available colors
 * -h, --help               - print this help message and exit
 * -V, --version            - print program's version and exit
 

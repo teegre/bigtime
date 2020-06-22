@@ -12,7 +12,7 @@ progname="$(basename "$0")"
 PROGNAME="${progname^^}"
 VERSION="20200621-0.2"
 
-DIGITS_PATH="$HOME/.config/bigtime/"
+DIGITS_PATH="$HOME/.config/bigtime"
 DIGITS_DEFAULT_FILE="$DIGITS_PATH/standard.digits"
 
 TERMH="$(tput lines)"
@@ -330,8 +330,13 @@ done
 	while read -r line; do
 		if [[ $line =~ ^$1=.*$ ]]; then
 			IFS=$'\n' read -d "" -a array <<< "${line//=/$'\n'}"
-			echo "${array[1]}"
-			return 0
+			if [[ -z ${array[1]} ]]; then
+				echo "null"
+				return 1
+			else
+				echo "${array[1]}"
+				return 0
+			fi
 		fi
 	done < <(cat "$file")
 	echo "null"

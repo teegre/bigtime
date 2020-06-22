@@ -62,7 +62,8 @@ OPTIONS:
 ## 4. Custom digits file
 
 Basically a digit file contains instructions on how to draw digits on the screen.  
-They have the *.digits* extension.
+They have the *.digits* extension and must be stored in **bigtime** configuration  
+directory: `$HOME/.config/bigtime`
 
 ### 4.1 Size
 

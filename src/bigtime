@@ -406,8 +406,9 @@ fi
 # this is a hack to synchronize them...
 _sync() {
 	n="1"
-	while [ ${n:0:1} != "0" ]; do
+	while [ $n != "0" ]; do
 		n="$(date "+%N")"
+		n="${n:0:1}"
 		sleep 0.05
 	done
 }
@@ -459,7 +460,7 @@ while :; do
 
 	# change terminal title
 	# FIXME original title is not restored in a tmux session
-	((_T != _M)) && { ((_T=_M)); echo -ne "\033]0;bigtime: $_H:$_M $_AMPM\007"; }
+	[[ $_T != "$_M" ]] && { _T="$_M"; echo -ne "\033]0;bigtime: $_H:$_M $_AMPM\007"; }
 
 	[[ $_BLINK && $((${_S:1:1} % 2)) == 0 ]] && index=0 || index=1
 

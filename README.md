@@ -110,7 +110,8 @@ separator=0;0;0;0;1
 blank=0;0;0;0;0
 ```
 
-## 4. TODO
+## 5. TODO
 
-* Fix redraw issue in tmux
+* Fix redraw issue that sometimes occurs when resizing terminal
 * Fix original title not restored in tmux
+* Find a more reliable way to format date output

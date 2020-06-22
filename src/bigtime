@@ -18,6 +18,8 @@ DIGITS_DEFAULT_FILE="$DIGITS_PATH/standard.digits"
 TERMH="$(tput lines)"
 TERMW="$(tput cols)"
 
+COLORS="$(tput colors)"
+
 declare -i CLOCKH
 declare -i CLOCKW
 
@@ -53,8 +55,7 @@ OPTIONS:
 -V, --version            - print program's version and exit
 
 KEYS BINDINGS:
-c                        - toggle foreground color
-b                        - toggle background color
+q                        - exit program
 R                        - reset to default terminal colors
 r                        - refresh screen
 
@@ -271,6 +272,7 @@ while :; do
 				__err -u "error: --preset should be a numeric value between 0 and $plen"
 				exit 1
 			fi
+			unset plen
 			;;
 		--list-presets)
 			j=0
@@ -282,30 +284,42 @@ while :; do
 			;;
 		-F | --foreground)
 			shift
-			if [[ $1 =~ ^[0-7]$ ]]; then
-				_FG="$1"
+			if [[ $1 =~ ^[0-9]+$ ]]; then
+			    if [[ $1 -ge 0 ]] && [[ $1 -le $((COLORS-1)) ]]; then
+					_FG="$1"
+				else
+					__err -u "error: --foreground should be a numeric value between 0 and $((COLORS-1))"
+					exit 1
+				fi
 			else
-				__err -u "error: --foreground should be a numeric value between 0 and 7"
+				__err -u "error: --foreground should be a numeric value between 0 and $((COLORS-1))"
 				exit 1
 			fi
 			shift
 			;;
 		-B | --background)
 			shift
-			if [[ $1 =~ ^[0-7]$ ]]; then
-				_BG="$1"
+			if [[ $1 =~ ^[0-9]+$ ]]; then
+			    if [[ $1 -ge 0 ]] && [[ $1 -le $((COLORS-1)) ]]; then
+					_BG="$1"
+				else
+					__err -u "error: --background should be a numeric value between 0 and $((COLORS-1))"
+					exit 1
+				fi
 			else
-				__err -u "error: --background should be a numeric value between 0 and 7"
+				__err -u "error: --background should be a numeric value between 0 and $((COLORS-1))"
 				exit 1
 			fi
 			shift
 			;;
 		--list-colors)
-			for ((i=0;i<8;i++)); do
-				on="$(tput setaf $((i)))"
+			tc="$(tput setaf 0)"
+			for ((i=0;i<COLORS;i++)); do
+				on="$(tput setab $((i)))"
 				off="$(tput sgr0)"
-				echo "$i:$on color$off"
+				printf "%s%s %03d %s" "$on" "$tc" "$i" "$off"
 			done
+			echo
 			exit 0
 			;;
 		--)
@@ -409,25 +423,9 @@ _sync() {
 	done
 }
 
-toggle_color() {
-	case "$1" in
-		-b)
-			((_BG++))
-            ((_BG>7)) && _BG=0
-			tput setab "$_BG"
-			redraw_clock
-			;;
-		-f)
-			((_FG++))
-			((_FG>7)) && _FG=0
-			tput setaf "$_FG"
-			;;
-		-r)
-			tput reset
-			tput civis
-			stty -echo -icanon time 0 min 0
-			redraw_clock
-	esac
+reset_colors() {
+	printf '\e[mR\n'
+	redraw_clock
 }
 
 tput smcup
@@ -446,11 +444,9 @@ while :; do
 
 	read char
 	case "$char" in
-		b) toggle_color -b ;;
-		c) toggle_color -f ;;
 		q) exit_clock ;;
 		r) redraw_clock ;;
-		R) toggle_color -r
+		R) reset_colors -r
 	esac
 
 	#date
@@ -474,7 +470,7 @@ while :; do
 
 	# change terminal title
 	# FIXME original title is not restored in a tmux session
-	((_T != _M)) && { ((_T=_M)); echo -ne "\033]0;bigtime: $_H:$_M\007"; }
+	((_T != _M)) && { ((_T=_M)); echo -ne "\033]0;bigtime: $_H:$_M $_AMPM\007"; }
 
 	[[ $_BLINK && $((${_S:1:1} % 2)) == 0 ]] && index=0 || index=1
 

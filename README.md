@@ -66,8 +66,7 @@ OPTIONS:
 
 ## 3. Key bindings
 
-* c - cycle through available foreground colors
-* b - cycle through available background colors
+* q - exit program
 * R - restore default terminal colors
 * r - refresh screen
 

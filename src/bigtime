@@ -622,11 +622,7 @@ while :; do
 				S2=$"_D"$s2"[$i]"
 
 				tput cup $((_y)) $((_x))
-
-				case "$i" in
-					*)
-						printf "%s%s%s" $"${!S1}" $"$_SPC" $"${!S2}"
-				esac
+				printf "%s%s%s" $"${!S1}" $"$_SPC" $"${!S2}"
 
 				((_y++))
 

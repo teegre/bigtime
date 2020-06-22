@@ -405,10 +405,9 @@ fi
 # whenever several instances of bigtime are running
 # this is a hack to synchronize them...
 _sync() {
-	n=1
-	while [ ${n:0:1} != 9 ]; do
+	n="1"
+	while [ ${n:0:1} != "0" ]; do
 		n="$(date "+%N")"
-		[[ $n =~ 0*(.*) ]] && n="${BASH_REMATCH[1]}"
 		sleep 0.05
 	done
 }

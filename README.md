@@ -39,8 +39,8 @@ OPTIONS:
 * --list-files             - print available digits files
 * --preset [0..n]          - use predefined characters (override -c and -p options)
 * --list-presets           - print available presets
-* -F, --foreground [color] - set foreground color(2)
-* -B, --background [color] - set background color(2)
+* -F, --foreground [0..n]  - set foreground color(2)
+* -B, --background [0..n]  - set background color(2)
 * --list-colors            - print available colors
 * -h, --help               - print this help message and exit
 * -V, --version            - print program's version and exit
@@ -52,17 +52,6 @@ OPTIONS:
 * %M: month
 * %D: day of month
 * %Y: year
-
-(2): color values:
-
-* 0: black
-* 1: red
-* 2: green
-* 3: yellow
-* 4: blue
-* 5: magenta
-* 6: cyan
-* 7: white
 
 ## 3. Key bindings
 

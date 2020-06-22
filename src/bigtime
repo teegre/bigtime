@@ -48,16 +48,16 @@ OPTIONS:
 --list-files             - print available digits files
 --preset <0..4>          - use predefined characters (override -c and -p options)
 --list-presets           - print preset characters
--F, --foreground <color> - set foreground color(2)
--B, --background <color> - set background color(2)
+-F, --foreground <0..n>  - set foreground color
+-B, --background <0..n>  - set background color
 --list-colors            - print available colors
 -h, --help               - print this help message and exit
 -V, --version            - print program's version and exit
 
 KEYS BINDINGS:
 q                        - exit program
-R                        - reset to default terminal colors
 r                        - refresh screen
+R                        - reset to default terminal colors
 
 (1) date format:
 --- %W:abbr. weekday name
@@ -65,16 +65,6 @@ r                        - refresh screen
 --- %M: month
 --- %D:day of month
 --- %Y: year
-
-(2) color values:
---- 0:black
---- 1:red
---- 2:green
---- 3:yellow
---- 4:blue
---- 5:magenta
---- 6:cyan
---- 7:white
 
 EOB
 }

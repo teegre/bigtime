@@ -46,7 +46,7 @@ OPTIONS:
 -v, --vertical           - display clock vertically
 --file <filename>        - use a custom digits file (filename only)
 -l, --list-files         - print available digits files
---preset <0..4>          - use predefined characters (override -c and -p options)
+--preset <0..n>          - use predefined characters (override -c and -p options)
 -P, --list-presets       - print preset characters
 -F, --foreground <0..n>  - set foreground color
 -B, --background <0..n>  - set background color
@@ -122,6 +122,8 @@ exit_clock() {
 	tput cnorm
 	tput rmcup
 	stty sane
+	# update terminal title to default(?) within tmux (...)
+	[[ $TERM =~ ^tmux.*$ ]] && echo -ne "\033]0;$(hostname)\007"
 	echo "-- bye!"
 	exit
 }
@@ -175,7 +177,7 @@ while :; do
 			shift
 			[[ ${#1} != 1 ]] && {
 				__err -u "error: --char only 1 character allowed"
-			    exit 1
+				exit 1
 			}
 			_CHR="$1"
 			shift
@@ -240,10 +242,10 @@ while :; do
 			shift
 			[[ $1 =~ \.digits$ ]] && _FILE="$1" || _FILE="$1.digits"
 			! [[ -a "$DIGITS_PATH/$_FILE" ]] && {
-					__err -u "error: --file $_FILE not found"
-					exit 1
+				__err -u "error: --file $_FILE not found"
+				exit 1
 			} || _FILE="$DIGITS_PATH/$_FILE"
-		    shift
+			shift
 			;;
 		-l | --list-files)
 			find "$DIGITS_PATH" -name "*.digits"
@@ -275,7 +277,7 @@ while :; do
 		-F | --foreground)
 			shift
 			if [[ $1 =~ ^[0-9]+$ ]]; then
-			    if [[ $1 -ge 0 ]] && [[ $1 -le $((COLORS-1)) ]]; then
+				if [[ $1 -ge 0 ]] && [[ $1 -le $((COLORS-1)) ]]; then
 					_FG="$1"
 				else
 					__err -u "error: --foreground should be a numeric value between 0 and $((COLORS-1))"
@@ -290,7 +292,7 @@ while :; do
 		-B | --background)
 			shift
 			if [[ $1 =~ ^[0-9]+$ ]]; then
-			    if [[ $1 -ge 0 ]] && [[ $1 -le $((COLORS-1)) ]]; then
+				if [[ $1 -ge 0 ]] && [[ $1 -le $((COLORS-1)) ]]; then
 					_BG="$1"
 				else
 					__err -u "error: --background should be a numeric value between 0 and $((COLORS-1))"
@@ -452,9 +454,9 @@ while :; do
 	#date
 	[[ $_DATE ]] && {
 		#TODO: use distinct variable for each element of the date (?)
-	    #(if it makes any sense)
+		#(if it makes any sense)
 		_date="$(date -d "now + $_OFFSET hours" "+${_FDATE:-%F}")"
-	    _date="${_date^^}"
+		_date="${_date^^}"
 	}
 
 	# time

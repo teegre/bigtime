@@ -39,8 +39,8 @@ OPTIONS:
 * -l, --list-files         - print available digits files
 * --preset [0..n]          - use predefined characters (override -c and -p options)
 * -P, --list-presets       - print available presets
-* -F, --foreground [0..n]  - set foreground color(2)
-* -B, --background [0..n]  - set background color(2)
+* -F, --foreground [0..n]  - set foreground color
+* -B, --background [0..n]  - set background color
 * -C, --list-colors        - print available colors
 * -h, --help               - print this help message and exit
 * -V, --version            - print program's version and exit

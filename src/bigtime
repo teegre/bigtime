@@ -344,7 +344,7 @@ done
 				return 0
 			fi
 		fi
-	done < <(cat "$file")
+	done < "$file"
 	echo "null"
 	return 1
 }

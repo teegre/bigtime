@@ -105,17 +105,19 @@ clock_size() {
 }
 
 # redraw clock
-# FIXME: doesn't work as expected!
 redraw_clock() {
-  clear
-    TERMH="$(tput lines)"
+  _REDRAW=1
+  TERMH="$(tput lines)"
   TERMW="$(tput cols)"
   if [[ $TERMH -le $CLOCKH || $TERMW -le $CLOCKW ]]; then
     exit_clock
     __err -u "error: clock doesn't fit"
     exit 1
   fi
+  ((_y=(TERMH-CLOCKH)/2))
+  ((_x=(TERMW-CLOCKW)/2))
   clear
+  _REDRAW=0
 }
 
 exit_clock() {
@@ -436,6 +438,9 @@ stty -echo -icanon time 0 min 0
 [[ -n $_FG ]] && tput setaf "$_FG"
 [[ -n $_BG ]] && tput setab "$_BG"
 
+((_y=(TERMH-CLOCKH)/2))
+((_x=(TERMW-CLOCKW)/2))
+
 tput clear
 
 trap exit_clock INT QUIT
@@ -450,6 +455,8 @@ while :; do
     r) redraw_clock ;;
     R) reset_colors -r
   esac
+  
+  [[ $_REDRAW == 1 ]] && continue
 
   #date
   [[ $_DATE ]] && {
@@ -473,7 +480,6 @@ while :; do
   _S="$(date "+%S")"
 
   # change terminal title
-  # FIXME original title is not restored in a tmux session
   [[ $_T != "$_M" ]] && { _T="$_M"; echo -ne "\033]0;bigtime: $_H:$_M $_AMPM\007"; }
 
   [[ $_BLINK && $((${_S:1:1} % 2)) == 0 ]] && index=0 || index=1
@@ -485,12 +491,9 @@ while :; do
   s1=${_S:0:1}
   s2=${_S:1:1}
 
-  ((_y=(TERMH-CLOCKH)/2))
-  ((_x=(TERMW-CLOCKW)/2))
-
-  #SIZE DEBUG
-  #tput cup 0 0
-  #printf "x=%d y=%d ch=%d cw=%d dh=%d dw=%d sw=%d" "$_x" "$_y" "$CLOCKH" "$CLOCKW" "$dh" "$dw" "$sw"
+  # SIZE DEBUG
+  # tput cup 0 0
+  # printf "x=%d y=%d ch=%d cw=%d dh=%d dw=%d sw=%d" "$_x" "$_y" "$CLOCKH" "$CLOCKW" "$dh" "$dw" "$sw"
 
   tput cup $((_y-1)) $((_x))
   echo $"$_date"
@@ -572,13 +575,14 @@ while :; do
 
   # VERTICAL LAYOUT
   elif [[ $_VERTICAL ]]; then
+	y=$_y
 
     for ((i=0;i<dh;i++)); do
 
       H1=$"_D"$h1"[$i]"     # hours
       H2=$"_D"$h2"[$i]"     #
 
-      tput cup $((_y)) $((_x))
+      tput cup $((y)) $((_x))
       
       case "$i" in
         $((dh-1)))
@@ -588,22 +592,22 @@ while :; do
           printf "%s%s%s" $"${!H1}" $"$_SPC" $"${!H2}"
       esac
 
-      ((_y++))
+      ((y++))
 
     done
 
-    tput cup $((_y)) $((_x))
+    tput cup $((y)) $((_x))
     (( _OFFSET > 0 )) && echo "[+$_OFFSET]"
     (( _OFFSET < 0 )) && echo "[$_OFFSET]"
 
-    ((_y++))
+    ((y++))
 
     for ((i=0;i<dh;i++)); do
 
       M1=$"_D"$m1"[$i]"     # minutes
       M2=$"_D"$m2"[$i]"     #
 
-      tput cup $((_y)) $((_x))
+      tput cup $((y)) $((_x))
       
       if ((i == dh-1)) && [[ $_SSEC ]]; then
         printf "%s%s%s %s%s" $"${!M1}" $"$_SPC" $"${!M2}" "$s1" "$s2"
@@ -611,11 +615,11 @@ while :; do
         printf "%s%s%s" $"${!M1}" $"$_SPC" $"${!M2}"
       fi
 
-      ((_y++))
+      ((y++))
 
     done
 
-    ((_y++))
+    ((y++))
 
     if [[ $_BSEC ]]; then
       for ((i=0;i<dh;i++)); do
@@ -623,15 +627,15 @@ while :; do
         S1=$"_D"$s1"[$i]" # seconds
         S2=$"_D"$s2"[$i]"
 
-        tput cup $((_y)) $((_x))
+        tput cup $((y)) $((_x))
         printf "%s%s%s" $"${!S1}" $"$_SPC" $"${!S2}"
 
-        ((_y++))
+        ((y++))
 
       done
 
     elif [[ $_SSEC ]]; then
-      tput cup $((_y)) $((_x))
+      tput cup $((y)) $((_x))
     fi
   fi
   

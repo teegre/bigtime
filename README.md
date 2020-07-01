@@ -112,6 +112,4 @@ blank=0;0;0;0;0
 
 ## 5. TODO
 
-* Fix redraw issue that sometimes occurs when resizing terminal
-* Fix original title not restored in tmux
 * Find a more reliable way to format date output

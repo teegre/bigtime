@@ -70,93 +70,93 @@ EOB
 }
 
 __err() {
-    local color off
-    off="$(tput sgr0)"
+  local color off
+  off="$(tput sgr0)"
 
-    case "$2" in
-		-l) color="$(tput setaf 2)" ;;
-		-n) color="$(tput setaf 3)" ;;
-		-u) color="$(tput setaf 1)"
-    esac
+  case "$2" in
+    -l) color="$(tput setaf 2)" ;;
+    -n) color="$(tput setaf 3)" ;;
+    -u) color="$(tput setaf 1)"
+  esac
 
-    ( >&2 echo -e "$progname: ${color}$2${off}" )
+  ( >&2 echo -e "$progname: ${color}$2${off}" )
 }
 
 # compute clock size
 clock_size() {
-	local height width
-	if ! [[ $_VERTICAL ]]; then
-		((height=dh))
-		((width=dw*4+sw+4))
-		[[ $_BSEC ]] && ((width+=dw*2+sw+3))
-	else
-		((height=dh*2+1))
-		((width=dw*2+2))
-		[[ $_BSEC ]] && ((height+=dh))
-	fi
+  local height width
+  if ! [[ $_VERTICAL ]]; then
+    ((height=dh))
+    ((width=dw*4+sw+4))
+    [[ $_BSEC ]] && ((width+=dw*2+sw+3))
+  else
+    ((height=dh*2+1))
+    ((width=dw*2+2))
+    [[ $_BSEC ]] && ((height+=dh))
+  fi
 
-	[[ $_F24 && $_SSEC ]] && ((width+=3))
-	! [[ $_F24 ]] && ! [[ $_SSEC ]] && ((width+=3))
-	[[ $_DATE ]] && ((height+=1))
-	[[ $_OFFSET -gt 0 ]] && ((height+=1))
+  [[ $_F24 && $_SSEC ]] && ((width+=3))
+  [[ $_F24 ]] && ! [[ $_SSEC ]] && ((width+=3))
+  [[ $_DATE ]] && ((height+=1))
+  [[ $_OFFSET -gt 0 ]] && ((height+=1))
 
-	((CLOCKH=height))
-	((CLOCKW=width))
+  ((CLOCKH=height))
+  ((CLOCKW=width))
 }
 
 # redraw clock
 # FIXME: doesn't work as expected!
 redraw_clock() {
-	clear
-	TERMH="$(tput lines)"
-	TERMW="$(tput cols)"
-	if [[ $TERMH -le $CLOCKH || $TERMW -le $CLOCKW ]]; then
-		exit_clock
-		__err -u "error: clock doesn't fit"
-	exit 1
-fi
-	clear
+  clear
+    TERMH="$(tput lines)"
+  TERMW="$(tput cols)"
+  if [[ $TERMH -le $CLOCKH || $TERMW -le $CLOCKW ]]; then
+    exit_clock
+    __err -u "error: clock doesn't fit"
+    exit 1
+  fi
+  clear
 }
 
 exit_clock() {
-	tput cnorm
-	tput rmcup
-	stty sane
-	# update terminal title to default(?) within tmux (...)
-	[[ $TERM =~ ^tmux.*$ ]] && echo -ne "\033]0;$(hostname)\007"
-	echo "-- bye!"
-	exit
+  tput cnorm
+  tput rmcup
+  stty sane
+  # update terminal title to default(?) within tmux (...)
+  [[ $TERM =~ ^tmux.*$ ]] && echo -ne "\033]0;$(hostname)\007"
+  echo "-- bye!"
+  exit
 }
 
 ! [[ -a "$DIGITS_DEFAULT_FILE" ]] && {
-	__err -u "error: $DIGITS_DEFAULT_FILE not found"
+  __err -u "error: $DIGITS_DEFAULT_FILE not found"
     exit
 }
 
 # options
 
-_opts=$(LC_ALL=C getopt                              \
-	--long "help"                                    \
-	--long "version"                                 \
-	--long "preset:"                                 \
-	--long "list-presets"                            \
-	--long "char:"                                   \
-	--long "space:"                                  \
-	--long "offset:"                                 \
-	--long "small-seconds"                           \
-	--long "big-seconds"                             \
-	--long "date"                                    \
-	--long "date-format:"                            \
-	--long "blink"                                   \
-	--long "vertical"                                \
-	--long "file:"                                   \
-	--long "list-files"                              \
-	--long "foreground:"                             \
-	--long "background:"                             \
-	--long "list-colors"                             \
-	--options "h,V,c:,p:,f,s,S,d,D:,b,v,F:,B:,P,C,l" \
-	--name "$progname"                               \
-	-- "$@"                                          \
+_opts=$(LC_ALL=C getopt                            \
+  --long "help"                                    \
+  --long "version"                                 \
+  --long "preset:"                                 \
+  --long "list-presets"                            \
+  --long "char:"                                   \
+  --long "space:"                                  \
+  --long "offset:"                                 \
+  --long "small-seconds"                           \
+  --long "big-seconds"                             \
+  --long "date"                                    \
+  --long "date-format:"                            \
+  --long "blink"                                   \
+  --long "vertical"                                \
+  --long "file:"                                   \
+  --long "list-files"                              \
+  --long "foreground:"                             \
+  --long "background:"                             \
+  --long "list-colors"                             \
+  --options "h,V,c:,p:,f,s,S,d,D:,b,v,F:,B:,P,C,l" \
+  --name "$progname"                               \
+  -- "$@"                                          \
 ) || exit 1
 
 eval set -- "$_opts"
@@ -164,189 +164,189 @@ eval set -- "$_opts"
 # options parsing
 
 while :; do
-	case "$1" in
-		-h | --help)
-			__help
-			exit 0
-			;;
-		-V | --version)
-			echo "$PROGNAME version $VERSION"
-			exit 0
-			;;
-		-c | --char)
-			shift
-			[[ ${#1} != 1 ]] && {
-				__err -u "error: --char only 1 character allowed"
-				exit 1
-			}
-			_CHR="$1"
-			shift
-			;;
-		-p | --space)
-			shift
-			[[ ${#1} != 1 ]] && {
-				__err -u "error: --space only 1 character allowed"
-				exit 1
-			}
-			_SPC="$1"
-			shift
-			;;
-		-f)
-			_F24=1
-			shift
-			;;
-		--offset)
-			shift
-			if [[ $1 -ge -12 && $1 -le 12 ]]; then
-				_OFFSET=$1
-				shift
-			else
-				__err -u "error: --offset should be a numeric value between -12 and 12"
-				exit 1
-			fi
-			;;
-		-s | --small-seconds)
-			unset _BSEC
-			_SSEC=1
-			shift
-			;;
-		-S | --big-seconds)
-			unset _SSEC
-			_BSEC=1
-			shift
-			;;
-		-d | --date)
-			_DATE=1
-			shift
-			;;
-		-D | --date-format)
-			shift
-			#TODO: limit formatting to these...
-			_FDATE="$1"
-			_FDATE="${_FDATE//%D/%d}" # day of the month
-			_FDATE="${_FDATE//%m/%b}" # abbrev. month name
-			_FDATE="${_FDATE//%M/%m}" # month
-			_FDATE="${_FDATE//%W/%a}" # abbrev. weekday name
-			shift
-			;;
-		-b | --blink)
-			_BLINK=1
-			shift
-			;;
-		-v | --vertical)
-			unset _BLINK
-			_VERTICAL=1
-			shift
-			;;
-		--file)
-			shift
-			[[ $1 =~ \.digits$ ]] && _FILE="$1" || _FILE="$1.digits"
-			! [[ -a "$DIGITS_PATH/$_FILE" ]] && {
-				__err -u "error: --file $_FILE not found"
-				exit 1
-			} || _FILE="$DIGITS_PATH/$_FILE"
-			shift
-			;;
-		-l | --list-files)
-			find "$DIGITS_PATH" -name "*.digits"
-			exit 0
-			;;
-		--preset)
-			shift
-			((plen=(${#PRESETS[@]}-1)/2))
-			if [[ $1 =~ [0-$plen] && $1 -ge 0 && $1 -le $plen ]]; then
-				index=$1
-				_CHR="${PRESETS[$((index*2))]}"
-				_SPC="${PRESETS[$((index*2+1))]}"
-				unset index
-				shift
-			else
-				__err -u "error: --preset should be a numeric value between 0 and $plen"
-				exit 1
-			fi
-			unset plen
-			;;
-		-P | --list-presets)
-			j=0
-			for ((i=1;i<${#PRESETS[@]};((i+=2)))); do
-				echo "$j: '${PRESETS[$((i-1))]}' '${PRESETS[$i]}'"
-				((j++))
-			done
-			exit 0
-			;;
-		-F | --foreground)
-			shift
-			if [[ $1 =~ ^[0-9]+$ ]]; then
-				if [[ $1 -ge 0 ]] && [[ $1 -le $((COLORS-1)) ]]; then
-					_FG="$1"
-				else
-					__err -u "error: --foreground should be a numeric value between 0 and $((COLORS-1))"
-					exit 1
-				fi
-			else
-				__err -u "error: --foreground should be a numeric value between 0 and $((COLORS-1))"
-				exit 1
-			fi
-			shift
-			;;
-		-B | --background)
-			shift
-			if [[ $1 =~ ^[0-9]+$ ]]; then
-				if [[ $1 -ge 0 ]] && [[ $1 -le $((COLORS-1)) ]]; then
-					_BG="$1"
-				else
-					__err -u "error: --background should be a numeric value between 0 and $((COLORS-1))"
-					exit 1
-				fi
-			else
-				__err -u "error: --background should be a numeric value between 0 and $((COLORS-1))"
-				exit 1
-			fi
-			shift
-			;;
-		-C | --list-colors)
-			tc="$(tput setaf 0)"
-			((maxcols=(TERMW/5)-1))
-			col=0
-			for ((i=0;i<COLORS;i++)); do
-				on="$(tput setab $((i)))"
-				off="$(tput sgr0)"
-				printf "%s%s %03d %s" "$on" "$tc" "$i" "$off"
-				((col++))
-				((col>maxcols)) && { printf "\n"; col=0; }
-			done
-			echo
-			exit 0
-			;;
-		--)
-			shift
-			break
-			;;
-		*)
-			[[ -z $1 ]] && break
-			__err -u "error: invalid option '$1'"
-			exit 1
-	esac
+  case "$1" in
+    -h | --help)
+      __help
+      exit 0
+      ;;
+    -V | --version)
+      echo "$PROGNAME version $VERSION"
+      exit 0
+      ;;
+    -c | --char)
+      shift
+      [[ ${#1} != 1 ]] && {
+        __err -u "error: --char only 1 character allowed"
+        exit 1
+      }
+      _CHR="$1"
+      shift
+      ;;
+    -p | --space)
+      shift
+      [[ ${#1} != 1 ]] && {
+        __err -u "error: --space only 1 character allowed"
+        exit 1
+      }
+      _SPC="$1"
+      shift
+      ;;
+    -f)
+      _F24=1
+      shift
+      ;;
+    --offset)
+      shift
+      if [[ $1 -ge -12 && $1 -le 12 ]]; then
+        _OFFSET=$1
+        shift
+      else
+        __err -u "error: --offset should be a numeric value between -12 and 12"
+        exit 1
+      fi
+      ;;
+    -s | --small-seconds)
+      unset _BSEC
+      _SSEC=1
+      shift
+      ;;
+    -S | --big-seconds)
+      unset _SSEC
+      _BSEC=1
+      shift
+      ;;
+    -d | --date)
+      _DATE=1
+      shift
+      ;;
+    -D | --date-format)
+      shift
+      #TODO: limit formatting to these...
+      _FDATE="$1"
+      _FDATE="${_FDATE//%D/%d}" # day of the month
+      _FDATE="${_FDATE//%m/%b}" # abbrev. month name
+      _FDATE="${_FDATE//%M/%m}" # month
+      _FDATE="${_FDATE//%W/%a}" # abbrev. weekday name
+      shift
+      ;;
+    -b | --blink)
+      _BLINK=1
+      shift
+      ;;
+    -v | --vertical)
+      unset _BLINK
+      _VERTICAL=1
+      shift
+      ;;
+    --file)
+      shift
+      [[ $1 =~ \.digits$ ]] && _FILE="$1" || _FILE="$1.digits"
+      ! [[ -a "$DIGITS_PATH/$_FILE" ]] && {
+        __err -u "error: --file $_FILE not found"
+        exit 1
+      } || _FILE="$DIGITS_PATH/$_FILE"
+      shift
+      ;;
+    -l | --list-files)
+      find "$DIGITS_PATH" -name "*.digits"
+      exit 0
+      ;;
+    --preset)
+      shift
+      ((plen=(${#PRESETS[@]}-1)/2))
+      if [[ $1 =~ [0-$plen] && $1 -ge 0 && $1 -le $plen ]]; then
+        index=$1
+        _CHR="${PRESETS[$((index*2))]}"
+        _SPC="${PRESETS[$((index*2+1))]}"
+        unset index
+        shift
+      else
+        __err -u "error: --preset should be a numeric value between 0 and $plen"
+        exit 1
+      fi
+      unset plen
+      ;;
+    -P | --list-presets)
+      j=0
+      for ((i=1;i<${#PRESETS[@]};((i+=2)))); do
+        echo "$j: '${PRESETS[$((i-1))]}' '${PRESETS[$i]}'"
+        ((j++))
+      done
+      exit 0
+      ;;
+    -F | --foreground)
+      shift
+      if [[ $1 =~ ^[0-9]+$ ]]; then
+        if [[ $1 -ge 0 ]] && [[ $1 -le $((COLORS-1)) ]]; then
+          _FG="$1"
+        else
+          __err -u "error: --foreground should be a numeric value between 0 and $((COLORS-1))"
+          exit 1
+        fi
+      else
+        __err -u "error: --foreground should be a numeric value between 0 and $((COLORS-1))"
+        exit 1
+      fi
+      shift
+      ;;
+    -B | --background)
+      shift
+      if [[ $1 =~ ^[0-9]+$ ]]; then
+        if [[ $1 -ge 0 ]] && [[ $1 -le $((COLORS-1)) ]]; then
+          _BG="$1"
+        else
+          __err -u "error: --background should be a numeric value between 0 and $((COLORS-1))"
+          exit 1
+        fi
+      else
+        __err -u "error: --background should be a numeric value between 0 and $((COLORS-1))"
+        exit 1
+      fi
+      shift
+      ;;
+    -C | --list-colors)
+      tc="$(tput setaf 0)"
+      ((maxcols=(TERMW/5)-1))
+      col=0
+      for ((i=0;i<COLORS;i++)); do
+        on="$(tput setab $((i)))"
+        off="$(tput sgr0)"
+        printf "%s%s %03d %s" "$on" "$tc" "$i" "$off"
+        ((col++))
+        ((col>maxcols)) && { printf "\n"; col=0; }
+      done
+      echo
+      exit 0
+      ;;
+    --)
+      shift
+      break
+      ;;
+    *)
+      [[ -z $1 ]] && break
+      __err -u "error: invalid option '$1'"
+      exit 1
+  esac
 done
 
  readoption() {
-	local file option
-	file="$_FILE"
-	option="$1"
-	while read -r line; do
-		if [[ $line =~ ^$1=.*$ ]]; then
-			IFS=$'\n' read -d "" -ra array <<< "${line//=/$'\n'}"
-			if [[ -z ${array[1]} ]]; then
-				echo "null"
-				return 1
-			else
-				echo "${array[1]}"
-				return 0
-			fi
-		fi
-	done < "$file"
-	echo "null"
-	return 1
+  local file option
+  file="$_FILE"
+  option="$1"
+  while read -r line; do
+    if [[ $line =~ ^$1=.*$ ]]; then
+      IFS=$'\n' read -d "" -ra array <<< "${line//=/$'\n'}"
+      if [[ -z ${array[1]} ]]; then
+        echo "null"
+        return 1
+      else
+        echo "${array[1]}"
+        return 0
+      fi
+    fi
+  done < "$file"
+  echo "null"
+  return 1
 }
 
 _FILE="${_FILE:-$DIGITS_DEFAULT_FILE}"
@@ -369,17 +369,17 @@ _OFFSET="${_OFFSET:-0}"
 # and 0s by _SPC
 
 for ((i=0;i<10;i++)); do
-	digit="$(readoption "$i")"
-	[[ $digit == "null" ]] && { echo "error: $_FILE: missing digit $i"; exit 1; }
-	IFS=$'\n' read -d "" -ra digit <<< "${digit//$';'/$'\n'}"
-	((${#digit[@]}!=dh)) && { echo "error: $_FILE: digit $i, height mismatch"; exit 1; }
-	for ((j=0;j<dh;j++)); do
-		((${#digit[$j]}!=dw)) &&{ echo "error: $_FILE: digit $i, width mismatch: col $((j+1))"; exit 1; }
-		digit[$j]=${digit[$j]//0/"$_SPC"}
-		digit[$j]=${digit[$j]//1/"$_CHR"}
-		declare -a "_D$i+=(\"${digit[$j]}\")"
-	done
-	unset digit
+  digit="$(readoption "$i")"
+  [[ $digit == "null" ]] && { echo "error: $_FILE: missing digit $i"; exit 1; }
+  IFS=$'\n' read -d "" -ra digit <<< "${digit//$';'/$'\n'}"
+  ((${#digit[@]}!=dh)) && { echo "error: $_FILE: digit $i, height mismatch"; exit 1; }
+  for ((j=0;j<dh;j++)); do
+    ((${#digit[$j]}!=dw)) &&{ echo "error: $_FILE: digit $i, width mismatch: col $((j+1))"; exit 1; }
+    digit[$j]=${digit[$j]//0/"$_SPC"}
+    digit[$j]=${digit[$j]//1/"$_CHR"}
+    declare -a "_D$i+=(\"${digit[$j]}\")"
+  done
+  unset digit
 done
 
 # same as above for separator and blank space
@@ -387,46 +387,46 @@ done
 
 options=("separator" "blank")
 for option in "${options[@]}"; do
-	opt="$(readoption "$option")"
-	[[ $opt == "null" ]] && { echo "error: $_FILE: missing $option"; exit 1; }
-	IFS=$'\n' read -d "" -ra opt <<< "${opt//$';'/$'\n'}"
-	# check whether width matches declared one
-	((${#opt[@]}!=dh)) && { echo "error: $option: height mismatch"; exit 1; }
-	# replace 0s and 1s
-	for ((i=0;i<dh;i++)); do
-		# check whether height matches declared one
-		((${#opt[$i]}!=sw)) &&{ echo "error: $option, width mismatch: col $((i+1))"; exit 1; }
-		opt[$i]=${opt[$i]//0/"$_SPC"}
-		opt[$i]=${opt[$i]//1/"$_CHR"}
-		case "$option" in
-			separator) declare -a "_P+=(\"${opt[$i]}\")" ;;
-			blank    ) declare -a "_W+=(\"${opt[$i]}\")"
-		esac
-	done
-	unset opt
+  opt="$(readoption "$option")"
+  [[ $opt == "null" ]] && { echo "error: $_FILE: missing $option"; exit 1; }
+  IFS=$'\n' read -d "" -ra opt <<< "${opt//$';'/$'\n'}"
+  # check whether width matches declared one
+  ((${#opt[@]}!=dh)) && { echo "error: $option: height mismatch"; exit 1; }
+  # replace 0s and 1s
+  for ((i=0;i<dh;i++)); do
+    # check whether height matches declared one
+    ((${#opt[$i]}!=sw)) &&{ echo "error: $option, width mismatch: col $((i+1))"; exit 1; }
+    opt[$i]=${opt[$i]//0/"$_SPC"}
+    opt[$i]=${opt[$i]//1/"$_CHR"}
+    case "$option" in
+      separator) declare -a "_P+=(\"${opt[$i]}\")" ;;
+      blank    ) declare -a "_W+=(\"${opt[$i]}\")"
+    esac
+  done
+  unset opt
 done
 
 clock_size
 
 if [[ $TERMH -le $CLOCKH || $TERMW -le $CLOCKW ]]; then
-	__err -u "error: clock doesn't fit"
-	exit 1
+  __err -u "error: clock doesn't fit"
+  exit 1
 fi
 
 # whenever several instances of bigtime are running
 # this is a hack to synchronize them...
 _sync() {
-	n="1"
-	while [ $n != "0" ]; do
-		n="$(date "+%N")"
-		n="${n:0:1}"
-		sleep 0.05
-	done
+  n="1"
+  while [ $n != "0" ]; do
+    n="$(date "+%N")"
+    n="${n:0:1}"
+    sleep 0.05
+  done
 }
 
 reset_colors() {
-	printf '\e[mR\n'
-	redraw_clock
+  printf '\e[mR\n'
+  redraw_clock
 }
 
 tput smcup
@@ -443,198 +443,198 @@ trap redraw_clock WINCH
 
 while :; do
 
-	#shellcheck disable=SC2162
-	read char
-	case "$char" in
-		q) exit_clock ;;
-		r) redraw_clock ;;
-		R) reset_colors -r
-	esac
+  #shellcheck disable=SC2162
+  read char
+  case "$char" in
+    q) exit_clock ;;
+    r) redraw_clock ;;
+    R) reset_colors -r
+  esac
 
-	#date
-	[[ $_DATE ]] && {
-		#TODO: use distinct variable for each element of the date (?)
-		#(if it makes any sense)
-		_date="$(date -d "now + $_OFFSET hours" "+${_FDATE:-%F}")"
-		_date="${_date^^}"
-	}
+  #date
+  [[ $_DATE ]] && {
+    #TODO: use distinct variable for each element of the date (?)
+    #(if it makes any sense)
+    _date="$(date -d "now + $_OFFSET hours" "+${_FDATE:-%F}")"
+    _date="${_date^^}"
+  }
 
-	# time
-	if [[ $_F24 ]]; then
-		_H="$(date -d "now + $_OFFSET hours" "+%H")"
-	else
-		_H="$(date -d "now + $_OFFSET hours" "+%I")"
-		H="$(date -d "now + $_OFFSET hours" "+%H")"
-		[[ ${H:0:1} == 0 ]] && H="${H:1:1}"
-		[[ $H -ge 12 ]] && _AMPM="PM" || _AMPM="AM" 
-	fi
+  # time
+  if [[ $_F24 ]]; then
+    _H="$(date -d "now + $_OFFSET hours" "+%H")"
+  else
+    _H="$(date -d "now + $_OFFSET hours" "+%I")"
+    H="$(date -d "now + $_OFFSET hours" "+%H")"
+    [[ ${H:0:1} == 0 ]] && H="${H:1:1}"
+    [[ $H -ge 12 ]] && _AMPM="PM" || _AMPM="AM" 
+  fi
 
-	_M="$(date "+%M")"
-	_S="$(date "+%S")"
+  _M="$(date "+%M")"
+  _S="$(date "+%S")"
 
-	# change terminal title
-	# FIXME original title is not restored in a tmux session
-	[[ $_T != "$_M" ]] && { _T="$_M"; echo -ne "\033]0;bigtime: $_H:$_M $_AMPM\007"; }
+  # change terminal title
+  # FIXME original title is not restored in a tmux session
+  [[ $_T != "$_M" ]] && { _T="$_M"; echo -ne "\033]0;bigtime: $_H:$_M $_AMPM\007"; }
 
-	[[ $_BLINK && $((${_S:1:1} % 2)) == 0 ]] && index=0 || index=1
+  [[ $_BLINK && $((${_S:1:1} % 2)) == 0 ]] && index=0 || index=1
 
-	h1=${_H:0:1}
-	h2=${_H:1:1}
-	m1=${_M:0:1}
-	m2=${_M:1:1}
-	s1=${_S:0:1}
-	s2=${_S:1:1}
+  h1=${_H:0:1}
+  h2=${_H:1:1}
+  m1=${_M:0:1}
+  m2=${_M:1:1}
+  s1=${_S:0:1}
+  s2=${_S:1:1}
 
-	((_y=(TERMH-CLOCKH)/2))
-	((_x=(TERMW-CLOCKW)/2))
+  ((_y=(TERMH-CLOCKH)/2))
+  ((_x=(TERMW-CLOCKW)/2))
 
-	#SIZE DEBUG
-	#tput cup 0 0
-	#printf "x=%d y=%d ch=%d cw=%d dh=%d dw=%d sw=%d" "$_x" "$_y" "$CLOCKH" "$CLOCKW" "$dh" "$dw" "$sw"
+  #SIZE DEBUG
+  #tput cup 0 0
+  #printf "x=%d y=%d ch=%d cw=%d dh=%d dw=%d sw=%d" "$_x" "$_y" "$CLOCKH" "$CLOCKW" "$dh" "$dw" "$sw"
 
-	tput cup $((_y-1)) $((_x))
-	echo $"$_date"
-	#echo $" $_weekday $_day $_month $_year"
+  tput cup $((_y-1)) $((_x))
+  echo $"$_date"
+  #echo $" $_weekday $_day $_month $_year"
 
-	_sync
+  _sync
 
-	# HORIZONTAL LAYOUT
-	if ! [[ $_VERTICAL ]]; then
+  # HORIZONTAL LAYOUT
+  if ! [[ $_VERTICAL ]]; then
 
-		for ((i=0;i<dh;i++)); do
+    for ((i=0;i<dh;i++)); do
 
-			H1=$"_D"$h1"[$i]"     # hours
-			H2=$"_D"$h2"[$i]"     #
-			M1=$"_D"$m1"[$i]"     # minutes
-			M2=$"_D"$m2"[$i]"     #
+      H1=$"_D"$h1"[$i]"     # hours
+      H2=$"_D"$h2"[$i]"     #
+      M1=$"_D"$m1"[$i]"     # minutes
+      M2=$"_D"$m2"[$i]"     #
 
-			[[ $_BSEC ]] && {
-				S1=$"_D"$s1"[$i]" # seconds
-				S2=$"_D"$s2"[$i]"
-			}
+      [[ $_BSEC ]] && {
+        S1=$"_D"$s1"[$i]" # seconds
+        S2=$"_D"$s2"[$i]"
+      }
 
-			SP=$"${_P[$i]}"       # separator
-			WS=$"${_W[$i]}"       # whitespace
-			
-			[[ $_BLINK ]] && {
-				blink_array=("$SP" "$WS")
-				sp="${blink_array[$index]}"
-			} || sp="$SP"
+      SP=$"${_P[$i]}"       # separator
+      WS=$"${_W[$i]}"       # whitespace
+      
+      [[ $_BLINK ]] && {
+        blink_array=("$SP" "$WS")
+        sp="${blink_array[$index]}"
+      } || sp="$SP"
 
-			tput cup $((i+_y)) $((_x))
-			case $i in
-				0)
-					if [[ $_SSEC ]]; then
-						printf "%s%s%s%s%s%s%s%s%s %s"                 \
-						$"${!H1}" $"$_SPC" $"${!H2}" $"$_SPC" $"$sp"   \
-						$"$_SPC" $"${!M1}" $"$_SPC" $"${!M2}" "$s1$s2"
-					elif [[ $_BSEC ]]; then
-						printf "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s"        \
-						$"${!H1}" $"$_SPC" $"${!H2}" $"$_SPC" $"$sp"   \
-						$"$_SPC" $"${!M1}" $"$_SPC" $"${!M2}" $"$_SPC" \
-						$"$sp" $"$_SPC" $"${!S1}" $"$_SPC" $"${!S2}"
-					else
-						printf "%s%s%s%s%s%s%s%s%s"                    \
-						$"${!H1}" $"$_SPC" $"${!H2}" $"$_SPC" $"$sp"   \
-						$"$_SPC" $"${!M1}" $"$_SPC" $"${!M2}"
-					fi
-					;;
-				$((dh-1)))
-					if [[ $_BSEC ]]; then
-						printf "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s %s"     \
-						$"${!H1}" $"$_SPC" $"${!H2}" $"$_SPC" $"$sp"   \
-						$"$_SPC" $"${!M1}" $"$_SPC" $"${!M2}" $"$_SPC" \
-						$"$sp" $"$_SPC" $"${!S1}" $"$_SPC" $"${!S2}"   \
-						"$_AMPM"
-					else
-						printf "%s%s%s%s%s%s%s%s%s %s"                 \
-						$"${!H1}" $"$_SPC" $"${!H2}" $"$_SPC" $"$sp"   \
-						$"$_SPC" $"${!M1}" $"$_SPC" $"${!M2}" "$_AMPM"
-					fi
-					;;
-				*)
-					if [[ $_BSEC ]]; then
-						printf "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s"        \
-						$"${!H1}" $"$_SPC" $"${!H2}" $"$_SPC" $"$sp"   \
-						$"$_SPC" $"${!M1}" $"$_SPC" $"${!M2}" $"$_SPC" \
-						$"$sp" $"$_SPC" $"${!S1}" $"$_SPC" $"${!S2}"
-					else
-						printf "%s%s%s%s%s%s%s%s%s"                    \
-						$"${!H1}" $"$_SPC" $"${!H2}" $"$_SPC" $"$sp"   \
-						$"$_SPC" $"${!M1}" $"$_SPC" $"${!M2}"
-					fi
-			esac
-		done
+      tput cup $((i+_y)) $((_x))
+      case $i in
+        0)
+          if [[ $_SSEC ]]; then
+            printf "%s%s%s%s%s%s%s%s%s %s"                 \
+            $"${!H1}" $"$_SPC" $"${!H2}" $"$_SPC" $"$sp"   \
+            $"$_SPC" $"${!M1}" $"$_SPC" $"${!M2}" "$s1$s2"
+          elif [[ $_BSEC ]]; then
+            printf "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s"        \
+            $"${!H1}" $"$_SPC" $"${!H2}" $"$_SPC" $"$sp"   \
+            $"$_SPC" $"${!M1}" $"$_SPC" $"${!M2}" $"$_SPC" \
+            $"$sp" $"$_SPC" $"${!S1}" $"$_SPC" $"${!S2}"
+          else
+            printf "%s%s%s%s%s%s%s%s%s"                    \
+            $"${!H1}" $"$_SPC" $"${!H2}" $"$_SPC" $"$sp"   \
+            $"$_SPC" $"${!M1}" $"$_SPC" $"${!M2}"
+          fi
+          ;;
+        $((dh-1)))
+          if [[ $_BSEC ]]; then
+            printf "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s %s"     \
+            $"${!H1}" $"$_SPC" $"${!H2}" $"$_SPC" $"$sp"   \
+            $"$_SPC" $"${!M1}" $"$_SPC" $"${!M2}" $"$_SPC" \
+            $"$sp" $"$_SPC" $"${!S1}" $"$_SPC" $"${!S2}"   \
+            "$_AMPM"
+          else
+            printf "%s%s%s%s%s%s%s%s%s %s"                 \
+            $"${!H1}" $"$_SPC" $"${!H2}" $"$_SPC" $"$sp"   \
+            $"$_SPC" $"${!M1}" $"$_SPC" $"${!M2}" "$_AMPM"
+          fi
+          ;;
+        *)
+          if [[ $_BSEC ]]; then
+            printf "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s"        \
+            $"${!H1}" $"$_SPC" $"${!H2}" $"$_SPC" $"$sp"   \
+            $"$_SPC" $"${!M1}" $"$_SPC" $"${!M2}" $"$_SPC" \
+            $"$sp" $"$_SPC" $"${!S1}" $"$_SPC" $"${!S2}"
+          else
+            printf "%s%s%s%s%s%s%s%s%s"                    \
+            $"${!H1}" $"$_SPC" $"${!H2}" $"$_SPC" $"$sp"   \
+            $"$_SPC" $"${!M1}" $"$_SPC" $"${!M2}"
+          fi
+      esac
+    done
 
-		tput cup $((_y+dh)) $((_x))
-		(( _OFFSET > 0 )) && echo "[+$_OFFSET]"
-		(( _OFFSET < 0 )) && echo "[$_OFFSET]"
+    tput cup $((_y+dh)) $((_x))
+    (( _OFFSET > 0 )) && echo "[+$_OFFSET]"
+    (( _OFFSET < 0 )) && echo "[$_OFFSET]"
 
-	# VERTICAL LAYOUT
-	elif [[ $_VERTICAL ]]; then
+  # VERTICAL LAYOUT
+  elif [[ $_VERTICAL ]]; then
 
-		for ((i=0;i<dh;i++)); do
+    for ((i=0;i<dh;i++)); do
 
-			H1=$"_D"$h1"[$i]"     # hours
-			H2=$"_D"$h2"[$i]"     #
+      H1=$"_D"$h1"[$i]"     # hours
+      H2=$"_D"$h2"[$i]"     #
 
-			tput cup $((_y)) $((_x))
-			
-			case "$i" in
-				$((dh-1)))
-					printf "%s%s%s %s" $"${!H1}" $"$_SPC" $"${!H2}" "$_AMPM"
-					;;
-				*)
-					printf "%s%s%s" $"${!H1}" $"$_SPC" $"${!H2}"
-			esac
+      tput cup $((_y)) $((_x))
+      
+      case "$i" in
+        $((dh-1)))
+          printf "%s%s%s %s" $"${!H1}" $"$_SPC" $"${!H2}" "$_AMPM"
+          ;;
+        *)
+          printf "%s%s%s" $"${!H1}" $"$_SPC" $"${!H2}"
+      esac
 
-			((_y++))
+      ((_y++))
 
-		done
+    done
 
-		tput cup $((_y)) $((_x))
-		(( _OFFSET > 0 )) && echo "[+$_OFFSET]"
-		(( _OFFSET < 0 )) && echo "[$_OFFSET]"
+    tput cup $((_y)) $((_x))
+    (( _OFFSET > 0 )) && echo "[+$_OFFSET]"
+    (( _OFFSET < 0 )) && echo "[$_OFFSET]"
 
-		((_y++))
+    ((_y++))
 
-		for ((i=0;i<dh;i++)); do
+    for ((i=0;i<dh;i++)); do
 
-			M1=$"_D"$m1"[$i]"     # minutes
-			M2=$"_D"$m2"[$i]"     #
+      M1=$"_D"$m1"[$i]"     # minutes
+      M2=$"_D"$m2"[$i]"     #
 
-			tput cup $((_y)) $((_x))
-			
-			if ((i == dh-1)) && [[ $_SSEC ]]; then
-				printf "%s%s%s %s%s" $"${!M1}" $"$_SPC" $"${!M2}" "$s1" "$s2"
-			else
-				printf "%s%s%s" $"${!M1}" $"$_SPC" $"${!M2}"
-			fi
+      tput cup $((_y)) $((_x))
+      
+      if ((i == dh-1)) && [[ $_SSEC ]]; then
+        printf "%s%s%s %s%s" $"${!M1}" $"$_SPC" $"${!M2}" "$s1" "$s2"
+      else
+        printf "%s%s%s" $"${!M1}" $"$_SPC" $"${!M2}"
+      fi
 
-			((_y++))
+      ((_y++))
 
-		done
+    done
 
-		((_y++))
+    ((_y++))
 
-		if [[ $_BSEC ]]; then
-			for ((i=0;i<dh;i++)); do
+    if [[ $_BSEC ]]; then
+      for ((i=0;i<dh;i++)); do
 
-				S1=$"_D"$s1"[$i]" # seconds
-				S2=$"_D"$s2"[$i]"
+        S1=$"_D"$s1"[$i]" # seconds
+        S2=$"_D"$s2"[$i]"
 
-				tput cup $((_y)) $((_x))
-				printf "%s%s%s" $"${!S1}" $"$_SPC" $"${!S2}"
+        tput cup $((_y)) $((_x))
+        printf "%s%s%s" $"${!S1}" $"$_SPC" $"${!S2}"
 
-				((_y++))
+        ((_y++))
 
-			done
+      done
 
-		elif [[ $_SSEC ]]; then
-			tput cup $((_y)) $((_x))
-		fi
-	fi
-	
-	sleep 0.5
+    elif [[ $_SSEC ]]; then
+      tput cup $((_y)) $((_x))
+    fi
+  fi
+  
+  sleep 0.5
 
 done

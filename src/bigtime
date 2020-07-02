@@ -334,7 +334,6 @@ done
  readoption() {
   local file option
   file="$_FILE"
-  option="$1"
   while read -r line; do
     if [[ $line =~ ^$1=.*$ ]]; then
       IFS=$'\n' read -d "" -ra array <<< "${line//=/$'\n'}"

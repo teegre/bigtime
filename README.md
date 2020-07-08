@@ -8,6 +8,7 @@
 ![alt text](img/bigtime5.png)  
 ![alt text](img/bigtime4.png)  
 ![alt text](img/bigtime6.png)  
+![alt text](img/bigtime7.png)  
 
 ## 1. Installation
 

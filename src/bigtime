@@ -110,9 +110,7 @@ redraw_clock() {
   TERMH="$(tput lines)"
   TERMW="$(tput cols)"
   if [[ $TERMH -le $CLOCKH || $TERMW -le $CLOCKW ]]; then
-    exit_clock
-    __err -u "error: clock doesn't fit"
-    exit 1
+    exit_clock "error: clock doesn't fit"
   fi
   ((_y=(TERMH-CLOCKH)/2))
   ((_x=(TERMW-CLOCKW)/2))
@@ -126,8 +124,9 @@ exit_clock() {
   stty sane
   # update terminal title to default(?) within tmux (...)
   [[ $TERM =~ ^tmux.*$ ]] && echo -ne "\033]0;$(hostname)\007"
-  echo "-- bye!"
-  exit
+  [[ $1 ]] && __err -u "$1"
+  __err -l "-- bye!"
+  exit 1
 }
 
 ! [[ -a "$DIGITS_DEFAULT_FILE" ]] && {
@@ -225,10 +224,6 @@ while :; do
       shift
       #TODO: limit formatting to these...
       _FDATE="$1"
-      _FDATE="${_FDATE//%D/%d}" # day of the month
-      _FDATE="${_FDATE//%m/%b}" # abbrev. month name
-      _FDATE="${_FDATE//%M/%m}" # month
-      _FDATE="${_FDATE//%W/%a}" # abbrev. weekday name
       shift
       ;;
     -b | --blink)
@@ -371,11 +366,11 @@ _OFFSET="${_OFFSET:-0}"
 
 for ((i=0;i<10;i++)); do
   digit="$(readoption "$i")"
-  [[ $digit == "null" ]] && { echo "error: $_FILE: missing digit $i"; exit 1; }
+  [[ $digit == "null" ]] && { __err -u "error: $_FILE: missing digit $i"; exit 1; }
   IFS=$'\n' read -d "" -ra digit <<< "${digit//$';'/$'\n'}"
-  ((${#digit[@]}!=dh)) && { echo "error: $_FILE: digit $i, height mismatch"; exit 1; }
+  ((${#digit[@]}!=dh)) && { __err -u "error: $_FILE: digit $i, height mismatch"; exit 1; }
   for ((j=0;j<dh;j++)); do
-    ((${#digit[$j]}!=dw)) &&{ echo "error: $_FILE: digit $i, width mismatch: col $((j+1))"; exit 1; }
+    ((${#digit[$j]}!=dw)) &&{ __err -u "error: $_FILE: digit $i, width mismatch: col $((j+1))"; exit 1; }
     digit[$j]=${digit[$j]//0/"$_SPC"}
     digit[$j]=${digit[$j]//1/"$_CHR"}
     declare -a "_D$i+=(\"${digit[$j]}\")"
@@ -389,14 +384,14 @@ done
 options=("separator" "blank")
 for option in "${options[@]}"; do
   opt="$(readoption "$option")"
-  [[ $opt == "null" ]] && { echo "error: $_FILE: missing $option"; exit 1; }
+  [[ $opt == "null" ]] && { __err -u "error: $_FILE: missing $option"; exit 1; }
   IFS=$'\n' read -d "" -ra opt <<< "${opt//$';'/$'\n'}"
   # check whether width matches declared one
-  ((${#opt[@]}!=dh)) && { echo "error: $option: height mismatch"; exit 1; }
+  ((${#opt[@]}!=dh)) && { __err -u "error: $option: height mismatch"; exit 1; }
   # replace 0s and 1s
   for ((i=0;i<dh;i++)); do
     # check whether height matches declared one
-    ((${#opt[$i]}!=sw)) &&{ echo "error: $option, width mismatch: col $((i+1))"; exit 1; }
+    ((${#opt[$i]}!=sw)) &&{ __err -u "error: $option, width mismatch: col $((i+1))"; exit 1; }
     opt[$i]=${opt[$i]//0/"$_SPC"}
     opt[$i]=${opt[$i]//1/"$_CHR"}
     case "$option" in
@@ -430,6 +425,8 @@ reset_colors() {
   redraw_clock
 }
 
+_first_time=0
+
 tput smcup
 tput civis
 stty -echo -icanon time 0 min 0
@@ -442,7 +439,7 @@ stty -echo -icanon time 0 min 0
 
 tput clear
 
-trap exit_clock INT QUIT
+trap 'exit_clock "-- interrupted by user"' INT QUIT
 trap redraw_clock WINCH
 
 while :; do
@@ -459,10 +456,24 @@ while :; do
 
   #date
   [[ $_DATE ]] && {
-    #TODO: use distinct variable for each element of the date (?)
-    #(if it makes any sense)
-    _date="$(date -d "now + $_OFFSET hours" "+${_FDATE:-%F}")"
-    _date="${_date^^}"
+    if [[ $_FDATE ]]; then
+      _date_format="$(date -d "now + $_OFFSET hours" '+%a %d %b %m %Y')"
+      IFS=$'\n' read -d "" -ra date_format <<< "${_date_format// /$'\n'}"
+      FDATE="$_FDATE"
+      FDATE="${FDATE//%W/${date_format[0]}}"
+      FDATE="${FDATE//%D/${date_format[1]}}"
+      FDATE="${FDATE//%m/${date_format[2]}}"
+      FDATE="${FDATE//%M/${date_format[3]}}"
+      FDATE="${FDATE//%Y/${date_format[4]}}"
+      if [[ $FDATE == "$_FDATE" && $_first_time == 0 ]]; then
+        # it means we couldn't find anything related to date format
+        exit_clock "error: invalid date format"
+      fi
+    else
+      FDATE="$(date -d "now + $_OFFSET hours" "+%F")"
+    fi
+    _date="${FDATE^^}"
+    _first_time=1
   }
 
   # time

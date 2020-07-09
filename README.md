@@ -111,7 +111,3 @@ sep_width=1
 separator=0;0;0;0;1
 blank=0;0;0;0;0
 ```
-
-## 5. TODO
-
-* Find a more reliable way to format date output

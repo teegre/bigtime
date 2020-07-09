@@ -27,7 +27,7 @@ bigtime [options values]
 
 OPTIONS:
 
-* -c, --char [char]        - character for digits (default is █)
+* -c, --char [char]        - character for digits (default is ∎)
 * -p, --space [char]       - character for whitespaces (default is " ")
 * -f                       - display time in 24h format
 * --offset [hours]         - hours to be added to current time
@@ -90,7 +90,7 @@ They are sequences of 0s and 1s, for instance:
 represents digit 0, and it is stored as:  
 `0=11111;11011;11011;11011;11111`  
 
-By default, when launched, **bigtime** replaces 0 by whitespace and 1 by █ 
+By default, when launched, **bigtime** replaces 0 by whitespace and 1 by ∎
 
 ## 4.3 Example: narrow.digits file
 

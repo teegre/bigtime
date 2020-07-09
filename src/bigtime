@@ -23,7 +23,7 @@ COLORS="$(tput colors)"
 declare -i CLOCKH
 declare -i CLOCKW
 
-PRESETS=("∎" " " "▮" " " "●" " " "◆" " " "▓" "█" "♥" " ")
+PRESETS=("█" " " "▮" " " "●" " " "◆" " " "▓" " " "♥" " ")
 
 __help() {
 
@@ -34,7 +34,7 @@ USAGE:
 bigtime [OPTIONS] [VALUE]
 
 OPTIONS:
--c, --char <char>        - character for digits (default is █)
+-c, --char <char>        - character for digits (default is ∎)
 -p, --space <char>       - character for whitespaces (default is " ")
 -f                       - display time in 24h format
 --offset <hours>         - hours to be added to current time
@@ -356,7 +356,7 @@ sw="$(readoption "sep_width")"
 [[ $sw == "null" ]] && { __err -u "error: $_FILE: missing sep_width value"; exit 1; }
 
 _SPC="${_SPC:-" "}"
-_CHR="${_CHR:-"█"}"
+_CHR="${_CHR:-"∎"}"
 
 _OFFSET="${_OFFSET:-0}"
 

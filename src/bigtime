@@ -10,7 +10,7 @@
 
 progname="$(basename "$0")"
 PROGNAME="${progname^^}"
-VERSION="20200621-0.2"
+VERSION="20200613-0.3"
 
 DIGITS_PATH="$HOME/.config/bigtime"
 DIGITS_DEFAULT_FILE="$DIGITS_PATH/standard.digits"
@@ -55,6 +55,8 @@ OPTIONS:
 -V, --version            - print program's version and exit
 
 KEYS BINDINGS:
+b                        - pick a random background color
+f                        - pick a random foreground color
 q                        - exit program
 r                        - refresh screen
 R                        - reset to default terminal colors
@@ -447,6 +449,8 @@ while :; do
   #shellcheck disable=SC2162
   read char
   case "$char" in
+    f) ((_FG=RANDOM/COLORS)); tput setaf "$_FG" ;;
+    b) ((_BG=RANDOM/COLORS)); tput setab "$_BG"; redraw_clock;;
     q) exit_clock ;;
     r) redraw_clock ;;
     R) reset_colors -r

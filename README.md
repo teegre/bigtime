@@ -58,6 +58,8 @@ OPTIONS:
 
 ## 3. Key bindings
 
+* b - pick a random background color
+* f - pick a random foreground color
 * q - exit program
 * R - restore default terminal colors
 * r - refresh screen
@@ -75,7 +77,7 @@ All digits must have the same size (in characters) which is defined as follow:
 `width=5`
 
 The separator can have a different width but must have the same height as digits:  
-`sep_width=2`
+`sep_width=1`
 
 ### 4.2 Digits, separator and blank
 
@@ -89,9 +91,11 @@ They are sequences of 0s and 1s, for instance:
 11111
 ```  
 represents digit 0, and it is stored as:  
-`0=11111;11011;11011;11011;11111`  
+`0=11111;11011;11011;11011;11111`
 
-By default, when launched, **bigtime** replaces 0 by whitespace and 1 by ∎
+By default, **bigtime** replaces 0 by whitespace and 1 by ∎  
+but characters and spaces can be hard coded as well, i.e:  
+`0=@@@@@;@@_@@;@@_@@;@@_@@;@@@@@`
 
 ## 4.3 Example: narrow.digits file
 

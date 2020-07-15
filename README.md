@@ -37,6 +37,8 @@ OPTIONS:
 * -d, --date               - show date
 * -D, --date-format        - date format(1)
 * -b, --blink              - blinking separators
+* -a, --alarm [time]       - set daily alarm
+* -i, --chime              - activate hourly time signal
 * -v, --vertical           - display clock vertically
 * --file [filename]        - use a custom digits file (filename only)
 * -l, --list-files         - print available digits files
@@ -56,21 +58,52 @@ OPTIONS:
 * %D: day of month
 * %Y: year
 
-## 3. Key bindings
+## 3. Display
 
-* b - pick a random background color
-* f - pick a random foreground color
-* q - exit program
-* R - restore default terminal colors
-* r - refresh screen
+```
+hourly time signal
+|
+| date
+| |
+| WED 07-15
+∎  ∎∎∎   ∎∎∎       ∎∎∎     ∎      ∎∎∎∎    ∎
+  ∎   ∎ ∎   ∎     ∎   ∎   ∎∎          ∎  ∎
+  ∎ ∎ ∎  ∎∎∎∎        ∎   ∎ ∎       ∎∎∎  ∎∎∎∎
+  ∎   ∎    ∎   ∎    ∎   ∎∎∎∎∎  ∎      ∎ ∎   ∎
+A  ∎∎∎    ∎    ∎  ∎∎∎∎∎    ∎   ∎  ∎∎∎∎   ∎∎∎  PM -- AM/PM indicator
+| |            |  |               |
+| hours        |  minutes         seconds
+|              |
+|              separator
+|
+daily alarm
+```
 
-## 4. Custom digits file
+## 4. Alarm
+
+To set a daily alarm starting tomorrow at 7:00 AM:  
+`bigtime --alarm "7:00 tomorrow"`
+
+To test the alarm :  
+`bigtime --alarm "now"`
+
+Press space bar to stop.
+
+
+## 5. Key bindings
+
+* h     - toggle hourly time signal
+* q     - exit program
+* r     - refresh screen
+* space - stop alarm
+
+## 6. Custom digits file
 
 Basically a digit file contains instructions on how to draw digits on the screen.  
 They have the *.digits* extension and must be stored in **bigtime** configuration  
 directory: `$HOME/.config/bigtime`
 
-### 4.1 Size
+### 6.1 Size
 
 All digits must have the same size (in characters) which is defined as follow:  
 `height=5`  
@@ -79,7 +112,7 @@ All digits must have the same size (in characters) which is defined as follow:
 The separator can have a different width but must have the same height as digits:  
 `sep_width=1`
 
-### 4.2 Digits, separator and blank
+### 6.2 Digits, separator and blank
 
 They are sequences of 0s and 1s, for instance:  
 
@@ -93,11 +126,11 @@ They are sequences of 0s and 1s, for instance:
 represents digit 0, and it is stored as:  
 `0=11111;11011;11011;11011;11111`
 
-By default, **bigtime** replaces 0 by whitespace and 1 by ∎  
-but characters and spaces can be hard coded as well, i.e:  
+By default, **bigtime** replaces 0 by whitespace and 1 by ∎ but characters and  
+spaces can be hardcoded as well, i.e:  
 `0=@@@@@;@@_@@;@@_@@;@@_@@;@@@@@`
 
-## 4.3 Example: narrow.digits file
+### 5.3 Example: narrow.digits file
 
 ```
 width=3

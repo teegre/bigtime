@@ -7,3 +7,4 @@ CONFIG_DIR="$HOME/.config/bigtime"
 
 cp ./src/bigtime "$INSTALL_DIR/"
 cp ./src/*.digits "$CONFIG_DIR/"
+cp ./src/*.wav  "$CONFIG_DIR/"

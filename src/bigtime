@@ -5,15 +5,18 @@
 # | '_ \| |/ _` | __| | '_ ` _ \ / _ \
 # | |_) | | (_| | |_| | | | | | |  __/
 # |_.__/|_|\__, |\__|_|_| |_| |_|\___|
-#          |___/ version 20200621-0.2
+#          |___/ version 20200714-0.4
 # ♥ ##################################
 
 progname="$(basename "$0")"
 PROGNAME="${progname^^}"
-VERSION="20200613-0.3"
+VERSION="20200614-0.4"
 
-DIGITS_PATH="$HOME/.config/bigtime"
-DIGITS_DEFAULT_FILE="$DIGITS_PATH/standard.digits"
+CONFIG_PATH="$HOME/.config/bigtime"
+DIGITS_DEFAULT_FILE="$CONFIG_PATH/standard.digits"
+BEEP_SOUND="$CONFIG_PATH/beep.wav"
+ALARM_SOUND="$CONFIG_PATH/alarm.wav"
+KEY_SOUND="$CONFIG_PATH/key.wav"
 
 TERMH="$(tput lines)"
 TERMW="$(tput cols)"
@@ -23,7 +26,7 @@ COLORS="$(tput colors)"
 declare -i CLOCKH
 declare -i CLOCKW
 
-PRESETS=("█" " " "▮" " " "●" " " "◆" " " "▓" " " "♥" " ")
+PRESETS=("█" " " "▮" " " "⦁" " " "◆" " " "▓" " " "♥" " " "⏺" " ")
 
 __help() {
 
@@ -44,6 +47,8 @@ OPTIONS:
 -D, --date-format        - date format(1)
 -b, --blink              - blinking separators
 -v, --vertical           - display clock vertically
+-a, --alarm <time>       - set alarm
+-i, --chime              - hourly chime
 --file <filename>        - use a custom digits file (filename only)
 -l, --list-files         - print available digits files
 --preset <0..n>          - use predefined characters (override -c and -p options)
@@ -138,28 +143,30 @@ exit_clock() {
 
 # options
 
-_opts=$(LC_ALL=C getopt                            \
-  --long "help"                                    \
-  --long "version"                                 \
-  --long "preset:"                                 \
-  --long "list-presets"                            \
-  --long "char:"                                   \
-  --long "space:"                                  \
-  --long "offset:"                                 \
-  --long "small-seconds"                           \
-  --long "big-seconds"                             \
-  --long "date"                                    \
-  --long "date-format:"                            \
-  --long "blink"                                   \
-  --long "vertical"                                \
-  --long "file:"                                   \
-  --long "list-files"                              \
-  --long "foreground:"                             \
-  --long "background:"                             \
-  --long "list-colors"                             \
-  --options "h,V,c:,p:,f,s,S,d,D:,b,v,F:,B:,P,C,l" \
-  --name "$progname"                               \
-  -- "$@"                                          \
+_opts=$(LC_ALL=C getopt                                 \
+  --long "help"                                         \
+  --long "version"                                      \
+  --long "preset:"                                      \
+  --long "list-presets"                                 \
+  --long "char:"                                        \
+  --long "space:"                                       \
+  --long "offset:"                                      \
+  --long "small-seconds"                                \
+  --long "big-seconds"                                  \
+  --long "date"                                         \
+  --long "date-format:"                                 \
+  --long "blink"                                        \
+  --long "vertical"                                     \
+  --long "alarm:"                                       \
+  --long "chime"                                        \
+  --long "file:"                                        \
+  --long "list-files"                                   \
+  --long "foreground:"                                  \
+  --long "background:"                                  \
+  --long "list-colors"                                  \
+  --options "h,V,c:,p:,f,s,S,d,D:,b,v,a:,i,F:,B:,P,C,l" \
+  --name "$progname"                                    \
+  -- "$@"                                               \
 ) || exit 1
 
 eval set -- "$_opts"
@@ -237,17 +244,27 @@ while :; do
       _VERTICAL=1
       shift
       ;;
+    -a | --alarm)
+      _ALARM=1
+      shift
+      _ALARM_TIME="$1"
+      shift
+      ;;
+    -i | --chime)
+      _BEEP=1
+      shift
+      ;;
     --file)
       shift
       [[ $1 =~ \.digits$ ]] && _FILE="$1" || _FILE="$1.digits"
-      ! [[ -a "$DIGITS_PATH/$_FILE" ]] && {
+      ! [[ -a "$CONFIG_PATH/$_FILE" ]] && {
         __err -u "error: --file $_FILE not found"
         exit 1
-      } || _FILE="$DIGITS_PATH/$_FILE"
+      } || _FILE="$CONFIG_PATH/$_FILE"
       shift
       ;;
     -l | --list-files)
-      find "$DIGITS_PATH" -name "*.digits"
+      find "$CONFIG_PATH" -name "*.digits"
       exit 0
       ;;
     --preset)
@@ -444,16 +461,25 @@ tput clear
 trap 'exit_clock "-- interrupted by user"' INT QUIT
 trap redraw_clock WINCH
 
+[[ $_ALARM ]] && { ALARM_TIME="$(date -d "$_ALARM_TIME" "+%s")" || exit_clock "invalid alarm time"; }
+
 while :; do
 
   #shellcheck disable=SC2162
-  read char
+  IFS= read char
   case "$char" in
-    f) ((_FG=RANDOM/COLORS)); tput setaf "$_FG" ;;
-    b) ((_BG=RANDOM/COLORS)); tput setab "$_BG"; redraw_clock;;
-    q) exit_clock ;;
-    r) redraw_clock ;;
-    R) reset_colors -r
+    h)
+        if [[ $_BEEP ]]; then
+          unset _BEEP;
+        else
+          _BEEP=1 
+        fi
+        aplay --quiet "$KEY_SOUND" &
+        ;;
+    q) aplay --quiet "$KEY_SOUND" & exit_clock ;;
+    r) aplay --quiet "$KEY_SOUND" & redraw_clock ;;
+    R) aplay --quiet "$KEY_SOUND" & reset_colors -r ;;
+    " ") unset ALARM; aplay --quiet "$KEY_SOUND"
   esac
   
   [[ $_REDRAW == 1 ]] && continue
@@ -493,10 +519,13 @@ while :; do
   _M="$(date "+%M")"
   _S="$(date "+%S")"
 
+  _A="$(date "+%s")" # seconds from the epoch, for alarm
+
   # change terminal title
   [[ $_T != "$_M" ]] && { _T="$_M"; echo -ne "\033]0;bigtime: $_H:$_M $_AMPM\007"; }
 
-  [[ $_BLINK && $((${_S:1:1} % 2)) == 0 ]] && index=0 || index=1
+  # blink
+  [[ $((${_S:1:1} % 2)) == 0 ]] && index=0 || index=1
 
   h1=${_H:0:1}
   h2=${_H:1:1}
@@ -511,9 +540,30 @@ while :; do
 
   tput cup $((_y-1)) $((_x))
   echo $"$_date"
-  #echo $" $_weekday $_day $_month $_year"
 
   _sync
+
+  # indicators
+  tput cup $((_y)) $((_x-2)); [[ $_BEEP ]] && echo "$_CHR" || echo "$_SPC"
+  [[ $_ALARM ]] && {
+      tput cup $((_y+dh-1)) $((_x-2))
+        if [[ $ALARM && $index == 1 ]]; then
+            echo " "
+        else
+            echo "A"
+        fi
+    }
+
+  # beep
+  [[ -z $ALARM && $_BEEP && $_M == "00" && $_S == "00" ]] && aplay --quiet "$BEEP_SOUND" &
+
+  # alarm
+  [[ $_ALARM ]] && [[ $((ALARM_TIME+_OFFSET)) == "$_A" ]] && {
+    # set new alarm for tomorrow
+    ALARM_TIME="$(date -d "@$((ALARM_TIME+86400))" "+%s")"
+    ALARM=1
+  } 
+  [[ $ALARM ]] && [[ $index == 0 ]] && aplay --quiet "$ALARM_SOUND" &
 
   # HORIZONTAL LAYOUT
   if ! [[ $_VERTICAL ]]; then
@@ -526,7 +576,7 @@ while :; do
       M2=$"_D"$m2"[$i]"     #
 
       [[ $_BSEC ]] && {
-        S1=$"_D"$s1"[$i]" # seconds
+        S1=$"_D"$s1"[$i]"   # seconds
         S2=$"_D"$s2"[$i]"
       }
 

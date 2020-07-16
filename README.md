@@ -1,4 +1,4 @@
-# **bigtime** version 0.2 (06-2020)
+# **bigtime** version 0.4 (07-2020)
 
 **bigtime** is a customizable clock for the terminal, written in bash.
 
@@ -130,7 +130,7 @@ By default, **bigtime** replaces 0 by whitespace and 1 by ∎ but characters and
 spaces can be hardcoded as well, i.e:  
 `0=@@@@@;@@_@@;@@_@@;@@_@@;@@@@@`
 
-### 5.3 Example: narrow.digits file
+### 6.3 Example: narrow.digits file
 
 ```
 width=3

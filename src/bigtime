@@ -405,11 +405,11 @@ for option in "${options[@]}"; do
   opt="$(readoption "$option")"
   [[ $opt == "null" ]] && { __err -u "error: $_FILE: missing $option"; exit 1; }
   IFS=$'\n' read -d "" -ra opt <<< "${opt//$';'/$'\n'}"
-  # check whether width matches declared one
+  # check whether height matches declared one
   ((${#opt[@]}!=dh)) && { __err -u "error: $option: height mismatch"; exit 1; }
   # replace 0s and 1s
   for ((i=0;i<dh;i++)); do
-    # check whether height matches declared one
+    # check whether width matches declared one
     ((${#opt[$i]}!=sw)) &&{ __err -u "error: $option, width mismatch: col $((i+1))"; exit 1; }
     opt[$i]=${opt[$i]//0/"$_SPC"}
     opt[$i]=${opt[$i]//1/"$_CHR"}
@@ -444,7 +444,7 @@ reset_colors() {
   redraw_clock
 }
 
-_first_time=0
+_make_date=0
 
 tput smcup
 tput civis
@@ -461,65 +461,74 @@ tput clear
 trap 'exit_clock "-- interrupted by user"' INT QUIT
 trap redraw_clock WINCH
 
-[[ $_ALARM ]] && { ALARM_TIME="$(date -d "$_ALARM_TIME" "+%s")" || exit_clock "invalid alarm time"; }
+[[ $_ALARM ]] && { ALARM_TIME="$(date -d "${_ALARM_TIME} + $_OFFSET hours" "+%s")" || exit_clock "invalid alarm time"; }
 
 while :; do
 
   #shellcheck disable=SC2162
   IFS= read char
   case "$char" in
-    h)
-        if [[ $_BEEP ]]; then
-          unset _BEEP;
-        else
-          _BEEP=1 
-        fi
-        aplay --quiet "$KEY_SOUND" &
-        ;;
+    h) [[ $_BEEP ]] && unset _BEEP || _BEEP=1; aplay --quiet "$KEY_SOUND" & ;;
     q) aplay --quiet "$KEY_SOUND" & exit_clock ;;
     r) aplay --quiet "$KEY_SOUND" & redraw_clock ;;
     R) aplay --quiet "$KEY_SOUND" & reset_colors -r ;;
-    " ") unset ALARM; aplay --quiet "$KEY_SOUND"
+    " ") [[ $ALARM ]] && { unset ALARM; aplay --quiet "$KEY_SOUND"; }
   esac
   
   [[ $_REDRAW == 1 ]] && continue
 
-  #date
-  [[ $_DATE ]] && {
+
+  # TIME and DATE
+  # index | description
+  # 0     | hour (01..12)
+  # 1     | AM or PM
+  # 2     | hour (00..23)
+  # 3     | minute (00..59)
+  # 4     | second (00..59)
+  # 5     | seconds since the epoch
+  # 6     | abbr. weekday name
+  # 7     | day of month (01..31)
+  # 8     | abbr. month name
+  # 9     | month (01..12)
+  # 10    | year
+
+  _TIMEDATE="$(LC_TIME=C date -d "now + $_OFFSET hours" "+%I:%p:%H:%M:%S:%s:%a:%d:%b:%m:%Y")"
+  IFS=$'\n' read -d "" -ra TIMEDATE <<< "${_TIMEDATE//:/$'\n'}"
+  unset _TIMEDATE
+
+  # TIME
+  # shellcheck disable=SC2015
+  [[ $_F24 ]] && _H="${TIMEDATE[2]}" || { _H="${TIMEDATE[0]}"; _AMPM="${TIMEDATE[1]^^}"; }
+
+  _M="${TIMEDATE[3]}"
+  _S="${TIMEDATE[4]}"
+  _A="${TIMEDATE[5]}"
+  
+  [[ $_H == "00"  && $_M == "00" && $_S == "00" ]] \
+      || [[ $_H == 12 && $_AMPM == "PM" && $_M == "00" && $_S == "00" ]] && _make_date=0
+
+  # DATE
+  [[ $_DATE && $_make_date == 0 ]] && {
     if [[ $_FDATE ]]; then
-      _date_format="$(date -d "now + $_OFFSET hours" '+%a %d %b %m %Y')"
-      IFS=$'\n' read -d "" -ra date_format <<< "${_date_format// /$'\n'}"
       FDATE="$_FDATE"
-      FDATE="${FDATE//%W/${date_format[0]}}"
-      FDATE="${FDATE//%D/${date_format[1]}}"
-      FDATE="${FDATE//%m/${date_format[2]}}"
-      FDATE="${FDATE//%M/${date_format[3]}}"
-      FDATE="${FDATE//%Y/${date_format[4]}}"
-      if [[ $FDATE == "$_FDATE" && $_first_time == 0 ]]; then
-        # it means we couldn't find anything related to date format
+      FDATE="${FDATE//%W/${TIMEDATE[6]}}"
+      FDATE="${FDATE//%D/${TIMEDATE[7]}}"
+      FDATE="${FDATE//%m/${TIMEDATE[8]}}"
+      FDATE="${FDATE//%M/${TIMEDATE[9]}}"
+      FDATE="${FDATE//%Y/${TIMEDATE[10]}}"
+      if [[ $FDATE == "$_FDATE" ]]; then
+        # we couldn't find anything related to date format
         exit_clock "error: invalid date format"
       fi
     else
-      FDATE="$(date -d "now + $_OFFSET hours" "+%F")"
+      FDATE="${TIMEDATE[10]}/${TIMEDATE[9]}/${TIMEDATE[7]}"
     fi
     _date="${FDATE^^}"
-    _first_time=1
+    _make_date=1
+    unset FDATE
   }
 
-  # time
-  if [[ $_F24 ]]; then
-    _H="$(date -d "now + $_OFFSET hours" "+%H")"
-  else
-    _H="$(date -d "now + $_OFFSET hours" "+%I")"
-    H="$(date -d "now + $_OFFSET hours" "+%H")"
-    [[ ${H:0:1} == 0 ]] && H="${H:1:1}"
-    [[ $H -ge 12 ]] && _AMPM="PM" || _AMPM="AM" 
-  fi
-
-  _M="$(date "+%M")"
-  _S="$(date "+%S")"
-
-  _A="$(date "+%s")" # seconds from the epoch, for alarm
+  unset TIMEDATE
 
   # change terminal title
   [[ $_T != "$_M" ]] && { _T="$_M"; echo -ne "\033]0;bigtime: $_H:$_M $_AMPM\007"; }
@@ -538,31 +547,32 @@ while :; do
   # tput cup 0 0
   # printf "x=%d y=%d ch=%d cw=%d dh=%d dw=%d sw=%d" "$_x" "$_y" "$CLOCKH" "$CLOCKW" "$dh" "$dw" "$sw"
 
+  _sync
+  
   tput cup $((_y-1)) $((_x))
   echo $"$_date"
-
-  _sync
 
   # indicators
   tput cup $((_y)) $((_x-2)); [[ $_BEEP ]] && echo "$_CHR" || echo "$_SPC"
   [[ $_ALARM ]] && {
       tput cup $((_y+dh-1)) $((_x-2))
-        if [[ $ALARM && $index == 1 ]]; then
-            echo " "
-        else
-            echo "A"
-        fi
+      if [[ $ALARM && $index == 1 ]]; then
+        echo " "
+      else
+        echo "A"
+      fi
     }
 
   # beep
   [[ -z $ALARM && $_BEEP && $_M == "00" && $_S == "00" ]] && aplay --quiet "$BEEP_SOUND" &
 
   # alarm
-  [[ $_ALARM ]] && [[ $((ALARM_TIME+_OFFSET)) == "$_A" ]] && {
+  [[ $_ALARM ]] && [[ $ALARM_TIME == "$_A" ]] && {
     # set new alarm for tomorrow
     ALARM_TIME="$(date -d "@$((ALARM_TIME+86400))" "+%s")"
     ALARM=1
   } 
+
   [[ $ALARM ]] && [[ $index == 0 ]] && aplay --quiet "$ALARM_SOUND" &
 
   # HORIZONTAL LAYOUT
@@ -639,7 +649,7 @@ while :; do
 
   # VERTICAL LAYOUT
   elif [[ $_VERTICAL ]]; then
-	y=$_y
+    y=$_y
 
     for ((i=0;i<dh;i++)); do
 

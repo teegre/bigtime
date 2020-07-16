@@ -444,6 +444,16 @@ reset_colors() {
   redraw_clock
 }
 
+play_sound() {
+  which aplay > /dev/null && {
+    case "$1" in
+      alarm) aplay --quiet "$ALARM_SOUND" & ;;
+      beep ) aplay --quiet "$BEEP_SOUND" & ;;
+      key  ) aplay --quiet "$KEY_SOUND" &
+    esac
+  }
+}
+
 _make_date=0
 
 tput smcup
@@ -468,11 +478,11 @@ while :; do
   #shellcheck disable=SC2162
   IFS= read char
   case "$char" in
-    h) [[ $_BEEP ]] && unset _BEEP || _BEEP=1; aplay --quiet "$KEY_SOUND" & ;;
-    q) aplay --quiet "$KEY_SOUND" & exit_clock ;;
-    r) aplay --quiet "$KEY_SOUND" & redraw_clock ;;
-    R) aplay --quiet "$KEY_SOUND" & reset_colors -r ;;
-    " ") [[ $ALARM ]] && { unset ALARM; aplay --quiet "$KEY_SOUND"; }
+    h) [[ $_BEEP ]] && unset _BEEP || _BEEP=1; play_sound key ;;
+    q) play_sound key; exit_clock ;;
+    r) play_sound key; redraw_clock ;;
+    R) play_sound key; reset_colors -r ;;
+    " ") [[ $ALARM ]] && { unset ALARM; play_sound key; }
   esac
   
   [[ $_REDRAW == 1 ]] && continue
@@ -564,7 +574,7 @@ while :; do
     }
 
   # beep
-  [[ -z $ALARM && $_BEEP && $_M == "00" && $_S == "00" ]] && aplay --quiet "$BEEP_SOUND" &
+  [[ -z $ALARM && $_BEEP && $_M == "00" && $_S == "00" ]] && play_sound beep
 
   # alarm
   [[ $_ALARM ]] && [[ $ALARM_TIME == "$_A" ]] && {
@@ -573,7 +583,7 @@ while :; do
     ALARM=1
   } 
 
-  [[ $ALARM ]] && [[ $index == 0 ]] && aplay --quiet "$ALARM_SOUND" &
+  [[ $ALARM ]] && [[ $index == 0 ]] && play_sound alarm
 
   # HORIZONTAL LAYOUT
   if ! [[ $_VERTICAL ]]; then

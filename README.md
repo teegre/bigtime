@@ -12,6 +12,9 @@
 ![alt text](img/bigtime7.png)  
 ![alt text](img/bigtime8.png)  
 
+
+*depends on: bash, ncurses, alsa-utils*
+
 ## 1. Installation
 
 ### 1.1 Clone this repository:

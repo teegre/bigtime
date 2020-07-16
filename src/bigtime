@@ -5,12 +5,12 @@
 # | '_ \| |/ _` | __| | '_ ` _ \ / _ \
 # | |_) | | (_| | |_| | | | | | |  __/
 # |_.__/|_|\__, |\__|_|_| |_| |_|\___|
-#          |___/ version 20200714-0.4
+#          |___/ version 20200716-0.4
 # ♥ ##################################
 
 progname="$(basename "$0")"
 PROGNAME="${progname^^}"
-VERSION="20200614-0.4"
+VERSION="20200716-0.4"
 
 CONFIG_PATH="$HOME/.config/bigtime"
 DIGITS_DEFAULT_FILE="$CONFIG_PATH/standard.digits"

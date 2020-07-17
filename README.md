@@ -95,10 +95,11 @@ Press space bar to stop.
 
 ## 5. Key bindings
 
+* a     - toggle daily alarm
 * h     - toggle hourly time signal
 * q     - exit program
 * r     - refresh screen
-* space - stop alarm
+* space - display or stop alarm
 
 ## 6. Custom digits file
 

@@ -60,11 +60,12 @@ OPTIONS:
 -V, --version            - print program's version and exit
 
 KEYS BINDINGS:
-b                        - pick a random background color
-f                        - pick a random foreground color
+a                        - toggle daily alarm
+h                        - toggle hourly time signal
 q                        - exit program
 r                        - refresh screen
 R                        - reset to default terminal colors
+space                    - display or stop alarm
 
 (1) date format:
 --- %W:abbr. weekday name
@@ -471,18 +472,41 @@ tput clear
 trap 'exit_clock "-- interrupted by user"' INT QUIT
 trap redraw_clock WINCH
 
-[[ $_ALARM ]] && { ALARM_TIME="$(date -d "${_ALARM_TIME} + $_OFFSET hours" "+%s")" || exit_clock "invalid alarm time"; }
+set_alarm() {
+  [[ $_ALARM ]] && { 
+    ALARM_TIME="$(date -d "${_ALARM_TIME}" "+%s")" || exit_clock "invalid alarm time"
+    _T="$(date -d "now + $_OFFSET hours" "+%s")"
+    ((ALARM_TIME<_T)) && ((ALARM_TIME+=86400))
+    unset _T
+  }
+}
+
+set_alarm
 
 while :; do
 
   #shellcheck disable=SC2162
   IFS= read char
   case "$char" in
+    a)
+      if [[ $_ALARM  && -z $_DALARM ]]; then
+        unset _ALARM;
+        play_sound key
+      elif [[ $ALARM_TIME && -z $_DALARM ]]; then
+        _ALARM=1;
+        play_sound key
+      elif [[ $_DALARM ]]; then
+        [[ $_SET_ALARM ]] && { unset _SET_ALARM; unset _DALARM; } || { _SET_ALARM=1; }
+        play_sound key
+      fi
+      ;;
     h) [[ $_BEEP ]] && unset _BEEP || _BEEP=1; play_sound key ;;
     q) play_sound key; exit_clock ;;
     r) play_sound key; redraw_clock ;;
     R) play_sound key; reset_colors -r ;;
-    " ") [[ $ALARM ]] && { unset ALARM; play_sound key; }
+    " ") [[ $ALARM ]] && { unset ALARM; play_sound key; continue; } \
+           || [[ $_ALARM ]] && { play_sound key; [[ $_DALARM ]] && { unset _DALARM; _make_date=0; } || _DALARM=1; }
+         ;;
   esac
   
   [[ $_REDRAW == 1 ]] && continue
@@ -502,7 +526,13 @@ while :; do
   # 9     | month (01..12)
   # 10    | year
 
-  _TIMEDATE="$(LC_TIME=C date -d "now + $_OFFSET hours" "+%I:%p:%H:%M:%S:%s:%a:%d:%b:%m:%Y")"
+  if [[ $_DALARM ]]; then
+    _TIMEDATE="$(LC_TIME=C date -d "@$ALARM_TIME" "+%I:%p:%H:%M:%S:%s:%a:%d:%b:%m:%Y")"
+    _make_date=0
+  else
+    _TIMEDATE="$(LC_TIME=C date -d "now + $_OFFSET hours" "+%I:%p:%H:%M:%S:%s:%a:%d:%b:%m:%Y")"
+  fi
+
   IFS=$'\n' read -d "" -ra TIMEDATE <<< "${_TIMEDATE//:/$'\n'}"
   unset _TIMEDATE
 
@@ -515,7 +545,7 @@ while :; do
   _A="${TIMEDATE[5]}"
   
   [[ $_H == "00"  && $_M == "00" && $_S == "00" ]] \
-      || [[ $_H == 12 && $_AMPM == "PM" && $_M == "00" && $_S == "00" ]] && _make_date=0
+      || [[ $_H == 12 && $_AMPM == "AM" && $_M == "00" && $_S == "00" ]] && _make_date=0
 
   # DATE
   [[ $_DATE && $_make_date == 0 ]] && {
@@ -531,7 +561,7 @@ while :; do
         exit_clock "error: invalid date format"
       fi
     else
-      FDATE="${TIMEDATE[10]}/${TIMEDATE[9]}/${TIMEDATE[7]}"
+      FDATE="${TIMEDATE[6]} ${TIMEDATE[9]}-${TIMEDATE[7]}"
     fi
     _date="${FDATE^^}"
     _make_date=1
@@ -564,22 +594,30 @@ while :; do
 
   # indicators
   tput cup $((_y)) $((_x-2)); [[ $_BEEP ]] && echo "$_CHR" || echo "$_SPC"
-  [[ $_ALARM ]] && {
-      tput cup $((_y+dh-1)) $((_x-2))
-      if [[ $ALARM && $index == 1 ]]; then
-        echo " "
-      else
-        echo "A"
-      fi
-    }
+  tput cup $((_y+dh-1)) $((_x-2))
+  if [[ $_ALARM ]]; then
+    if [[ $ALARM && $index == 1 ]]; then
+      printf " "
+    elif [[ $_DALARM ]]; then
+        printf "%s" "$(tput smul)A$(tput rmul)"
+    else
+      printf "A"
+    fi
+  else
+      printf " "
+  fi
 
   # beep
-  [[ -z $ALARM && $_BEEP && $_M == "00" && $_S == "00" ]] && play_sound beep
+  [[ -z $ALARM && -z $_DALARM && $_BEEP && $_M == "00" && $_S == "00" ]] && play_sound beep
 
   # alarm
-  [[ $_ALARM ]] && [[ $ALARM_TIME == "$_A" ]] && {
+  [[ $_ALARM && -z $_DALARM ]] && [[ $ALARM_TIME == "$_A" ]] && {
+    [[ $_F24 ]] && TIME="$(date -d "@$ALARM_TIME" "+%x - %X")" \
+      || TIME="$(LC_TIME=C date -d "@$ALARM_TIME" "+%x - %I:%M:%S %p")"
+    notify-send -u critical "$PROGNAME" "Alarm: $TIME"
+    unset TIME
     # set new alarm for tomorrow
-    ALARM_TIME="$(date -d "@$((ALARM_TIME+86400))" "+%s")"
+    ((ALARM_TIME+=86400))
     ALARM=1
   } 
 

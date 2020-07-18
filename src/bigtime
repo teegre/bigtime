@@ -462,9 +462,8 @@ trap redraw_clock WINCH
 set_alarm() {
   [[ $_ALARM ]] && { 
     ALARM_TIME="$(date -d "$_ALARM_TIME" "+%s" 2> /dev/null)" || return 1
-    _T="$(date -d "+%s")"
+    _T="$(date "+%s")"
     ((ALARM_TIME<_T)) && ((ALARM_TIME+=86400))
-    echo "$_T :: $ALARM_TIME"
     unset _T
   }
   return 0

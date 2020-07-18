@@ -17,6 +17,7 @@ DIGITS_DEFAULT_FILE="$CONFIG_PATH/standard.digits"
 BEEP_SOUND="$CONFIG_PATH/beep.wav"
 ALARM_SOUND="$CONFIG_PATH/alarm.wav"
 KEY_SOUND="$CONFIG_PATH/key.wav"
+ERROR_SOUND="$CONFIG_PATH/error.wav"
 
 TERMH="$(tput lines)"
 TERMW="$(tput cols)"
@@ -40,7 +41,6 @@ OPTIONS:
 -c, --char <char>        - character for digits (default is ∎)
 -p, --space <char>       - character for whitespaces (default is " ")
 -f                       - display time in 24h format
---offset <hours>         - hours to be added to current time
 -s, --small-seconds      - show seconds (normal size)
 -S, --big-seconds        - show seconds (big size)
 -d, --date               - show date
@@ -106,7 +106,6 @@ clock_size() {
   [[ $_F24 && $_SSEC ]] && ((width+=3))
   [[ $_F24 ]] && ! [[ $_SSEC ]] && ((width+=3))
   [[ $_DATE ]] && ((height+=1))
-  [[ $_OFFSET -gt 0 ]] && ((height+=1))
 
   ((CLOCKH=height))
   ((CLOCKW=width))
@@ -151,7 +150,6 @@ _opts=$(LC_ALL=C getopt                                 \
   --long "list-presets"                                 \
   --long "char:"                                        \
   --long "space:"                                       \
-  --long "offset:"                                      \
   --long "small-seconds"                                \
   --long "big-seconds"                                  \
   --long "date"                                         \
@@ -205,16 +203,6 @@ while :; do
     -f)
       _F24=1
       shift
-      ;;
-    --offset)
-      shift
-      if [[ $1 -ge -12 && $1 -le 12 ]]; then
-        _OFFSET=$1
-        shift
-      else
-        __err -u "error: --offset should be a numeric value between -12 and 12"
-        exit 1
-      fi
       ;;
     -s | --small-seconds)
       unset _BSEC
@@ -378,8 +366,6 @@ sw="$(readoption "sep_width")"
 _SPC="${_SPC:-" "}"
 _CHR="${_CHR:-"∎"}"
 
-_OFFSET="${_OFFSET:-0}"
-
 # read file and dynamically declare an array
 # for each digit (_D0, _D1... _D9) where 1s are replaced by _CHR
 # and 0s by _SPC
@@ -450,7 +436,8 @@ play_sound() {
     case "$1" in
       alarm) aplay --quiet "$ALARM_SOUND" & ;;
       beep ) aplay --quiet "$BEEP_SOUND" & ;;
-      key  ) aplay --quiet "$KEY_SOUND" &
+      key  ) aplay --quiet "$KEY_SOUND" & ;;
+      error) aplay --quiet "$ERROR_SOUND" &
     esac
   }
 }
@@ -474,39 +461,117 @@ trap redraw_clock WINCH
 
 set_alarm() {
   [[ $_ALARM ]] && { 
-    ALARM_TIME="$(date -d "${_ALARM_TIME}" "+%s")" || exit_clock "invalid alarm time"
-    _T="$(date -d "now + $_OFFSET hours" "+%s")"
+    ALARM_TIME="$(date -d "$_ALARM_TIME" "+%s" 2> /dev/null)" || return 1
+    _T="$(date -d "+%s")"
     ((ALARM_TIME<_T)) && ((ALARM_TIME+=86400))
+    echo "$_T :: $ALARM_TIME"
     unset _T
   }
+  return 0
 }
 
-set_alarm
+set_alarm || exit_clock "invalid alarm time"
 
 while :; do
 
   #shellcheck disable=SC2162
   IFS= read char
+  # key bindings
   case "$char" in
     a)
       if [[ $_ALARM  && -z $_DALARM ]]; then
-        unset _ALARM;
+        # activate alarm
+        unset _ALARM
         play_sound key
       elif [[ $ALARM_TIME && -z $_DALARM ]]; then
+        # deactivate alarm
         _ALARM=1;
         play_sound key
+      elif [[ -z $ALARM_TIME && -z $_DALARM ]]; then
+          # new alarm setting mode
+          current_alarm=""
+          _DALARM=1
+          _SET_ALARM=1
+          [[ $_F24 ]] && _ALARM_TIME="00:00:00" || _ALARM_TIME="12:00:00 AM"
+          _ALARM=1
+          set_alarm
+          _DSELECT=0
+          play_sound key
+          continue
       elif [[ $_DALARM ]]; then
-        [[ $_SET_ALARM ]] && { unset _SET_ALARM; unset _DALARM; } || { _SET_ALARM=1; }
+          if [[ $_SET_ALARM ]]; then
+          # quit alarm setting mode
+            unset _SET_ALARM
+            unset _DALARM
+            unset _DSELECT
+            tput cup $((_y+dh)) $((_x))
+            tput el
+          else
+            # alarm setting mode
+            _SET_ALARM=1
+            _DSELECT=0
+            tput cup $((_y+dh)) $((_x))
+            tput el
+          fi
         play_sound key
       fi
       ;;
     h) [[ $_BEEP ]] && unset _BEEP || _BEEP=1; play_sound key ;;
+    p)
+      if [[ $_DSELECT && -z $_F24 ]]; then
+        if [[ ${_ALARM_TIME:9:2} == "AM" ]]; then
+          _ALARM_TIME="${_ALARM_TIME/AM/PM}"
+        else
+          _ALARM_TIME="${_ALARM_TIME/PM/AM}"
+        fi
+        if set_alarm; then play_sound error; else play_sound key; fi
+      fi
+      ;;
     q) play_sound key; exit_clock ;;
     r) play_sound key; redraw_clock ;;
     R) play_sound key; reset_colors -r ;;
-    " ") [[ $ALARM ]] && { unset ALARM; play_sound key; continue; } \
-           || [[ $_ALARM ]] && { play_sound key; [[ $_DALARM ]] && { unset _DALARM; _make_date=0; } || _DALARM=1; }
-         ;;
+    " ")
+        if [[ $ALARM ]]; then
+          unset ALARM
+          play_sound key
+          continue
+        elif [[ $_ALARM ]]; then
+            play_sound key
+            if [[ $_DALARM ]]; then
+              unset _DALARM
+              unset _SET_ALARM
+              ALARM_TIME="$current_alarm"
+              [[ -z $ALARM_TIME ]] && unset _ALARM
+              tput cup $((_y+dh)) $((_x))
+              tput el
+              unset current_alarm
+              unset _DSELECT
+              _make_date=0
+            else
+              current_alarm="$ALARM_TIME"
+              _DALARM=1;
+            fi
+        fi
+        ;;
+    $'\t' | j)
+      [[ -z $_SET_ALARM ]] && continue
+      ((_DSELECT=_DSELECT>2?0:_DSELECT+1)); play_sound key ;;
+    k) ((_DSELECT=_DSELECT<0?3:_DSELECT-1)); play_sound key ;;
+    [0-9])
+      [[ -z $_SET_ALARM ]] && continue
+      ((offset=_DSELECT>1?_DSELECT+1:_DSELECT))
+      current="$_ALARM_TIME"
+      _ALARM_TIME="${_ALARM_TIME:0:$((offset))}$char${_ALARM_TIME:$((offset+1))}"
+      if set_alarm; then
+        ((_DSELECT=_DSELECT>2?0:_DSELECT+1))
+        play_sound key
+      else
+        play_sound error
+        _ALARM_TIME="$current"
+        set_alarm
+      fi
+      unset offset
+      unset current
   esac
   
   [[ $_REDRAW == 1 ]] && continue
@@ -530,7 +595,7 @@ while :; do
     _TIMEDATE="$(LC_TIME=C date -d "@$ALARM_TIME" "+%I:%p:%H:%M:%S:%s:%a:%d:%b:%m:%Y")"
     _make_date=0
   else
-    _TIMEDATE="$(LC_TIME=C date -d "now + $_OFFSET hours" "+%I:%p:%H:%M:%S:%s:%a:%d:%b:%m:%Y")"
+    _TIMEDATE="$(LC_TIME=C date "+%I:%p:%H:%M:%S:%s:%a:%d:%b:%m:%Y")"
   fi
 
   IFS=$'\n' read -d "" -ra TIMEDATE <<< "${_TIMEDATE//:/$'\n'}"
@@ -543,7 +608,7 @@ while :; do
   _M="${TIMEDATE[3]}"
   _S="${TIMEDATE[4]}"
   _A="${TIMEDATE[5]}"
-  
+
   [[ $_H == "00"  && $_M == "00" && $_S == "00" ]] \
       || [[ $_H == 12 && $_AMPM == "AM" && $_M == "00" && $_S == "00" ]] && _make_date=0
 
@@ -598,6 +663,19 @@ while :; do
   if [[ $_ALARM ]]; then
     if [[ $ALARM && $index == 1 ]]; then
       printf " "
+    elif [[ $_SET_ALARM ]]; then
+        on="$(tput smso)"
+        off="$(tput rmso)"
+        printf "%s" "${on}A${off}"
+
+        case $_DSELECT in
+          0) s="${on}H${off}H:MM" ;;
+          1) s="H${on}H${off}:MM" ;;
+          2) s="HH:${on}M${off}M" ;;
+          3) s="HH:M${on}M${off}" ;;
+        esac
+        tput cup $((_y+dh)) $((_x))
+        printf "%s" "$s"
     elif [[ $_DALARM ]]; then
         printf "%s" "$(tput smul)A$(tput rmul)"
     else
@@ -691,10 +769,6 @@ while :; do
       esac
     done
 
-    tput cup $((_y+dh)) $((_x))
-    (( _OFFSET > 0 )) && echo "[+$_OFFSET]"
-    (( _OFFSET < 0 )) && echo "[$_OFFSET]"
-
   # VERTICAL LAYOUT
   elif [[ $_VERTICAL ]]; then
     y=$_y
@@ -717,10 +791,6 @@ while :; do
       ((y++))
 
     done
-
-    tput cup $((y)) $((_x))
-    (( _OFFSET > 0 )) && echo "[+$_OFFSET]"
-    (( _OFFSET < 0 )) && echo "[$_OFFSET]"
 
     ((y++))
 

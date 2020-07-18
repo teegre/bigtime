@@ -34,7 +34,6 @@ OPTIONS:
 * -c, --char [char]        - character for digits (default is ∎)
 * -p, --space [char]       - character for whitespaces (default is " ")
 * -f                       - display time in 24h format
-* --offset [hours]         - hours to be added to current time
 * -s, --small-seconds      - show seconds (normal size)
 * -S, --big-seconds        - show seconds (big size)
 * -d, --date               - show date
@@ -95,11 +94,14 @@ Press space bar to stop.
 
 ## 5. Key bindings
 
-* a     - toggle daily alarm
+* a     - toggle daily alarm; set / confirm new alarm
 * h     - toggle hourly time signal
+* j     - select next digit (alarm setting mode)
+* k     - select previous digit (alarm setting mode)
+* p     - toggle AM/PM (alarm setting mode)
 * q     - exit program
 * r     - refresh screen
-* space - display or stop alarm
+* space - display / stop alarm / cancel (alarm setting mode)
 
 ## 6. Custom digits file
 

@@ -5,12 +5,12 @@
 # | '_ \| |/ _` | __| | '_ ` _ \ / _ \
 # | |_) | | (_| | |_| | | | | | |  __/
 # |_.__/|_|\__, |\__|_|_| |_| |_|\___|
-#          |___/ version 20200716-0.4
+#          |___/ version 20200719-0.9
 # ♥ ##################################
 
 progname="$(basename "$0")"
 PROGNAME="${progname^^}"
-VERSION="20200716-0.4"
+VERSION="20200719-0.9"
 
 CONFIG_PATH="$HOME/.config/bigtime"
 DIGITS_DEFAULT_FILE="$CONFIG_PATH/standard.digits"
@@ -44,7 +44,6 @@ OPTIONS:
 -s, --small-seconds      - show seconds (normal size)
 -S, --big-seconds        - show seconds (big size)
 -d, --date               - show date
--D, --date-format        - date format(1)
 -b, --blink              - blinking separators
 -v, --vertical           - display clock vertically
 -a, --alarm <time>       - set alarm
@@ -60,19 +59,15 @@ OPTIONS:
 -V, --version            - print program's version and exit
 
 KEYS BINDINGS:
-a                        - toggle daily alarm
+a                        - toggle / set daily alarm / confirm (alarm setting mode)
 h                        - toggle hourly time signal
+j                        - select next digit (alarm setting mode)
+k                        - select previous digit (alarm setting mode)
+p                        - toggle 24h format / toggle AM/PM (alarm setting mode)
 q                        - exit program
 r                        - refresh screen
 R                        - reset to default terminal colors
 space                    - display or stop alarm
-
-(1) date format:
---- %W:abbr. weekday name
---- %m:abbr. month name
---- %M: month
---- %D:day of month
---- %Y: year
 
 EOB
 }
@@ -93,7 +88,7 @@ __err() {
 # compute clock size
 clock_size() {
   local height width
-  if ! [[ $_VERTICAL ]]; then
+  if [[ -z $_VERTICAL ]]; then
     ((height=dh))
     ((width=dw*4+sw+4))
     [[ $_BSEC ]] && ((width+=dw*2+sw+3))
@@ -103,8 +98,6 @@ clock_size() {
     [[ $_BSEC ]] && ((height+=dh))
   fi
 
-  [[ $_F24 && $_SSEC ]] && ((width+=3))
-  [[ $_F24 ]] && ! [[ $_SSEC ]] && ((width+=3))
   [[ $_DATE ]] && ((height+=1))
 
   ((CLOCKH=height))
@@ -143,29 +136,28 @@ exit_clock() {
 
 # options
 
-_opts=$(LC_ALL=C getopt                                 \
-  --long "help"                                         \
-  --long "version"                                      \
-  --long "preset:"                                      \
-  --long "list-presets"                                 \
-  --long "char:"                                        \
-  --long "space:"                                       \
-  --long "small-seconds"                                \
-  --long "big-seconds"                                  \
-  --long "date"                                         \
-  --long "date-format:"                                 \
-  --long "blink"                                        \
-  --long "vertical"                                     \
-  --long "alarm:"                                       \
-  --long "chime"                                        \
-  --long "file:"                                        \
-  --long "list-files"                                   \
-  --long "foreground:"                                  \
-  --long "background:"                                  \
-  --long "list-colors"                                  \
-  --options "h,V,c:,p:,f,s,S,d,D:,b,v,a:,i,F:,B:,P,C,l" \
-  --name "$progname"                                    \
-  -- "$@"                                               \
+_opts=$(LC_ALL=C getopt                               \
+  --long "help"                                       \
+  --long "version"                                    \
+  --long "preset:"                                    \
+  --long "list-presets"                               \
+  --long "char:"                                      \
+  --long "space:"                                     \
+  --long "small-seconds"                              \
+  --long "big-seconds"                                \
+  --long "date"                                       \
+  --long "blink"                                      \
+  --long "vertical"                                   \
+  --long "alarm:"                                     \
+  --long "chime"                                      \
+  --long "file:"                                      \
+  --long "list-files"                                 \
+  --long "foreground:"                                \
+  --long "background:"                                \
+  --long "list-colors"                                \
+  --options "h,V,c:,p:,f,s,S,d,,b,v,a:,i,F:,B:,P,C,l" \
+  --name "$progname"                                  \
+  -- "$@"                                             \
 ) || exit 1
 
 eval set -- "$_opts"
@@ -216,12 +208,6 @@ while :; do
       ;;
     -d | --date)
       _DATE=1
-      shift
-      ;;
-    -D | --date-format)
-      shift
-      #TODO: limit formatting to these...
-      _FDATE="$1"
       shift
       ;;
     -b | --blink)
@@ -418,11 +404,39 @@ fi
 # whenever several instances of bigtime are running
 # this is a hack to synchronize them...
 _sync() {
-  n="1"
-  while [ $n != "0" ]; do
-    n="$(date "+%N")"
-    n="${n:0:1}"
+  declare -i n=1
+  local N
+  while ((n!=0)); do
+    N="$(date "+%N")"
+    n=${N:0:1}
     sleep 0.05
+  done
+}
+
+print_digit() {
+  local y x d D
+  y=$1; x=$2; d=$3
+  shift 3
+  for ((i=0;i<dh;i++)); do
+    D=$"_D"$d"[$i]"
+    tput cup $((y)) $((x))
+    printf $'%s' $"${!D}"
+    ((y++))
+  done
+}
+
+print_separator() {
+  local y x blink_array
+  y=$1; x=$2
+  shift 2
+  for ((i=0;i<dh;i++)); do
+    [[ $_BLINK ]] && {
+      blink_array=("${_P[$i]}" "${_W[$i]}")
+      sp="${blink_array[$index]}"
+    } || sp="${_P[$i]}"
+    tput cup $((y)) $((x))
+    printf "%s" "$sp"
+    ((y++))
   done
 }
 
@@ -479,11 +493,11 @@ while :; do
   case "$char" in
     a)
       if [[ $_ALARM  && -z $_DALARM ]]; then
-        # activate alarm
+        # deactivate alarm
         unset _ALARM
         play_sound key
       elif [[ $ALARM_TIME && -z $_DALARM ]]; then
-        # deactivate alarm
+        # activate alarm
         _ALARM=1;
         play_sound key
       elif [[ -z $ALARM_TIME && -z $_DALARM ]]; then
@@ -503,14 +517,13 @@ while :; do
             unset _SET_ALARM
             unset _DALARM
             unset _DSELECT
-            tput cup $((_y+dh)) $((_x))
-            tput el
+            tput cup $((_y+dh)) $((_x)); tput el
+            _make_date=0
           else
             # alarm setting mode
             _SET_ALARM=1
             _DSELECT=0
-            tput cup $((_y+dh)) $((_x))
-            tput el
+            tput cup $((_y+dh)) $((_x)); tput el
           fi
         play_sound key
       fi
@@ -523,7 +536,13 @@ while :; do
         else
           _ALARM_TIME="${_ALARM_TIME/PM/AM}"
         fi
-        if set_alarm; then play_sound error; else play_sound key; fi
+        if set_alarm; then play_sound key; else play_sound error; fi
+      elif [[ -z $_F24  && -z $_DSELECT ]]; then
+        _F24=1; play_sound key
+        tput cup $((_y+dh-1)) $((_x+CLOCKW)); tput el
+        unset _AMPM
+      elif [[ -z $_DSELECT ]]; then
+        unset _F24; play_sound key
       fi
       ;;
     q) play_sound key; exit_clock ;;
@@ -541,8 +560,7 @@ while :; do
               unset _SET_ALARM
               ALARM_TIME="$current_alarm"
               [[ -z $ALARM_TIME ]] && unset _ALARM
-              tput cup $((_y+dh)) $((_x))
-              tput el
+              tput cup $((_y+dh)) $((_x)); tput el
               unset current_alarm
               unset _DSELECT
               _make_date=0
@@ -555,7 +573,7 @@ while :; do
     $'\t' | j)
       [[ -z $_SET_ALARM ]] && continue
       ((_DSELECT=_DSELECT>2?0:_DSELECT+1)); play_sound key ;;
-    k) ((_DSELECT=_DSELECT<0?3:_DSELECT-1)); play_sound key ;;
+    k) ((_DSELECT=_DSELECT<1?3:_DSELECT-1)); play_sound key ;;
     [0-9])
       [[ -z $_SET_ALARM ]] && continue
       ((offset=_DSELECT>1?_DSELECT+1:_DSELECT))
@@ -586,15 +604,13 @@ while :; do
   # 5     | seconds since the epoch
   # 6     | abbr. weekday name
   # 7     | day of month (01..31)
-  # 8     | abbr. month name
-  # 9     | month (01..12)
-  # 10    | year
+  # 8     | month (01..12)
 
   if [[ $_DALARM ]]; then
-    _TIMEDATE="$(LC_TIME=C date -d "@$ALARM_TIME" "+%I:%p:%H:%M:%S:%s:%a:%d:%b:%m:%Y")"
+    _TIMEDATE="$(LC_TIME=C date -d "@$ALARM_TIME" "+%I:%p:%H:%M:%S:%s:%a:%d:%m")"
     _make_date=0
   else
-    _TIMEDATE="$(LC_TIME=C date "+%I:%p:%H:%M:%S:%s:%a:%d:%b:%m:%Y")"
+    _TIMEDATE="$(LC_TIME=C date "+%I:%p:%H:%M:%S:%s:%a:%d:%m")"
   fi
 
   IFS=$'\n' read -d "" -ra TIMEDATE <<< "${_TIMEDATE//:/$'\n'}"
@@ -613,23 +629,12 @@ while :; do
 
   # DATE
   [[ $_DATE && $_make_date == 0 ]] && {
-    if [[ $_FDATE ]]; then
-      FDATE="$_FDATE"
-      FDATE="${FDATE//%W/${TIMEDATE[6]}}"
-      FDATE="${FDATE//%D/${TIMEDATE[7]}}"
-      FDATE="${FDATE//%m/${TIMEDATE[8]}}"
-      FDATE="${FDATE//%M/${TIMEDATE[9]}}"
-      FDATE="${FDATE//%Y/${TIMEDATE[10]}}"
-      if [[ $FDATE == "$_FDATE" ]]; then
-        # we couldn't find anything related to date format
-        exit_clock "error: invalid date format"
-      fi
-    else
-      FDATE="${TIMEDATE[6]} ${TIMEDATE[9]}-${TIMEDATE[7]}"
-    fi
-    _date="${FDATE^^}"
+    W="${TIMEDATE[6]:0:2}"
+    W="${W^^}"
+    M="${TIMEDATE[8]}"
+    D="${TIMEDATE[7]}"
+    _date="${W^^} $M-$D"
     _make_date=1
-    unset FDATE
   }
 
   unset TIMEDATE
@@ -653,9 +658,6 @@ while :; do
 
   _sync
   
-  tput cup $((_y-1)) $((_x))
-  echo $"$_date"
-
   # indicators
   tput cup $((_y)) $((_x-2)); [[ $_BEEP ]] && echo "$_CHR" || echo "$_SPC"
   tput cup $((_y+dh-1)) $((_x-2))
@@ -663,18 +665,9 @@ while :; do
     if [[ $ALARM && $index == 1 ]]; then
       printf " "
     elif [[ $_SET_ALARM ]]; then
-        on="$(tput smso)"
-        off="$(tput rmso)"
-        printf "%s" "${on}A${off}"
-
-        case $_DSELECT in
-          0) s="${on}H${off}H:MM" ;;
-          1) s="H${on}H${off}:MM" ;;
-          2) s="HH:${on}M${off}M" ;;
-          3) s="HH:M${on}M${off}" ;;
-        esac
+        printf "%s" "$(tput smso)A$(tput rmso)"
         tput cup $((_y+dh)) $((_x))
-        printf "%s" "$s"
+        if [[ $_F24 ]]; then date "+%H:%M"; else LC_TIME=C date "+%I:%M %p"; fi
     elif [[ $_DALARM ]]; then
         printf "%s" "$(tput smul)A$(tput rmul)"
     else
@@ -700,135 +693,87 @@ while :; do
 
   [[ $ALARM ]] && [[ $index == 0 ]] && play_sound alarm
 
-  # HORIZONTAL LAYOUT
-  if ! [[ $_VERTICAL ]]; then
+  y=$_y x=$_x
 
-    for ((i=0;i<dh;i++)); do
-
-      H1=$"_D"$h1"[$i]"     # hours
-      H2=$"_D"$h2"[$i]"     #
-      M1=$"_D"$m1"[$i]"     # minutes
-      M2=$"_D"$m2"[$i]"     #
-
-      [[ $_BSEC ]] && {
-        S1=$"_D"$s1"[$i]"   # seconds
-        S2=$"_D"$s2"[$i]"
-      }
-
-      SP=$"${_P[$i]}"       # separator
-      WS=$"${_W[$i]}"       # whitespace
-      
-      [[ $_BLINK ]] && {
-        blink_array=("$SP" "$WS")
-        sp="${blink_array[$index]}"
-      } || sp="$SP"
-
-      tput cup $((i+_y)) $((_x))
-      case $i in
-        0)
-          if [[ $_SSEC ]]; then
-            printf "%s%s%s%s%s%s%s%s%s %s"                 \
-            $"${!H1}" $"$_SPC" $"${!H2}" $"$_SPC" $"$sp"   \
-            $"$_SPC" $"${!M1}" $"$_SPC" $"${!M2}" "$s1$s2"
-          elif [[ $_BSEC ]]; then
-            printf "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s"        \
-            $"${!H1}" $"$_SPC" $"${!H2}" $"$_SPC" $"$sp"   \
-            $"$_SPC" $"${!M1}" $"$_SPC" $"${!M2}" $"$_SPC" \
-            $"$sp" $"$_SPC" $"${!S1}" $"$_SPC" $"${!S2}"
-          else
-            printf "%s%s%s%s%s%s%s%s%s"                    \
-            $"${!H1}" $"$_SPC" $"${!H2}" $"$_SPC" $"$sp"   \
-            $"$_SPC" $"${!M1}" $"$_SPC" $"${!M2}"
-          fi
-          ;;
-        $((dh-1)))
-          if [[ $_BSEC ]]; then
-            printf "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s %s"     \
-            $"${!H1}" $"$_SPC" $"${!H2}" $"$_SPC" $"$sp"   \
-            $"$_SPC" $"${!M1}" $"$_SPC" $"${!M2}" $"$_SPC" \
-            $"$sp" $"$_SPC" $"${!S1}" $"$_SPC" $"${!S2}"   \
-            "$_AMPM"
-          else
-            printf "%s%s%s%s%s%s%s%s%s %s"                 \
-            $"${!H1}" $"$_SPC" $"${!H2}" $"$_SPC" $"$sp"   \
-            $"$_SPC" $"${!M1}" $"$_SPC" $"${!M2}" "$_AMPM"
-          fi
-          ;;
-        *)
-          if [[ $_BSEC ]]; then
-            printf "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s"        \
-            $"${!H1}" $"$_SPC" $"${!H2}" $"$_SPC" $"$sp"   \
-            $"$_SPC" $"${!M1}" $"$_SPC" $"${!M2}" $"$_SPC" \
-            $"$sp" $"$_SPC" $"${!S1}" $"$_SPC" $"${!S2}"
-          else
-            printf "%s%s%s%s%s%s%s%s%s"                    \
-            $"${!H1}" $"$_SPC" $"${!H2}" $"$_SPC" $"$sp"   \
-            $"$_SPC" $"${!M1}" $"$_SPC" $"${!M2}"
-          fi
-      esac
-    done
-
-  # VERTICAL LAYOUT
-  elif [[ $_VERTICAL ]]; then
-    y=$_y
-
-    for ((i=0;i<dh;i++)); do
-
-      H1=$"_D"$h1"[$i]"     # hours
-      H2=$"_D"$h2"[$i]"     #
-
-      tput cup $((y)) $((_x))
-      
-      case "$i" in
-        $((dh-1)))
-          printf "%s%s%s %s" $"${!H1}" $"$_SPC" $"${!H2}" "$_AMPM"
-          ;;
-        *)
-          printf "%s%s%s" $"${!H1}" $"$_SPC" $"${!H2}"
-      esac
-
-      ((y++))
-
-    done
-
-    ((y++))
-
-    for ((i=0;i<dh;i++)); do
-
-      M1=$"_D"$m1"[$i]"     # minutes
-      M2=$"_D"$m2"[$i]"     #
-
-      tput cup $((y)) $((_x))
-      
-      if ((i == dh-1)) && [[ $_SSEC ]]; then
-        printf "%s%s%s %s%s" $"${!M1}" $"$_SPC" $"${!M2}" "$s1" "$s2"
+  [[ $_date ]] && {
+      if [[ $_VERTICAL ]]; then
+        tput cup $((y))   $((x+CLOCKW)); printf "%s" "$W"
+        tput cup $((y+1)) $((x+CLOCKW)); printf "%s" "$M"
+        tput cup $((y+2)) $((x+CLOCKW)); printf "%s" "$D"
       else
-        printf "%s%s%s" $"${!M1}" $"$_SPC" $"${!M2}"
+        tput cup $((y-1)) $((x)); printf "%s" "$_date"
       fi
+  }
 
-      ((y++))
+  [[ $_SET_ALARM ]] && ((_DSELECT==0)) && tput smso
+  print_digit $((y)) $((x)) "$h1"
+  [[ $_SET_ALARM ]] && ((_DSELECT==0)) && tput rmso
 
-    done
+  ((x+=dw+1))
 
-    ((y++))
+  [[ $_SET_ALARM ]] && ((_DSELECT==1)) && tput smso
+  print_digit $((y)) $((x)) "$h2";
+  [[ $_SET_ALARM ]] && ((_DSELECT==1)) && tput rmso
 
+  if [[ -z $_VERTICAL ]]; then
+    ((x+=dw+1))
+    ((sx=x))
+    ((x+=sw+1))
+  else
+    ((y+=dh+1))
+    x=$_x
+  fi
+
+  [[ $_SET_ALARM ]] && ((_DSELECT==2)) && tput smso
+  print_digit $((y)) $((x)) "$m1"
+  [[ $_SET_ALARM ]] && ((_DSELECT==2)) && tput rmso
+
+  ((x+=dw+1))
+
+  [[ $_SET_ALARM ]] && ((_DSELECT==3)) && tput smso
+  print_digit $((y)) $((x)) "$m2"
+  [[ $_SET_ALARM ]] && ((_DSELECT==3)) && tput rmso
+
+  if [[ -z $_VERTICAL ]]; then
+    ((x+=dw+1))
+  else
     if [[ $_BSEC ]]; then
-      for ((i=0;i<dh;i++)); do
-
-        S1=$"_D"$s1"[$i]" # seconds
-        S2=$"_D"$s2"[$i]"
-
-        tput cup $((y)) $((_x))
-        printf "%s%s%s" $"${!S1}" $"$_SPC" $"${!S2}"
-
-        ((y++))
-
-      done
-
-    elif [[ $_SSEC ]]; then
-      tput cup $((y)) $((_x))
+      ((y+=dh+1))
+      x=$_x
+    else
+      ((y+=dh-1))
+      ((x+=dw+1))
     fi
   fi
+
+  if [[ $_BSEC ]]; then
+    [[ -z $_VERTICAL ]] && {
+      print_separator $((y)) $((sx))
+      print_separator $((y)) $((x));
+      ((x+=sw+1))
+    }
+    print_digit $((y)) $((x)) "$s1"
+    ((x+=dw+1))
+    print_digit $((y)) $((x)) "$s2"
+    ((x+=dw+1))
+  elif [[ -z $_SSEC && -z $_VERTICAL ]]; then
+    print_separator $((y)) $((sx))
+  fi
+
+  [[ $_SSEC ]] && {
+    if [[ -z $_VERTICAL ]]; then
+      print_separator $((y)) $((sx))
+      tput cup $((y)) $((x))
+    else
+      tput cup $((y)) $((_x+CLOCKW))
+    fi
+    printf "%s" "$_S"
+  }
+
+  [[ $_AMPM ]] && {
+      tput cup $((_y+dh-1)) $((x))
+      printf "%s" "$_AMPM"
+  }
   
   sleep 0.5
 

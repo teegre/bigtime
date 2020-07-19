@@ -1,17 +1,6 @@
-# **bigtime** version 0.4 (07-2020)
+# **bigtime** version 0.9 (07-2020)
 
 **bigtime** is a customizable clock for the terminal, written in bash.
-
-![alt text](img/bigtime1.png)  
-![alt text](img/bigtime2.png)  
-![alt text](img/bigtime9.png)  
-![alt text](img/bigtime3.png)  
-![alt text](img/bigtime5.png)  
-![alt text](img/bigtime4.png)  
-![alt text](img/bigtime6.png)  
-![alt text](img/bigtime7.png)  
-![alt text](img/bigtime8.png)  
-
 
 *depends on: bash, ncurses, alsa-utils*
 
@@ -25,7 +14,28 @@
 
 `./install.sh`
 
-## 2. Usage
+## 2. Display
+
+```
+hourly time signal
+|
+| date
+| |
+| WE 07-15
+∎  ∎∎∎   ∎∎∎       ∎∎∎     ∎      ∎∎∎∎    ∎
+  ∎   ∎ ∎   ∎     ∎   ∎   ∎∎          ∎  ∎
+  ∎ ∎ ∎  ∎∎∎∎        ∎   ∎ ∎       ∎∎∎  ∎∎∎∎
+  ∎   ∎    ∎   ∎    ∎   ∎∎∎∎∎  ∎      ∎ ∎   ∎
+A  ∎∎∎    ∎    ∎  ∎∎∎∎∎    ∎   ∎  ∎∎∎∎   ∎∎∎  PM -- AM/PM indicator
+| |            |  |               |
+| hours        |  minutes         seconds
+|              |
+|              separator
+|
+daily alarm indicator
+```
+
+## 3. Usage
 
 bigtime [options values]
 
@@ -37,7 +47,6 @@ OPTIONS:
 * -s, --small-seconds      - show seconds (normal size)
 * -S, --big-seconds        - show seconds (big size)
 * -d, --date               - show date
-* -D, --date-format        - date format(1)
 * -b, --blink              - blinking separators
 * -a, --alarm [time]       - set daily alarm
 * -i, --chime              - activate hourly time signal
@@ -52,56 +61,39 @@ OPTIONS:
 * -h, --help               - print this help message and exit
 * -V, --version            - print program's version and exit
 
-(1): date format:
-
-* %W: abbr. weekday name
-* %m: abbr. month name
-* %M: month
-* %D: day of month
-* %Y: year
-
-## 3. Display
-
-```
-hourly time signal
-|
-| date
-| |
-| WED 07-15
-∎  ∎∎∎   ∎∎∎       ∎∎∎     ∎      ∎∎∎∎    ∎
-  ∎   ∎ ∎   ∎     ∎   ∎   ∎∎          ∎  ∎
-  ∎ ∎ ∎  ∎∎∎∎        ∎   ∎ ∎       ∎∎∎  ∎∎∎∎
-  ∎   ∎    ∎   ∎    ∎   ∎∎∎∎∎  ∎      ∎ ∎   ∎
-A  ∎∎∎    ∎    ∎  ∎∎∎∎∎    ∎   ∎  ∎∎∎∎   ∎∎∎  PM -- AM/PM indicator
-| |            |  |               |
-| hours        |  minutes         seconds
-|              |
-|              separator
-|
-daily alarm
-```
-
 ## 4. Alarm
 
+### 4.1 From the command line
 To set a daily alarm starting tomorrow at 7:00 AM:  
 `bigtime --alarm "7:00 tomorrow"`
 
 To test the alarm :  
 `bigtime --alarm "now"`
 
-Press space bar to stop.
+Press <kbd>space</kbd> to stop.
 
+### 4.2 From within the application
+
+Press <kbd>a</kbd> to set a new alarm.  
+To modify an existing alarm, press <kbd>space</kbd> and <kbd>a</kbd>.  
+Enter the desired time.  
+Press <kbd>j</kbd> or <kbd>k</kbd> to select next/previous digit.  
+Press <kbd>p</kbd> to toggle AM/PM.
+
+When done, press <kbd>a</kbd> to enable the alarm.
+
+To cancel, press <kbd>space</kbd>
 
 ## 5. Key bindings
 
-* a     - toggle daily alarm; set / confirm new alarm
-* h     - toggle hourly time signal
-* j     - select next digit (alarm setting mode)
-* k     - select previous digit (alarm setting mode)
-* p     - toggle AM/PM (alarm setting mode)
-* q     - exit program
-* r     - refresh screen
-* space - display / stop alarm / cancel (alarm setting mode)
+* <kbd>a</kbd>     - toggle daily alarm; set / confirm new alarm
+* <kbd>h</kbd>     - toggle hourly time signal
+* <kbd>j</kbd>     - select next digit (alarm setting mode)
+* <kbd>k</kbd>     - select previous digit (alarm setting mode)
+* <kbd>p</kbd>     - toggle 24h format / toggle AM/PM (alarm setting mode)
+* <kbd>q</kbd>     - exit program
+* <kbd>r</kbd>     - refresh screen
+* <kbd>space</kbd> - display / stop alarm / cancel (alarm setting mode)
 
 ## 6. Custom digits file
 
@@ -132,8 +124,8 @@ They are sequences of 0s and 1s, for instance:
 represents digit 0, and it is stored as:  
 `0=11111;11011;11011;11011;11111`
 
-By default, **bigtime** replaces 0 by whitespace and 1 by ∎ but characters and  
-spaces can be hardcoded as well, i.e:  
+By default, **bigtime** replaces 0 by whitespace and 1 by ∎.  
+Characters and spaces can be hardcoded as well, i.e:  
 `0=@@@@@;@@_@@;@@_@@;@@_@@;@@@@@`
 
 ### 6.3 Example: narrow.digits file

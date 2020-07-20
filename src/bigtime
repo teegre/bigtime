@@ -17,6 +17,7 @@ DIGITS_DEFAULT_FILE="$CONFIG_PATH/standard.digits"
 BEEP_SOUND="$CONFIG_PATH/beep.wav"
 ALARM_SOUND="$CONFIG_PATH/alarm.wav"
 KEY_SOUND="$CONFIG_PATH/key.wav"
+YES_SOUND="$CONFIG_PATH/confirm.wav"
 ERROR_SOUND="$CONFIG_PATH/error.wav"
 
 TERMH="$(tput lines)"
@@ -426,7 +427,7 @@ print_digit() {
 }
 
 print_separator() {
-  local y x blink_array
+  local y x blink_array sp
   y=$1; x=$2
   shift 2
   for ((i=0;i<dh;i++)); do
@@ -448,10 +449,11 @@ reset_colors() {
 play_sound() {
   which aplay > /dev/null && {
     case "$1" in
-      alarm) aplay --quiet "$ALARM_SOUND" & ;;
-      beep ) aplay --quiet "$BEEP_SOUND" & ;;
-      key  ) aplay --quiet "$KEY_SOUND" & ;;
-      error) aplay --quiet "$ERROR_SOUND" &
+      alarm  ) aplay --quiet "$ALARM_SOUND" & ;;
+      beep   ) aplay --quiet "$BEEP_SOUND" & ;;
+      key    ) aplay --quiet "$KEY_SOUND" & ;;
+      error  ) aplay --quiet "$ERROR_SOUND" & ;;
+      confirm) aplay --quiet "$YES_SOUND" &
     esac
   }
 }
@@ -474,7 +476,7 @@ trap 'exit_clock "-- interrupted by user"' INT QUIT
 trap redraw_clock WINCH
 
 set_alarm() {
-  [[ $_ALARM ]] && { 
+  [[ $_ALARM ]] && {
     ALARM_TIME="$(date -d "$_ALARM_TIME" "+%s" 2> /dev/null)" || return 1
     _T="$(date "+%s")"
     ((ALARM_TIME<_T)) && ((ALARM_TIME+=86400))
@@ -503,12 +505,12 @@ while :; do
       elif [[ -z $ALARM_TIME && -z $_DALARM ]]; then
           # new alarm setting mode
           current_alarm=""
+          [[ $_F24 ]] && _ALARM_TIME="00:00:00" || _ALARM_TIME="12:00:00 AM"
           _DALARM=1
           _SET_ALARM=1
-          [[ $_F24 ]] && _ALARM_TIME="00:00:00" || _ALARM_TIME="12:00:00 AM"
           _ALARM=1
-          set_alarm
           _DSELECT=0
+          set_alarm
           play_sound key
           continue
       elif [[ $_DALARM ]]; then
@@ -518,30 +520,39 @@ while :; do
             unset _DALARM
             unset _DSELECT
             tput cup $((_y+dh)) $((_x)); tput el
+            play_sound confirm
             _make_date=0
           else
             # alarm setting mode
             _SET_ALARM=1
             _DSELECT=0
             tput cup $((_y+dh)) $((_x)); tput el
+            play_sound key
           fi
-        play_sound key
       fi
       ;;
     h) [[ $_BEEP ]] && unset _BEEP || _BEEP=1; play_sound key ;;
     p)
       if [[ $_DSELECT && -z $_F24 ]]; then
-        if [[ ${_ALARM_TIME:9:2} == "AM" ]]; then
+        if [[ $_ALARM_TIME =~ .*AM$ ]]; then
           _ALARM_TIME="${_ALARM_TIME/AM/PM}"
         else
           _ALARM_TIME="${_ALARM_TIME/PM/AM}"
         fi
         if set_alarm; then play_sound key; else play_sound error; fi
       elif [[ -z $_F24  && -z $_DSELECT ]]; then
+        [[ $_ALARM_TIME =~ .*(AM|PM)$ ]] && {
+          _ALARM_TIME="$(date -d "$_ALARM_TIME" "+%H:%M:%S")"
+          set_alarm
+        }
         _F24=1; play_sound key
         tput cup $((_y+dh-1)) $((_x+CLOCKW)); tput el
         unset _AMPM
       elif [[ -z $_DSELECT ]]; then
+        [[ $_ALARM_TIME =~ .*(AM|PM)$ ]] || {
+          _ALARM_TIME="$(LC_TIME=C date -d "$_ALARM_TIME" "+%I:%M:%S %p")"
+          set_alarm
+        }
         unset _F24; play_sound key
       fi
       ;;

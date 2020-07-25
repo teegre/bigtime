@@ -1,4 +1,4 @@
-# **bigtime** version 0.9 (07-2020)
+# **bigtime** version 1.0 (07-2020)
 
 **bigtime** is a customizable clock for the terminal, written in bash.
 

@@ -102,7 +102,7 @@ Press <kbd>p</kbd> to toggle AM/PM.
 
 When done, press <kbd>a</kbd> to enable the alarm.
 
-To cancel, press <kbd>space</kbd>
+Or press <kbd>space</kbd> to cancel.
 
 ## 5 Timer
 
@@ -113,22 +113,22 @@ To set a 3 minutes and 30 seconds timer:
 ### 5.2 From within the application
 
 Press <kbd>t</kbd> to set a new timer.  
-To modify an existing timer, press <kbd>space</kbd> and <kbd>t</kbd>.  
+To modify an existing timer, press <kbd>space</kbd> (twice if an alarm is set) and <kbd>t</kbd>.  
 Enter the desired duration.  
 Press <kbd>j</kbd> or <kbd>k</kbd> to select next/previous digit.  
 Press <kbd>r</kbd> to reset current timer.
 
 When done, press <kbd>t</kbd> to confirm.
 
-Press <kbd>space</kbd> to cancel.
+Or press <kbd>space</kbd> to cancel.
 
 
 ## 6. Key bindings
 
 * <kbd>a</kbd>     - toggle daily alarm; set / confirm new alarm
 * <kbd>h</kbd>     - toggle hourly time signal
-* <kbd>j</kbd>     - select next digit (alarm setting mode)
-* <kbd>k</kbd>     - select previous digit (alarm setting mode)
+* <kbd>j</kbd>     - select next digit (alarm/timer setting mode)
+* <kbd>k</kbd>     - select previous digit (alarm/timer setting mode)
 * <kbd>p</kbd>     - toggle 24h format / toggle AM/PM (alarm setting mode)
 * <kbd>q</kbd>     - exit program
 * <kbd>r</kbd>     - reset timer (timer setting mode)
@@ -142,7 +142,7 @@ Basically a digit file contains instructions on how to draw digits on the screen
 They have the *.digits* extension and must be stored in **bigtime** configuration  
 directory: `$HOME/.config/bigtime`
 
-### 6.1 Size
+### 7.1 Size
 
 All digits must have the same size (in characters) which is defined as follow:  
 `height=5`  
@@ -151,7 +151,7 @@ All digits must have the same size (in characters) which is defined as follow:
 The separator can have a different width but must have the same height as digits:  
 `sep_width=1`
 
-### 6.2 Digits, separator and blank
+### 7.2 Digits, separator and blank
 
 They are sequences of 0s and 1s, for instance:  
 
@@ -169,7 +169,7 @@ By default, **bigtime** replaces 0 by whitespace and 1 by ∎.
 Characters and spaces can be hardcoded as well, i.e:  
 `0=@@@@@;@@_@@;@@_@@;@@_@@;@@@@@`
 
-### 6.3 Example: narrow.digits file
+### 7.3 Example: narrow.digits file
 
 ```
 width=3
@@ -188,3 +188,14 @@ sep_width=1
 separator=0;0;0;0;1
 blank=0;0;0;0;0
 ```
+## 8. Changelog
+
+### Version 20200725-1.1
+
+* Added a little splash screen.
+
+### Version 20200725-1.0
+
+* Complete rewrite
+* Added timer
+* Added more sound effects

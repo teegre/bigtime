@@ -1,0 +1,138 @@
+.TH BIGTIME 1 20200725\-1.1 Linux "User Manuals"
+.SH NAME
+\fB\fCbigtime\fR \- customizable clock for the terminal
+.SH SYNOPSIS
+.B bigtime
+[\fI\,OPTION\/\fR [\fI\,VALUE\/\fR]... \fI\,OPTION\/\fR [\fI\,VALUE\/\fR]]
+.SH DESCRIPTION
+.PP
+Display the current time (and date) in big characters.
+.PP
+To render the time, \fBbigtime\fP reads a custom file (see: \fBDIGITS FILE\fR).
+.TP
+\fB\-c\fR, \fB\-\-char\fR=\fI\,char\/\fR
+Character for digits (default is ∎).
+.TP
+\fB\-p\fR, \fB\-\-space\fR=\fI\,char\/\fR
+Character for whitespaces (default is " ").
+.TP
+\fB\-F\fR, \fB\-\-foreground\fR=\fI\,0..n\/\fR
+Set foreground color.
+.TP
+\fB\-B\fR, \fB\-\-background\fR=\fI\,0..n\/\fR
+Set background color.
+.TP
+\fB\-C\fR, \fB\-\-list-colors\fR
+Print available colors and exit.
+.TP
+\fB\-f\fR
+Display time in 24h format.
+.TP
+\fB\-s\fR, \fB\-\-small\-seconds\fR
+Show seconds (normal size).
+.TP
+\fB\-S\fR, \fB\-\-big-seconds\fR
+Show seconds (big size).
+.TP
+\fB\-d\fR, \fB\-\-date\fR
+Show date.
+.TP
+\fB\-b\fR, \fB\-\-blink\fR
+Enable blinking separators.
+.TP
+\fB\-a\fR, \fB\-\-alarm\fR=\fI\,time\/\fR
+Set daily alarm.
+.TP
+\fB\-t\fR, \fB\-\-timer\fR=\fI\,[H]H:MM[:SS]\/\fR
+Set timer.
+.TP
+\fB\-i\fR, \fB\-\-signal\fR
+Activate hourly time signal.
+.TP
+\fB\-v\fR, \fB\-\-vertical\fR
+Display clock vertically.
+.br
+(Disable \fB\-b\fR option, since separators are not shown in this mode.)
+.TP
+\fB\-\-file\fR=\fI\,filename\/\fR
+Use a custom digits file.
+.TP
+\fB\-l\fR, \fB\-\-list\-files\fR
+Print available digits files and exit.
+.TP
+\fB\-\-preset\fR=\fI\,0..n\/\fR
+Use predefined characters (override \fB\-c\fR and \fB\-p\fR options).
+.TP
+\fB\-P\fR, \fB\-\-list-presets\fR
+Print available presets and exit.
+.TP
+\fB\-h\fR, \fB-\-help\fR
+Print this help and exit.
+.TP
+\fB\-V\fR, \fB\-\-version\fR
+Print version information and exit.
+.SH KEY BINDINGS
+.TP
+a
+Toggle daily alarm; set/confirm new alarm.
+.TP
+h
+Toggle hourly time signal.
+.TP
+j
+Select next digit (alarm/timer setting mode).
+.TP
+k
+Select previous digit (alarm/timer setting mode).
+.TP
+p
+Toggle 24h format / toggle AM/PM (alarm setting mode).
+.TP
+q
+Exit program.
+.TP
+r
+Reset timer (timer setting mode)
+.TP
+t
+Toggle timer; set/confirm new timer.
+.TP
+R
+refresh screen.
+.TP
+space
+Toggle display mode; stop alarm/timer; cancel alarm/timer (setting mode).
+.SH DIGITS FILES
+.TP
+In a nutshell, a \fBdigits file\fR contains instructions on how to draw digits on the screen.
+.TP
+Digits, separator and blank:
+Digits and separator are defined by a semicolon separated list of 0s and 1s.
+
+.EX
+\fB0=11111;11011;11011;11011;11111\fR
+\fB...\fR
+\fB9=11111;11011;11111;00011;11111\fR
+\fBseparator=0;1;0;1;0\fR
+\fBblank=0;0;0;0;0\fR
+.br
+.EE
+.TP
+When \fBbigtime\fR parses the file, it replaces 0s by the whitespace character (\fB\-\-space\fR option) and 1s by the digit character (\fB\-\-char\fR option).
+.TP
+Global settings for digits and separator sizes are defined as follow:
+
+.EX
+\fBheight=5\fR
+\fBwidth=5\fR
+\fBsep_width=1\fR
+.EE
+.SH AUTHOR
+Written by Stéphane Meyer (Teegre).
+.SH "REPORTING BUGS"
+<https://github.com/teegre/bigtime/issues>
+.SH LICENSE
+License MIT.
+.br
+This is free software provided \fBAS IS\fR with \fBNO WARRANTY\fR. Feel free to change and redistribute.
+

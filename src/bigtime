@@ -470,16 +470,6 @@ to_hms() {
   printf "%02d:  :%02d:%02d:%02d:%s:%s:%s:%s" "$H" "$H" "$M" "$S" "$(date "+%s")" "$W" "$D" "$m"
 }
 
-to_s() {
-  # convert HH:MM:SS to seconds
-  local T S
-  IFS=$'\n' read -d "" -ra T <<< "${T//:/$'\n'}"
-  ((S+=T[0]*3600))
-  ((S+=T[1]*60))
-  ((S+=T[2]))
-  echo "$S"
-}
-
 if [[ $_AA ]]; then set_alarm || EXIT_CLOCK "invalid alarm time"; fi
 if [[ $_TA ]]; then set_timer || EXIT_CLOCK "invalid timer duration"; fi
 if [[ $_TT ]]; then activate_timer || EXIT_CLOCK "what ?"; fi
@@ -567,9 +557,10 @@ PARSE_TIME() {
 DISPLAY_DATE() {
   [[ ! $_DA ]] && return 1
   [[ ! $_GD ]] && return 0
-  [[ $_H == "00" && $_M == "00" && $_S == "00" ]] \
-    || [[ $_H == "12" && $_p == "AM" && $_M == "00" && $_S == "00" ]] && \
-      return 0
+  [[ $_H == "00" ]] || [[ $_H == "12" && $_p == "AM" ]] && [[ $_M == "00" && $_S == "00" ]] && {
+    unset _GD
+    return 0
+  }
   return 1
 }
 
@@ -839,6 +830,38 @@ erase_hd() {
   tput cup $((_y+DH)) $((_x)); tput el
 }
 
+splash() {
+  local y x
+  if [[ ! $_VL ]]; then
+    local logo="-bigtime-"
+    ((y=(TERMH-1)/2))
+    ((x=(TERMW-${#logo})/2))
+    tput cup $((y)) $((x))
+    printf "%s" "$logo"
+  else
+    local l1 l2 l3 l4 l5 l6
+    l1="B"; l2="i"; l3="G"; l4="T"; l5="M"; l6="e"
+    ((y=(TERMH-7)/2))
+    ((x=(TERMW-1)/2))
+    tput cup $((y)) $((x))
+    printf "%s" "$l1"
+    tput cup $((y+1)) $((x))
+    printf "%s" "$l2"
+    tput cup $((y+2)) $((x))
+    printf "%s" "$l3"
+    tput cup $((y+3)) $((x))
+    printf "%s" "$l4"
+    tput cup $((y+4)) $((x))
+    printf "%s" "$l2"
+    tput cup $((y+5)) $((x))
+    printf "%s" "$l5"
+    tput cup $((y+6)) $((x))
+    printf "%s" "$l6"
+  fi
+  sleep 0.25
+  play_sound welcome
+}
+
 ### INIT SCREEN
 tput smcup
 tput civis
@@ -850,7 +873,10 @@ stty -echo -icanon time 0 min 0
 ((_y=(TERMH-CLOCKH)/2))
 ((_x=(TERMW-CLOCKW)/2))
 
+splash; sleep 1
+
 tput clear
+
 
 trap 'EXIT_CLOCK "-- interrupted by user"' INT QUIT
 trap REDRAW_CLOCK WINCH
@@ -959,7 +985,7 @@ while :; do
       [[ $AR && $IDX == 1 ]] && { printf "   "; unset IA; }
       if [[ ! $AR ]]; then
         if [[ $_AD ]]; then
-          printf "<A>"
+          printf " A "
         elif [[ $_AS ]]; then
           printf "[A]"
         else
@@ -982,7 +1008,7 @@ while :; do
       [[ $TR && $IDX == 1 ]] && { printf "   "; unset IT; }
       if [[ ! $TR ]]; then
         if [[ $_TD ]]; then
-          printf "<T>"
+          printf " T "
         elif [[ $_TS ]]; then
           printf "[T]"
         else
@@ -1027,8 +1053,6 @@ while :; do
   [[ $_AS || $_TS ]] && ((_DS==0)) && tput smso
   [[ $h1 != "$H1" ]] && print_digit $((y)) $((x)) "$h1"
   [[ $_AS || $_TS ]] && ((_DS==0)) && tput rmso
-
-  [[ ! $WS ]] && { play_sound welcome; WS=1; }
 
   H1=$h1
   ((x+=DW+1))

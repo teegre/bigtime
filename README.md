@@ -1,5 +1,7 @@
 # **bigtime**
 
+![screenshot](screenshot.png)
+
 **bigtime** is a customizable clock for the terminal, written in bash.
 
 *depends on: bash, coreutils, ncurses, alsa-utils*

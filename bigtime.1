@@ -1,4 +1,4 @@
-.TH BIGTIME 1 20200725\-1.1 Linux "User Manuals"
+.TH BIGTIME 1 20200727\-1.2 Linux "User Manuals"
 .SH NAME
 \fB\fCbigtime\fR \- customizable clock for the terminal
 .SH SYNOPSIS
@@ -10,17 +10,23 @@ Display the current time (and date) in big characters.
 .PP
 To render the time, \fBbigtime\fP reads a custom file (see: \fBDIGITS FILE\fR).
 .TP
-\fB\-c\fR, \fB\-\-char\fR=\fI\,char\/\fR
-Character for digits (default is ∎).
+\fB\-c\fR, \fB\-\-char\fR \fI\,"char"\/\fR
+Character for digits (default is "∎").
 .TP
-\fB\-p\fR, \fB\-\-space\fR=\fI\,char\/\fR
+\fB\-p\fR, \fB\-\-space\fR \fI\,"char"\/\fR
 Character for whitespaces (default is " ").
 .TP
-\fB\-F\fR, \fB\-\-foreground\fR=\fI\,0..n\/\fR
+\fB\-F\fR, \fB\-\-foreground\fR \fI\,0..n\/\fR
 Set foreground color.
 .TP
-\fB\-B\fR, \fB\-\-background\fR=\fI\,0..n\/\fR
+\fB\-B\fR, \fB\-\-background\fR \fI\,0..n\/\fR
 Set background color.
+.TP
+\fB\-r\fR, \fB\-\-rainbow\fR
+Rainbow effect.
+.TP
+\fB\-n\fR, \fB\-\-random\fR
+Random colors.
 .TP
 \fB\-C\fR, \fB\-\-list-colors\fR
 Print available colors and exit.
@@ -40,10 +46,10 @@ Show date.
 \fB\-b\fR, \fB\-\-blink\fR
 Enable blinking separators.
 .TP
-\fB\-a\fR, \fB\-\-alarm\fR=\fI\,time\/\fR
+\fB\-a\fR, \fB\-\-alarm\fR \fI\,time\/\fR
 Set daily alarm.
 .TP
-\fB\-t\fR, \fB\-\-timer\fR=\fI\,[H]H:MM[:SS]\/\fR
+\fB\-t\fR, \fB\-\-timer\fR \fI\,[H]H:MM[:SS]\/\fR
 Set timer.
 .TP
 \fB\-i\fR, \fB\-\-signal\fR
@@ -54,13 +60,13 @@ Display clock vertically.
 .br
 (Disable \fB\-b\fR option, since separators are not shown in this mode.)
 .TP
-\fB\-\-file\fR=\fI\,filename\/\fR
+\fB\-\-file\fR \fI\,filename\/\fR
 Use a custom digits file.
 .TP
 \fB\-l\fR, \fB\-\-list\-files\fR
 Print available digits files and exit.
 .TP
-\fB\-\-preset\fR=\fI\,0..n\/\fR
+\fB\-\-preset\fR \fI\,0..n\/\fR
 Use predefined characters (override \fB\-c\fR and \fB\-p\fR options).
 .TP
 \fB\-P\fR, \fB\-\-list-presets\fR

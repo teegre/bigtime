@@ -5,12 +5,12 @@
 # | '_ \| |/ _` | __| | '_ ` _ \ / _ \
 # | |_) | | (_| | |_| | | | | | |  __/
 # |_.__/|_|\__, |\__|_|_| |_| |_|\___|
-#          |___/ version 20200725-1.1
+#          |___/ version 20200727-1.2
 # ♥ ##################################
 
 progname="$(basename "$0")"
 PROGNAME="${progname^^}"
-VERSION="20200725-1.1"
+VERSION="20200727-1.2"
 
 CONFIG_PATH="$HOME/.config/bigtime"
 DIGITS_DEFAULT_FILE="$CONFIG_PATH/standard.digits"
@@ -19,6 +19,7 @@ BEEP_SOUND="$CONFIG_PATH/beep.wav"
 ALARM_SOUND="$CONFIG_PATH/alarm.wav"
 TIMER_SOUND="$CONFIG_PATH/timer.wav"
 KEY_SOUND="$CONFIG_PATH/key.wav"
+DIGIT_SOUND="$CONFIG_PATH/digit.wav"
 YES_SOUND="$CONFIG_PATH/confirm.wav"
 ERROR_SOUND="$CONFIG_PATH/error.wav"
 QUIT_SOUND="$CONFIG_PATH/quit.wav"
@@ -27,6 +28,11 @@ TERMH="$(tput lines)"
 TERMW="$(tput cols)"
 
 COLORS="$(tput colors)"
+
+# color list taken from c version of lolcat <https://github.com/jaseg/lolcat/blob/master/lolcat.c>
+RBC=(39 38 44 43 49 48 84 83 119 118 154 148 184 178 214 208 209 203 204 198 199 163 164 128 129 93 99 63 69 33)
+
+((COLOR_IDX=RANDOM%(${#RBC[@]}-1)))
 
 declare -i CLOCKH
 declare -i CLOCKW
@@ -109,7 +115,7 @@ REDRAW_CLOCK() {
   _REDRAW=1
   TERMH="$(tput lines)"
   TERMW="$(tput cols)"
-  if ((CLOCKW>=TERMH || CLOCKW>=TERMW)); then
+  if ((CLOCKH>=TERMH || CLOCKW>=TERMW)); then
     EXIT_CLOCK "error: clock doesn't fit"
   fi
   ((_y=(TERMH-CLOCKH)/2))
@@ -152,29 +158,31 @@ LIST_COLORS() {
 
 # options
 
-_opts=$(LC_ALL=C getopt                \
-  --long "help"                        \
-  --long "version"                     \
-  --long "preset:"                     \
-  --long "list-presets"                \
-  --long "char:"                       \
-  --long "space:"                      \
-  --long "small-seconds"               \
-  --long "big-seconds"                 \
-  --long "date"                        \
-  --long "blink"                       \
-  --long "vertical"                    \
-  --long "alarm:"                      \
-  --long "signal"                      \
-  --long "timer:"                      \
-  --long "file:"                       \
-  --long "list-files"                  \
-  --long "foreground:"                 \
-  --long "background:"                 \
-  --long "list-colors"                 \
-  --options "hVc:p:fsSdbva:it:F:B:PCl" \
-  --name "$progname"                   \
-  -- "$@"                              \
+_opts=$(LC_ALL=C getopt                  \
+  --long "help"                          \
+  --long "version"                       \
+  --long "preset:"                       \
+  --long "list-presets"                  \
+  --long "char:"                         \
+  --long "space:"                        \
+  --long "small-seconds"                 \
+  --long "big-seconds"                   \
+  --long "date"                          \
+  --long "blink"                         \
+  --long "vertical"                      \
+  --long "alarm:"                        \
+  --long "signal"                        \
+  --long "timer:"                        \
+  --long "file:"                         \
+  --long "list-files"                    \
+  --long "foreground:"                   \
+  --long "background:"                   \
+  --long "list-colors"                   \
+  --long "rainbow"                       \
+  --long "random"                        \
+  --options "hVc:p:fsSdbva:it:F:B:PClrn" \
+  --name "$progname"                     \
+  -- "$@"                                \
 ) || exit 1
 
 eval set -- "$_opts"
@@ -194,6 +202,8 @@ while :; do
     -a | --alarm        ) _AA=1; shift; _AT="$1"; shift ;;
     -i | --signal       ) _HTSA=1; shift ;;
     -t | --timer        ) _TA=1; shift; _TT="$1"; shift ;;
+    -r | --rainbow      ) _RB=1; unset _FG; shift ;;
+    -n | --random       ) _RC=1; unset _RB _FG; shift ;;
     -C | --list-colors  ) LIST_COLORS ;;
 
     -c | --char)
@@ -369,31 +379,55 @@ _sync() {
   done
 }
 
+rnd_color() { 
+  [[ $_RB ]] && ((COLOR_IDX=COLOR_IDX>${#RBC[@]}-2?0:COLOR_IDX+1))
+  [[ $_RC ]] && ((COLOR_IDX=RANDOM%(${#RBC[@]}-1)))
+  COLOR=${RBC[COLOR_IDX]}
+}
+
 print_digit() {
-  local y x d D
-  y=$1; x=$2; d=$3
+  local __y __x d D
+  __y=$1; __x=$2; d=$3
   shift 3
+  [[ $_RC ]] && rnd_color
   for ((i=0;i<DH;i++)); do
+    [[ $_RB ]] && rnd_color
     D=$"_D"$d"[$i]"
-    tput cup $((y)) $((x))
-    printf $'%s' $"${!D}"
-    ((y++))
+    tput cup $((__y)) $((__x))
+    echo $"${!D}" | print_rainbow
+    ((__y++))
   done
 }
 
 print_separator() {
-  local y x blink_array sp
-  y=$1; x=$2
+  local __y __x blink_array sp
+  __y=$1; __x=$2
   shift 2
+  [[ $_RC ]] && rnd_color
   for ((i=0;i<DH;i++)); do
+    [[ $_RB ]] && rnd_color
     [[ $_PB ]] && {
       blink_array=("${_P[$i]}" "${_W[$i]}")
       sp="${blink_array[$IDX]}"
     } || sp="${_P[$i]}"
-    tput cup $((y)) $((x))
-    printf "%s" "$sp"
-    ((y++))
+    tput cup $((__y)) $((__x))
+    echo $"$sp" | print_rainbow
+    ((__y++))
   done
+}
+
+print_rainbow() {
+    [[ ! $_RB  && ! $_RC ]] && { while IFS= read -r l; do printf "%s" $"$l"; done; return; }
+    local l L a
+    while IFS= read -r l; do
+        L=${#l}
+        for ((i=0;i<L;i++)); do
+            a="${l:$((i)):1}"
+            [[ $a == " " ]] && { printf "%s" $"$a"; continue; }
+            printf "\033[38;5;%dm%s" "$COLOR" $"$a"
+        done
+        unset COLOR
+    done
 }
 
 play_sound() {
@@ -401,6 +435,7 @@ play_sound() {
     case "$1" in
       welcome) aplay --quiet "$WELCOME_SOUND" & ;;
       key    ) aplay --quiet "$KEY_SOUND" & ;;
+      digit  ) aplay --quiet "$DIGIT_SOUND" & ;;
       alarm  ) aplay --quiet "$ALARM_SOUND" & ;;
       timer  ) aplay --quiet "$TIMER_SOUND" & ;;
       beep   ) aplay --quiet "$BEEP_SOUND" & ;;
@@ -480,7 +515,8 @@ BACK_HD() {
   _HD=1
   unset _hd
   erase_hd
-  unset _AD _AS _TD _TS _DS _GD IA IT HH MM SS PB OT
+  [[ $_TS && $_TT == "00:00:00" ]] && unset _TT _TA
+  unset _AD _AS _TD _TS _DS _GD IA IT H1 H2 M1 M2 S1 S2 PB OT
 }
 
 DISPLAY_ALARM() {
@@ -764,12 +800,12 @@ SELECT_DIGIT() {
     next)
       [[ $_AS ]] && { ((_DS=_DS==3?0:_DS+1)); unset H1 H2 M1 M2; }
       [[ $_TS ]] && { ((_DS=_DS==5?0:_DS+1)); unset H1 H2 M1 M2 S1 S2; }
-      [[ $_AS || $_TS ]] && play_sound key
+      [[ $_AS || $_TS ]] && play_sound digit
       ;;
     prev)
       [[ $_AS ]] && { ((_DS=_DS==0?3:_DS-1)); unset H1 H2 M1 M2; }
       [[ $_TS ]] && { ((_DS=_DS==0?5:_DS-1)); unset H1 H2 M1 M2 S1 S2; }
-      [[ $_AS || $_TS ]] && play_sound key
+      [[ $_AS || $_TS ]] && play_sound digit
   esac
 }
 
@@ -819,7 +855,8 @@ print_hd() {
   fi
   [[ $OT != "$NT" ]] && {
     tput cup $((_y+DH)) $((_x))
-    printf "%s" "$NT"
+    [[ $_RB || $_RC ]] && rnd_color
+    echo "$NT" | print_rainbow
     OT="$NT"
     return 0
   }
@@ -833,30 +870,38 @@ erase_hd() {
 splash() {
   local y x
   if [[ ! $_VL ]]; then
-    local logo="-bigtime-"
+    local logo="-BiGTiME-"
     ((y=(TERMH-1)/2))
     ((x=(TERMW-${#logo})/2))
     tput cup $((y)) $((x))
-    printf "%s" "$logo"
+    [[ $_RB || $_RC ]] && rnd_color
+    echo "$logo" | print_rainbow
   else
     local l1 l2 l3 l4 l5 l6
-    l1="B"; l2="i"; l3="G"; l4="T"; l5="M"; l6="e"
+    l1="B"; l2="i"; l3="G"; l4="T"; l5="M"; l6="E"
     ((y=(TERMH-7)/2))
     ((x=(TERMW-1)/2))
+    [[ $_RB || $_RC ]] && rnd_color
     tput cup $((y)) $((x))
-    printf "%s" "$l1"
+    echo "$l1" | print_rainbow
+    [[ $_RB || $_RC ]] && rnd_color
     tput cup $((y+1)) $((x))
-    printf "%s" "$l2"
+    echo "$l2" | print_rainbow
+    [[ $_RB || $_RC ]] && rnd_color
     tput cup $((y+2)) $((x))
-    printf "%s" "$l3"
+    echo "$l3" | print_rainbow
+    [[ $_RB || $_RC ]] && rnd_color
     tput cup $((y+3)) $((x))
-    printf "%s" "$l4"
+    echo "$l4" | print_rainbow
+    [[ $_RB || $_RC ]] && rnd_color
     tput cup $((y+4)) $((x))
-    printf "%s" "$l2"
+    echo "$l2" | print_rainbow
+    [[ $_RB || $_RC ]] && rnd_color
     tput cup $((y+5)) $((x))
-    printf "%s" "$l5"
+    echo "$l5" | print_rainbow
+    [[ $_RB || $_RC ]] && rnd_color
     tput cup $((y+6)) $((x))
-    printf "%s" "$l6"
+    echo "$l6" | print_rainbow
   fi
   sleep 0.25
   play_sound welcome
@@ -980,16 +1025,17 @@ while :; do
   ## ALARM INDICATOR
   [[ ! $IA ]] && {
     if [[ $_AA ]]; then
+      [[ $_RB || $_RC ]] && rnd_color
       tput cup $((y+1)) $((x-4))
-      [[ $AR && $IDX == 0 ]] && { printf " a "; unset IA; }
-      [[ $AR && $IDX == 1 ]] && { printf "   "; unset IA; }
+      [[ $AR && $IDX == 0 ]] && { echo " a " | print_rainbow; unset IA; }
+      [[ $AR && $IDX == 1 ]] && { echo "   " | print_rainbow; unset IA; }
       if [[ ! $AR ]]; then
         if [[ $_AD ]]; then
-          printf " A "
+          echo " A " | print_rainbow
         elif [[ $_AS ]]; then
-          printf "[A]"
+          echo "[A]" | print_rainbow
         else
-          printf " a "
+          echo " a " | print_rainbow
         fi
         IA=1
       fi
@@ -1003,16 +1049,17 @@ while :; do
   ## TIMER INDICATOR
   [[ ! $IT ]] && {
     if [[ $_TA ]]; then
+      [[ $_RB || $_RC ]] && rnd_color
       tput cup $((y+2)) $((x-4))
-      [[ $TR && $IDX == 0 ]] && { printf " t ";  unset IT; }
-      [[ $TR && $IDX == 1 ]] && { printf "   "; unset IT; }
+      [[ $TR && $IDX == 0 ]] && { echo " t " | print_rainbow;  unset IT; }
+      [[ $TR && $IDX == 1 ]] && { echo "   "; unset IT; }
       if [[ ! $TR ]]; then
         if [[ $_TD ]]; then
-          printf " T "
+          echo " T " | print_rainbow
         elif [[ $_TS ]]; then
-          printf "[T]"
+          echo "[T]" | print_rainbow
         else
-          printf " t "
+          echo " t " | print_rainbow
         fi
         IT=1
         unset IA
@@ -1028,7 +1075,8 @@ while :; do
   [[ ! $IH ]] && {
     tput cup $((y)) $((x-4))
     if [[ $_HTSA ]]; then
-      printf " s "
+      [[ $_RB || $_RC ]] && rnd_color
+      echo " s " | print_rainbow
       IH=1
     else
       printf "   "
@@ -1036,20 +1084,26 @@ while :; do
     fi
   }
 
- ## SMALL TIME
- print_hd 
+  ## SMALL TIME
+  [[ $_RB || $_RC ]] && rnd_color
+  print_hd 
 
   [[ $date != "$DATE" ]] && {
     if [[ $_VL ]]; then
-      tput cup $((y))   $((x+CLOCKW)); printf "%s" "$W"
-      tput cup $((y+1)) $((x+CLOCKW)); printf "%s" "$m"
-      tput cup $((y+2)) $((x+CLOCKW)); printf "%s" "$D"
+      [[ $_RB || $_RC ]] && rnd_color
+      tput cup $((y))   $((x+CLOCKW)); echo "$W" | print_rainbow
+      [[ $_RB || $_RC ]] && rnd_color
+      tput cup $((y+1)) $((x+CLOCKW)); echo "$m" | print_rainbow
+      [[ $_RB || $_RC ]] && rnd_color
+      tput cup $((y+2)) $((x+CLOCKW)); echo "$D" | print_rainbow
     else
-      tput cup $((y-1)) $((x)); printf "%s" "$DATE"
+      [[ $_RB || $_RC ]] && rnd_color
+      tput cup $((y-1)) $((x)); echo "$DATE" | print_rainbow
     fi
     date="$DATE"
   }
 
+  [[ $_RB || $_RC ]] && rnd_color
   [[ $_AS || $_TS ]] && ((_DS==0)) && tput smso
   [[ $h1 != "$H1" ]] && print_digit $((y)) $((x)) "$h1"
   [[ $_AS || $_TS ]] && ((_DS==0)) && tput rmso
@@ -1057,6 +1111,7 @@ while :; do
   H1=$h1
   ((x+=DW+1))
 
+  [[ $_RB || $_RC ]] && rnd_color
   [[ $_AS || $_TS ]] && ((_DS==1)) && tput smso
   [[ $h2 != "$H2" ]] && print_digit $((y)) $((x)) "$h2";
   [[ $_AS || $_TS ]] && ((_DS==1)) && tput rmso
@@ -1072,6 +1127,7 @@ while :; do
     x=$_x
   fi
 
+  [[ $_RB || $_RC ]] && rnd_color
   [[ $_AS || $_TS ]] && ((_DS==2)) && tput smso
   [[ $m1 != "$M1" ]] && print_digit $((y)) $((x)) "$m1"
   [[ $_AS || $_TS ]] && ((_DS==2)) && tput rmso
@@ -1079,6 +1135,7 @@ while :; do
   M1=$m1
   ((x+=DW+1))
 
+  [[ $_RB || $_RC ]] && rnd_color
   [[ $_AS || $_TS ]] && ((_DS==3)) && tput smso
   [[ $m2 != "$M2" ]] && print_digit $((y)) $((x)) "$m2"
   [[ $_AS || $_TS ]] && ((_DS==3)) && tput rmso
@@ -1104,6 +1161,7 @@ while :; do
       ((x+=SW+1))
     }
 
+    [[ $_RB || $_RC ]] && rnd_color
     [[ $_TS ]] && ((_DS==4)) && tput smso
     [[ $s1 != "$S1" ]] && print_digit $((y)) $((x)) "$s1"
     [[ $_TS ]] && ((_DS==4)) && tput rmso
@@ -1111,6 +1169,7 @@ while :; do
     S1=$s1
     ((x+=DW+1))
 
+    [[ $_RB || $_RC ]] && rnd_color
     [[ $_TS ]] && ((_DS==5)) && tput smso
     [[ $s2 != "$S2" ]] && print_digit $((y)) $((x)) "$s2"
     [[ $_TS ]] && ((_DS==5)) && tput rmso
@@ -1138,13 +1197,15 @@ while :; do
       fi
     fi
 
+    [[ $_RB || $_RC ]] && rnd_color
     [[ $_TS ]] && ((_DS==4)) && tput smso
-    [[ $S1 != "$s1" ]] && printf "%s" "$s1"
+    [[ $S1 != "$s1" ]] && echo "$s1" | print_rainbow
     [[ $_TS ]] && ((_DS==4)) && tput rmso
     S1="$s1"
 
+    [[ $_RB || $_RC ]] && rnd_color
     [[ $_TS ]] && ((_DS==5)) && tput smso
-    [[ $S2 != "$s2" ]] && printf "%s" "$s2"
+    [[ $S2 != "$s2" ]] && echo "$s2" | print_rainbow
     [[ $_TS ]] && ((_DS==5)) && tput rmso
     S2="$s2"
 
@@ -1159,8 +1220,9 @@ while :; do
   }
 
   [[ $_p ]] && {
+    [[ $_RB || $_RC ]] && rnd_color
     tput cup $((_y+DH-1)) $((x))
-    [[ $_p != "$p" ]] && printf "%s" "$_p"
+    [[ $_p != "$p" ]] && echo "$_p" | print_rainbow
     p="$_p"
   }
 

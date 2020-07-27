@@ -61,12 +61,17 @@ bigtime [option value...option value]
 
 OPTIONS:
 
-* -c, --char [char]        - character for digits (default is ∎)
-* -p, --space [char]       - character for whitespaces (default is " ")
+* -c, --char "char"        - character for digits (default is ∎)
+* -p, --space "char"       - character for whitespaces (default is " ")
 * -f                       - display time in 24h format
 * -s, --small-seconds      - show seconds (normal size)
 * -S, --big-seconds        - show seconds (big size)
 * -d, --date               - show date
+* -F, --foreground [0..n]  - set foreground color
+* -B, --background [0..n]  - set background color
+* -r, --rainbow            - rainbow effect
+* -n, --random             - random colors effect
+* -C, --list-colors        - print available colors
 * -b, --blink              - blinking separators
 * -a, --alarm [time]       - set daily alarm
 * -t, --timer [duration]   - set timer (format: [H]H:MM[:SS])
@@ -76,9 +81,6 @@ OPTIONS:
 * -l, --list-files         - print available digits files
 * --preset [0..n]          - use predefined characters (override -c and -p options)
 * -P, --list-presets       - print available presets
-* -F, --foreground [0..n]  - set foreground color
-* -B, --background [0..n]  - set background color
-* -C, --list-colors        - print available colors
 * -h, --help               - print this help message and exit
 * -V, --version            - print program's version and exit
 

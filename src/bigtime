@@ -48,38 +48,40 @@ USAGE:
 bigtime [OPTION VALUE ... OPTION VALUE]
 
 OPTIONS:
--c, --char <char>        - character for digits (default is ∎)
--p, --space <char>       - character for whitespaces (default is " ")
--f                       - display time in 24h format
--s, --small-seconds      - show seconds (normal size)
--S, --big-seconds        - show seconds (big size)
--d, --date               - show date
--b, --blink              - blinking separators
--v, --vertical           - display clock vertically
--a, --alarm <time>       - set alarm
--i, --signal             - hourly time signal
--t, --timer <duration>   - set timer (format: [H]H:MM[:SS])
---file <filename>        - use a custom digits file (filename only)
--l, --list-files         - print available digits files
---preset <0..n>          - use predefined characters (override -c and -p options)
--P, --list-presets       - print preset characters
--F, --foreground <0..n>  - set foreground color
--B, --background <0..n>  - set background color
--C, --list-colors        - print available colors
--h, --help               - print this help message and exit
--V, --version            - print program's version and exit
+-c, --char "CHAR"     - character for digits (default is "∎")
+-p, --space "CHAR"    - character for whitespaces (default is " ")
+-f                    - display time in 24h format
+-s, --small-seconds   - show seconds (normal size)
+-S, --big-seconds     - show seconds (big size)
+-d, --date            - show date
+-F, --foreground 0..N - set foreground color
+-B, --background 0..N - set background color
+-r, --rainbow         - rainbow effect
+-n, --random          - random colors effect
+-C, --list-colors     - print available colors
+-b, --blink           - blinking separators
+-v, --vertical        - display clock vertically
+-a, --alarm TIME      - set alarm
+-i, --signal          - hourly time signal
+-t, --timer DURATION  - set timer (format: [H]H:MM[:SS])
+--file FILENAME       - use a custom digits file (filename only)
+-l, --list-files      - print available digits files
+--preset 0..N         - use predefined characters (override -c and -p options)
+-P, --list-presets    - print preset characters
+-h, --help            - print this help message and exit
+-V, --version         - print program's version and exit
 
 KEYS BINDINGS:
-a                        - toggle / set daily alarm / confirm (alarm setting mode)
-h                        - toggle hourly time signal
-j                        - select next digit (alarm setting mode)
-k                        - select previous digit (alarm setting mode)
-p                        - toggle 24h format / toggle AM/PM (alarm setting mode)
-q                        - exit program
-r                        - reset timer (timer setting mode)
-R                        - refresh screen,,
-t                        - toggle / set timer / confirm (timer setting mode)
-space                    - toggle display / stop alarm/timer / cancel (alarm/timer setting mode)
+a                     - toggle/set daily alarm; confirm (alarm setting mode)
+h                     - toggle hourly time signal
+j                     - select next digit (alarm/timer setting mode)
+k                     - select previous digit (alarm/timer setting mode)
+p                     - toggle 24h format; toggle AM/PM (alarm setting mode)
+q                     - exit program
+r                     - reset timer (timer setting mode)
+R                     - refresh screen
+t                     - toggle/set timer; confirm (timer setting mode)
+space                 - toggle display; stop alarm/timer; cancel (alarm/timer setting mode)
 
 EOB
 }

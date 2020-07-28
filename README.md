@@ -27,6 +27,8 @@
 
 ## Install **bigtime**
 
+You can find **bigtime** in the [Arch User Repository](https://aur.archlinux.org/packages/bigtime).
+
 `make install`
 
 # DISPLAY <a name="display"></a>

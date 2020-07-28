@@ -5,12 +5,12 @@
 # | '_ \| |/ _` | __| | '_ ` _ \ / _ \
 # | |_) | | (_| | |_| | | | | | |  __/
 # |_.__/|_|\__, |\__|_|_| |_| |_|\___|
-#          |___/ version 20200727-1.2
+#          |___/ 
 # ♥ ##################################
 
 progname="$(basename "$0")"
 PROGNAME="${progname^^}"
-VERSION="20200727-1.2"
+VERSION="20200728-1.2.1"
 
 CONFIG_PATH="$HOME/.config/bigtime"
 DIGITS_DEFAULT_FILE="$CONFIG_PATH/standard.digits"
@@ -48,28 +48,29 @@ USAGE:
 bigtime [OPTION VALUE ... OPTION VALUE]
 
 OPTIONS:
--c, --char "CHAR"     - character for digits (default is "∎")
--p, --space "CHAR"    - character for whitespaces (default is " ")
--f                    - display time in 24h format
--s, --small-seconds   - show seconds (normal size)
--S, --big-seconds     - show seconds (big size)
--d, --date            - show date
--F, --foreground 0..N - set foreground color
--B, --background 0..N - set background color
--r, --rainbow         - rainbow effect
--n, --random          - random colors effect
--C, --list-colors     - print available colors
--b, --blink           - blinking separators
--v, --vertical        - display clock vertically
--a, --alarm TIME      - set alarm
--i, --signal          - hourly time signal
--t, --timer DURATION  - set timer (format: [H]H:MM[:SS])
+-c, --char "CHAR"     - character for digits (default is "∎").
+-p, --space "CHAR"    - character for whitespaces (default is " ").
+-f                    - display time in 24h format.
+-s, --small-seconds   - show seconds (normal size).
+-S, --big-seconds     - show seconds (big size).
+-d, --date            - show date.
+-z, --timezone        - show timezone (i.e. +0200).
+-F, --foreground 0..N - set foreground color (override -n and -r options).
+-B, --background 0..N - set background color.
+-r, --rainbow         - rainbow effect.
+-n, --random          - random colors effect.
+-C, --list-colors     - print available colors and exit.
+-b, --blink           - blinking separators.
+-v, --vertical        - display clock vertically.
+-a, --alarm TIME      - set alarm.
+-i, --signal          - hourly time signal.
+-t, --timer DURATION  - set timer (format: [H]H:MM[:SS]).
 --file FILENAME       - use a custom digits file (filename only)
--l, --list-files      - print available digits files
---preset 0..N         - use predefined characters (override -c and -p options)
--P, --list-presets    - print preset characters
+-l, --list-files      - print available digits files and exit.
+--preset 0..N         - use predefined characters (override -c and -p options).
+-P, --list-presets    - print preset characters.
 -h, --help            - print this help message and exit
--V, --version         - print program's version and exit
+-V, --version         - print program version info and exit.
 
 KEYS BINDINGS:
 a                     - toggle/set daily alarm; confirm (alarm setting mode)
@@ -122,7 +123,7 @@ REDRAW_CLOCK() {
   fi
   ((_y=(TERMH-CLOCKH)/2))
   ((_x=(TERMW-CLOCKW)/2))
-  unset H1 H2 M1 M2 S1 S2 S p date PB IA IH IT 
+  unset H1 H2 M1 M2 S1 S2 S p date PB IA IH IT IZ
   clear
   _REDRAW=0
 }
@@ -139,6 +140,7 @@ EXIT_CLOCK() {
 }
 
 LIST_COLORS() {
+  local tc maxcols col on off
   tc="$(tput setaf 0)"
   ((maxcols=(TERMW/5)-1))
   col=0
@@ -150,7 +152,6 @@ LIST_COLORS() {
     ((col>maxcols/2)) && { printf "\n"; col=0; }
   done
   echo
-  exit 0
 }
 
 ! [[ -a "$DIGITS_DEFAULT_FILE" ]] && {
@@ -160,31 +161,32 @@ LIST_COLORS() {
 
 # options
 
-_opts=$(LC_ALL=C getopt                  \
-  --long "help"                          \
-  --long "version"                       \
-  --long "preset:"                       \
-  --long "list-presets"                  \
-  --long "char:"                         \
-  --long "space:"                        \
-  --long "small-seconds"                 \
-  --long "big-seconds"                   \
-  --long "date"                          \
-  --long "blink"                         \
-  --long "vertical"                      \
-  --long "alarm:"                        \
-  --long "signal"                        \
-  --long "timer:"                        \
-  --long "file:"                         \
-  --long "list-files"                    \
-  --long "foreground:"                   \
-  --long "background:"                   \
-  --long "list-colors"                   \
-  --long "rainbow"                       \
-  --long "random"                        \
-  --options "hVc:p:fsSdbva:it:F:B:PClrn" \
-  --name "$progname"                     \
-  -- "$@"                                \
+_opts=$(LC_ALL=C getopt                   \
+  --long "help"                           \
+  --long "version"                        \
+  --long "preset:"                        \
+  --long "list-presets"                   \
+  --long "char:"                          \
+  --long "space:"                         \
+  --long "small-seconds"                  \
+  --long "big-seconds"                    \
+  --long "date"                           \
+  --long "blink"                          \
+  --long "vertical"                       \
+  --long "alarm:"                         \
+  --long "signal"                         \
+  --long "timer:"                         \
+  --long "file:"                          \
+  --long "list-files"                     \
+  --long "foreground:"                    \
+  --long "background:"                    \
+  --long "list-colors"                    \
+  --long "rainbow"                        \
+  --long "random"                         \
+  --long "timezone"                       \
+  --options "hVc:p:fsSdbva:it:F:B:PClrnz" \
+  --name "$progname"                      \
+  -- "$@"                                 \
 ) || exit 1
 
 eval set -- "$_opts"
@@ -199,6 +201,7 @@ while :; do
     -s | --small-seconds) unset _SD; _sD=1; shift ;;
     -S | --big-seconds  ) unset _sD; _SD=1; shift ;;
     -d | --date         ) _DA=1; shift ;;
+    -z | --timezone     ) _TZ=1; shift ;;
     -b | --blink        ) _PB=1; shift ;;
     -v | --vertical     ) unset _PB; _VL=1; shift ;;
     -a | --alarm        ) _AA=1; shift; _AT="$1"; shift ;;
@@ -206,7 +209,7 @@ while :; do
     -t | --timer        ) _TA=1; shift; _TT="$1"; shift ;;
     -r | --rainbow      ) _RB=1; unset _RC _FG; shift ;;
     -n | --random       ) _RC=1; unset _RB _FG; shift ;;
-    -C | --list-colors  ) LIST_COLORS ;;
+    -C | --list-colors  ) LIST_COLORS; exit 0 ;;
 
     -c | --char)
       shift
@@ -463,9 +466,9 @@ set_alarm() {
         return 1
       }
     fi
-    AT="$(date -d "$_AT" "+%s" 2> /dev/null)" || return 1
+    __AT="$(date -d "$_AT" "+%s" 2> /dev/null)" || return 1
     _T="$(date "+%s")"
-    ((AT<_T)) && ((AT+=86400))
+    ((__AT<_T)) && ((__AT+=86400))
     unset _T
     return 0
   }
@@ -507,24 +510,28 @@ to_hms() {
   printf "%02d:  :%02d:%02d:%02d:%s:%s:%s:%s" "$H" "$H" "$M" "$S" "$(date "+%s")" "$W" "$D" "$m"
 }
 
-if [[ $_AA ]]; then set_alarm || EXIT_CLOCK "invalid alarm time"; fi
-if [[ $_TA ]]; then set_timer || EXIT_CLOCK "invalid timer duration"; fi
+if [[ $_AA ]]; then set_alarm || { __err "invalid alarm time"; exit 1; }; fi
+if [[ $_AA ]]; then AT=$__AT; unset __AT; fi
+if [[ $_TA ]]; then set_timer || { __err "invalid timer duration"; exit 1; }; fi
 if [[ $_TT ]]; then activate_timer || EXIT_CLOCK "what ?"; fi
 
-_DF="+%I:%p:%H:%M:%S:%s:%a:%d:%m"
+_DF="+%I:%p:%H:%M:%S:%s:%a:%d:%m:%z"
 
 BACK_HD() {
   _HD=1
   unset _hd
   erase_hd
+  [[ $_AS && ! $AT ]] && unset _AT _AA
   [[ $_TS && $_TT == "00:00:00" ]] && unset _TT _TA
-  unset _AD _AS _TD _TS _DS _GD IA IT H1 H2 M1 M2 S1 S2 PB OT
+  unset _AD _AS _TD _TS _DS _GD IA IT IZ H1 H2 M1 M2 S1 S2 PB OT
 }
 
 DISPLAY_ALARM() {
   if [[ $_AD || $_AS ]]; then
-    _TIMEDATE="$(LC_TIME=C date -d "@$AT" "$_DF")" 2> /dev/null || { _HD=1; unset _AD _AS; return 1; }
+    ((a=__AT>0?__AT:AT))
+    _TIMEDATE="$(LC_TIME=C date -d "@$a" "$_DF")" 2> /dev/null || { _HD=1; unset _AD _AS IZ; return 1; }
     _s="$(date "+%s")"
+    unset a
     unset _GD
     unset _HD
     return 0
@@ -589,6 +596,7 @@ PARSE_TIME() {
   _M="${TIMEDATE[3]}"
   _S="${TIMEDATE[4]}"
   _s="${TIMEDATE[5]}"
+  _Z="${TIMEDATE[9]}"
   return 0
 }
 
@@ -616,8 +624,8 @@ PARSE_DATE() {
 }
 
 TOGGLE_SELECTION() {
-  [[ $AR ]]  && { play_sound key; unset AR IA; return 0; }
-  [[ $TR ]]  && { play_sound key; unset TR _TA _TD IT; _HD=1; return 0; }
+  [[ $AR ]]  && { play_sound key; unset AR RA AZ IA; return 0; }
+  [[ $TR ]]  && { play_sound key; unset TR RA _TA _TD IT IZ; _HD=1; return 0; }
   [[ $_AS ]] && {
     AT="$AC"
     _AT="$_AC"
@@ -626,7 +634,7 @@ TOGGLE_SELECTION() {
       _HD=1
       unset _hd
       erase_hd
-      unset _AS _DS _AA IA _GD H1 H2 M1 M2 PB OT
+      unset _AS _DS _AA IA IZ _GD H1 H2 M1 M2 PB OT
       play_sound key
     else
       AC="$AT"
@@ -635,7 +643,7 @@ TOGGLE_SELECTION() {
       _AA=1
       unset _hd
       erase_hd
-      unset _AS _DS AC IA _GD H1 H2 M1 M2 PB OT
+      unset _AS _DS AC IA IZ _GD H1 H2 M1 M2 PB OT
       play_sound key
     fi
     return 0
@@ -648,7 +656,7 @@ TOGGLE_SELECTION() {
       _HD=1
       unset _hd
       erase_hd
-      unset _TS _DS _TA TC IT _GD H1 H2 M1 M2 S1 S2 OT
+      unset _TS _DS _TA TC IT IZ _GD H1 H2 M1 M2 S1 S2 OT
       play_sound key
     else
       TC="$TT"
@@ -657,7 +665,7 @@ TOGGLE_SELECTION() {
       _AT=1
       unset _hd
       erase_hd
-      unset _TS _DS IT _GD H1 H2 M1 M2 S1 S2 OT
+      unset _TS _DS IT IZ _GD H1 H2 M1 M2 S1 S2 OT
       play_sound key
     fi
     return 0
@@ -665,16 +673,17 @@ TOGGLE_SELECTION() {
   [[ $_HD && $_AA ]] && { play_sound key; _AD=1; _hd=1; unset _HD IA PB; return 0; }
   [[ $_AD && $_TA ]] && { play_sound key; _TD=1; _hd=1; unset _AD _GD PB IA IT S1 S2; return 0; }
   [[ $_HD && $_TA ]] && { play_sound key; _TD=1; _hd=1; unset _HD IT S1 S2; return 0; }
-  [[ $_AD ]] && { play_sound key; _HD=1; unset _AD _GD IA PB _hd OT; erase_hd; return 0; }
-  [[ $_TD ]] && { play_sound key; _HD=1; unset _TD _GD IT _hd OT; erase_hd; return 0; }
+  [[ $_AD ]] && { play_sound key; _HD=1; unset _AD _GD IA IZ PB _hd OT; erase_hd; return 0; }
+  [[ $_TD ]] && { play_sound key; _HD=1; unset _TD _GD IT IZ _hd OT; erase_hd; return 0; }
 }
 
 TOGGLE_ALARM() {
   if [[ $_AS ]]; then
+    AT=$__AT
     _HD=1
     unset _hd
     erase_hd
-    unset AC _AS _DS IA _GD PB H1 H2 M1 M2 OT
+    unset AC _AS _DS __AT IA IZ _GD PB H1 H2 M1 M2 OT
     play_sound confirm
     return 0
   elif [[ $_HD ]]; then
@@ -692,7 +701,7 @@ TOGGLE_ALARM() {
       return 0
     }
     if [[ $_AA ]]; then
-      unset _AA IA
+      unset _AA IA RA AZ
       play_sound key
       return 0
     else
@@ -717,7 +726,7 @@ TOGGLE_TIMER() {
     _HD=1
     unset _hd
     erase_hd
-    unset TC _TS _DS IT H1 H2 M1 M2 S1 S2 OT
+    unset TC _TS _DS IT IZ H1 H2 M1 M2 S1 S2 OT
     if [[ ! $_TT || $_TT == "00:00:00" ]]; then
       unset _TA _TT TT TL IT
       play_sound key
@@ -857,6 +866,7 @@ print_hd() {
   fi
   [[ $OT != "$NT" ]] && {
     tput cup $((_y+DH)) $((_x))
+    tput el
     [[ $_RB || $_RC ]] && rnd_color
     echo "$NT" | print_rainbow
     OT="$NT"
@@ -864,6 +874,18 @@ print_hd() {
   }
   return 1
 }
+
+print_tz() {
+  [[ ! $_TZ ]] && return 1
+  [[ ! $_HD ]] && return 1
+  [[ $IZ ]] && return 1
+  tput cup $((_y+DH)) $((_x))
+  [[ $_RB || $_RC ]] && rnd_color
+  echo "$_Z" | print_rainbow
+  IZ=1
+  return 0
+}
+
 
 erase_hd() {
   tput cup $((_y+DH)) $((_x)); tput el
@@ -898,6 +920,10 @@ splash() {
   fi
   sleep 0.25
   play_sound welcome
+  sleep 1
+  tput cup $((__y)) $((__x))
+  [[ ! $_VL ]] && tput el
+  [[ $_VL ]] && tput el1
 }
 
 ### INIT SCREEN
@@ -911,10 +937,12 @@ stty -echo -icanon time 0 min 0
 ((_y=(TERMH-CLOCKH)/2))
 ((_x=(TERMW-CLOCKW)/2))
 
-splash; sleep 1
 
 tput clear
 
+splash
+
+tput clear
 
 trap 'EXIT_CLOCK "-- interrupted by user"' INT QUIT
 trap REDRAW_CLOCK WINCH
@@ -956,7 +984,7 @@ while :; do
 
   # DEBUG
   # tput cup 0 0; tput el
-  # printf "_AA:%s _AT:%s AT:%s _AD:%s _AS:%s _DS:%s" "${_AA:-"-"}" "${_AT:-"--:--:--"}" "${AT:-"-"}" "${_AD:-"-"}" "${_AS:-"-"}" "${_DS:-"-"}"
+  # printf "_AA:%s _AT:%s AT:%s __AT:%s _AD:%s _AS:%s _DS:%s" "${_AA:-"-"}" "${_AT:-"--:--:--"}" "${AT:-"-"}" "${__AT:-"-"}" "${_AD:-"-"}" "${_AS:-"-"}" "${_DS:-"-"}"
   # tput cup 1 0; tput el
   # printf "_TA:%s _TT:%s TT:%s TL:%s _TD:%s _TS:%s _DS:%s" "${_TA:-"-"}" "${_TT:-"--:--:--"}" "${TT:-"-"}" "${TL:-"-"}" "${_TD:-"-"}" "${_TS:-"-"}" "${_DS:-"-"}"
   # tput cup 2 0; tput el
@@ -979,9 +1007,9 @@ while :; do
   s1=${_S:0:1}
   s2=${_S:1:1}
 
-  # beep
-  [[ ! $AR && ! $_AD && ! $_AS && ! $TR && ! $_TD && ! $_TS && $_HTSA && $_M == "00" && $_S == "00" ]] \
-      && play_sound beep
+  [[ $AR && $RA -gt 60 ]] && { unset AR RA IA; AZ=1; }
+  [[ $TR && $RA -gt 15 ]] && { unset TR RA _TA _TD IT IZ; _HD=1; }
+  [[ $AZ ]] && { ((AZ==300)) && { AR=1; RA=0; unset IA AZ; }; }
 
   # alarm
   [[ $_AA && ! $_AD && ! $_AS ]] && [[ $AT == "$_s" ]] && {
@@ -992,14 +1020,22 @@ while :; do
     # set new alarm for tomorrow
     ((AT+=86400))
     AR=1
+    RA=0
     unset IA
   } 
+
+  # beep
+  [[ ! $AR && ! $_AD && ! $_AS && ! $TR && ! $_TD && ! $_TS && $_HTSA && $_M == "00" && $_S == "00" ]] \
+      && play_sound beep
 
   # timer
   [[ $_TA && $TL == 0 ]] && { TR=1; unset IT; }
 
-  [[ $AR ]] && [[ $IDX == 0 ]] && play_sound alarm
-  [[ $TR ]] && [[ $IDX == 0 ]] && play_sound timer
+  [[ $AR ]] && [[ $IDX == 0 ]] && { play_sound alarm; }
+  [[ $TR ]] && [[ $IDX == 0 ]] && { play_sound timer; }
+  [[ $AR ]] && ((RA++))
+  [[ $TR ]] && ((RA++))
+  [[ $AZ ]] && ((AZ++))
 
   y=$_y x=$_x
   
@@ -1008,13 +1044,13 @@ while :; do
     if [[ $_AA ]]; then
       [[ $_RB || $_RC ]] && rnd_color
       tput cup $((y+1)) $((x-4))
-      [[ $AR && $IDX == 0 ]] && { echo " a " | print_rainbow; unset IA; }
+      [[ $AR && $IDX == 0 ]] && { echo " a!" | print_rainbow; unset IA; }
       [[ $AR && $IDX == 1 ]] && { echo "   " | print_rainbow; unset IA; }
       if [[ ! $AR ]]; then
         if [[ $_AD ]]; then
-          echo " A " | print_rainbow
+          echo ">a " | print_rainbow
         elif [[ $_AS ]]; then
-          echo "[A]" | print_rainbow
+          echo " a>" | print_rainbow
         else
           echo " a " | print_rainbow
         fi
@@ -1032,13 +1068,13 @@ while :; do
     if [[ $_TA ]]; then
       [[ $_RB || $_RC ]] && rnd_color
       tput cup $((y+2)) $((x-4))
-      [[ $TR && $IDX == 0 ]] && { echo " t " | print_rainbow;  unset IT; }
+      [[ $TR && $IDX == 0 ]] && { echo " t!" | print_rainbow;  unset IT; }
       [[ $TR && $IDX == 1 ]] && { echo "   "; unset IT; }
       if [[ ! $TR ]]; then
         if [[ $_TD ]]; then
-          echo " T " | print_rainbow
+          echo ">t " | print_rainbow
         elif [[ $_TS ]]; then
-          echo "[T]" | print_rainbow
+          echo " t>" | print_rainbow
         else
           echo " t " | print_rainbow
         fi
@@ -1054,20 +1090,20 @@ while :; do
 
   ## HOURLY TIME SIGNAL INDICATOR
   [[ ! $IH ]] && {
-    tput cup $((y)) $((x-4))
+    tput cup $((y)) $((x-3))
     if [[ $_HTSA ]]; then
       [[ $_RB || $_RC ]] && rnd_color
-      echo " s " | print_rainbow
+      echo "s" | print_rainbow
       IH=1
     else
-      printf "   "
+      printf " "
       IH=1
     fi
   }
 
   ## SMALL TIME
   [[ $_RB || $_RC ]] && rnd_color
-  print_hd 
+  print_hd || print_tz
 
   [[ $date != "$DATE" ]] && {
     if [[ $_VL ]]; then

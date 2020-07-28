@@ -61,28 +61,29 @@ bigtime [option value...option value]
 
 OPTIONS:
 
-* -c, --char "char"        - character for digits (default is ∎)
-* -p, --space "char"       - character for whitespaces (default is " ")
-* -f                       - display time in 24h format
-* -s, --small-seconds      - show seconds (normal size)
-* -S, --big-seconds        - show seconds (big size)
-* -d, --date               - show date
-* -F, --foreground [0..n]  - set foreground color
-* -B, --background [0..n]  - set background color
-* -r, --rainbow            - rainbow effect
-* -n, --random             - random colors effect
-* -C, --list-colors        - print available colors
-* -b, --blink              - blinking separators
-* -a, --alarm [time]       - set daily alarm
-* -t, --timer [duration]   - set timer (format: [H]H:MM[:SS])
-* -i, --signal             - activate hourly time signal
-* -v, --vertical           - display clock vertically
-* --file [filename]        - use a custom digits file (filename only)
-* -l, --list-files         - print available digits files
-* --preset [0..n]          - use predefined characters (override -c and -p options)
-* -P, --list-presets       - print available presets
-* -h, --help               - print this help message and exit
-* -V, --version            - print program's version and exit
+* -c, --char "CHAR"        - character for digits (default is ∎).
+* -p, --space "CHAR"       - character for whitespaces (default is " ").
+* -f                       - display time in 24h format.
+* -s, --small-seconds      - show seconds (normal size).
+* -S, --big-seconds        - show seconds (big size).
+* -d, --date               - show date.
+* -z, --timezone           - show timezone (i.e. +0200).
+* -F, --foreground 0..N    - set foreground color.
+* -B, --background 0..N    - set background color.
+* -r, --rainbow            - rainbow effect (override -n and -F options).
+* -n, --random             - random colors effect (override -r and -F options).
+* -C, --list-colors        - print available colors and exit.
+* -b, --blink              - blinking separators.
+* -a, --alarm [time]       - set daily alarm.
+* -t, --timer [duration]   - set timer (format: [H]H:MM[:SS]).
+* -i, --signal             - activate hourly time signal.
+* -v, --vertical           - display clock vertically.
+* --file [filename]        - use a custom digits file (filename only).
+* -l, --list-files         - print available digits files and exit.
+* --preset [0..n]          - use predefined characters (override -c and -p options).
+* -P, --list-presets       - print available presets and exit.
+* -h, --help               - print this help message and exit.
+* -V, --version            - print program's version and exit.
 
 ## 4. Alarm
 
@@ -126,7 +127,6 @@ When done, press <kbd>t</kbd> to confirm.
 
 Or press <kbd>space</kbd> to cancel.
 
-
 ## 6. Key bindings
 
 * <kbd>a</kbd>     - toggle daily alarm; set / confirm new alarm
@@ -140,13 +140,18 @@ Or press <kbd>space</kbd> to cancel.
 * <kbd>R</kbd>     - refresh screen
 * <kbd>space</kbd> - toggle display mode / stop alarm/timer / cancel (alarm/timer setting mode)
 
-## 7. Custom digits file
+## 7. Timezone
+
+To display the time for a different timezone:  
+```TZ=Europe/Paris bigtime```
+
+## 8. Custom digits file
 
 Basically a digit file contains instructions on how to draw digits on the screen.  
 They have the *.digits* extension and must be stored in **bigtime** configuration  
 directory: `$HOME/.config/bigtime`
 
-### 7.1 Size
+### 8.1 Size
 
 All digits must have the same size (in characters) which is defined as follow:  
 `height=5`  
@@ -155,7 +160,7 @@ All digits must have the same size (in characters) which is defined as follow:
 The separator can have a different width but must have the same height as digits:  
 `sep_width=1`
 
-### 7.2 Digits, separator and blank
+### 8.2 Digits, separator and blank
 
 They are sequences of 0s and 1s, for instance:  
 
@@ -173,7 +178,7 @@ By default, **bigtime** replaces 0 by whitespace and 1 by ∎.
 Characters and spaces can be hardcoded as well, i.e:  
 `0=@@@@@;@@_@@;@@_@@;@@_@@;@@@@@`
 
-### 7.3 Example: narrow.digits file
+### 8.3 Example: narrow.digits file
 
 ```
 width=3
@@ -192,7 +197,18 @@ sep_width=1
 separator=0;0;0;0;1
 blank=0;0;0;0;0
 ```
-## 8. Changelog
+## 9. Changelog
+
+### Version 20200728-1.2.1
+
+* Automatic snooze: after 1 minute, alarm stops and the clock enter snooze mode.  
+Alarm will sound again after 5 minutes. Snooze mode is deactivated only if <kbd>space</kbd>  
+is explicitly pressed, if alarm is disabled or if a new alarm is set.
+* In alarm/timer display/setting mode, go back to time display after a period of inactivity.
+* Changed alarm and timer indicators.
+* Added timezone (+0000 format).
+* rainbow and random mode are mutually exclusive.
+* Changed default digits file.
 
 ### Version 20200727-1.2
 

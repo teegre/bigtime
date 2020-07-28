@@ -1,4 +1,4 @@
-.TH BIGTIME 1 20200727\-1.2 Linux "User Manuals"
+.TH BIGTIME 1 20200728\-1.2.1 Linux "User Manuals"
 .SH NAME
 \fB\fCbigtime\fR \- customizable clock for the terminal
 .SH SYNOPSIS
@@ -16,17 +16,17 @@ Character for digits (default is "∎").
 \fB\-p\fR, \fB\-\-space\fR \fI\,"char"\/\fR
 Character for whitespaces (default is " ").
 .TP
-\fB\-F\fR, \fB\-\-foreground\fR \fI\,0..n\/\fR
-Set foreground color.
+\fB\-F\fR, \fB\-\-foreground\fR \fI\,0..N\/\fR
+Set foreground color (override \fB\-n\fR and \fB\-r\fR options).
 .TP
-\fB\-B\fR, \fB\-\-background\fR \fI\,0..n\/\fR
+\fB\-B\fR, \fB\-\-background\fR \fI\,0..N\/\fR
 Set background color.
 .TP
 \fB\-r\fR, \fB\-\-rainbow\fR
-Rainbow effect.
+Rainbow effect (override \fB\-n\fR and \fB\-F\fR options).
 .TP
 \fB\-n\fR, \fB\-\-random\fR
-Random colors.
+Random colors (override \fB\-r\fR and \fB\-F\fR options).
 .TP
 \fB\-C\fR, \fB\-\-list-colors\fR
 Print available colors and exit.
@@ -42,6 +42,9 @@ Show seconds (big size).
 .TP
 \fB\-d\fR, \fB\-\-date\fR
 Show date.
+.TP
+\fB\-z\fR, \fB\-\-timezone\fR
+Show timezone (i.e. +0200).
 .TP
 \fB\-b\fR, \fB\-\-blink\fR
 Enable blinking separators.
@@ -141,4 +144,3 @@ Written by Stéphane Meyer (Teegre).
 License MIT.
 .br
 This is free software provided \fBAS IS\fR with \fBNO WARRANTY\fR. Feel free to change and redistribute.
-

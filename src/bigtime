@@ -12,24 +12,27 @@ progname="$(basename "$0")"
 PROGNAME="${progname^^}"
 VERSION="20200728-1.2.1"
 
-CONFIG_PATH="$HOME/.config/bigtime"
-DIGITS_DEFAULT_FILE="$CONFIG_PATH/standard.digits"
-WELCOME_SOUND="$CONFIG_PATH/welcome.wav"
-BEEP_SOUND="$CONFIG_PATH/beep.wav"
-ALARM_SOUND="$CONFIG_PATH/alarm.wav"
-TIMER_SOUND="$CONFIG_PATH/timer.wav"
-KEY_SOUND="$CONFIG_PATH/key.wav"
-DIGIT_SOUND="$CONFIG_PATH/digit.wav"
-YES_SOUND="$CONFIG_PATH/confirm.wav"
-ERROR_SOUND="$CONFIG_PATH/error.wav"
-QUIT_SOUND="$CONFIG_PATH/quit.wav"
+CONFIG_PATH="/etc/bigtime"
+DIGITS_PATH="$CONFIG_PATH/digits"
+CUSTOM_DIGITS_PATH="$HOME/.config/bigtime"
+SND_PATH="$CONFIG_PATH/snd"
+DIGITS_DEFAULT_FILE="$DIGITS_PATH/standard.digits"
+WELCOME_SOUND="$SND_PATH/welcome.wav"
+BEEP_SOUND="$SND_PATH/beep.wav"
+ALARM_SOUND="$SND_PATH/alarm.wav"
+TIMER_SOUND="$SND_PATH/timer.wav"
+KEY_SOUND="$SND_PATH/key.wav"
+DIGIT_SOUND="$SND_PATH/digit.wav"
+YES_SOUND="$SND_PATH/confirm.wav"
+ERROR_SOUND="$SND_PATH/error.wav"
+QUIT_SOUND="$SND_PATH/quit.wav"
 
 TERMH="$(tput lines)"
 TERMW="$(tput cols)"
 
 COLORS="$(tput colors)"
 
-# color list taken from c version of lolcat <https://github.com/jaseg/lolcat/blob/master/lolcat.c>
+# color list taken from C version of lolcat <https://github.com/jaseg/lolcat/blob/master/lolcat.c>
 RBC=(39 38 44 43 49 48 84 83 119 118 154 148 184 178 214 208 209 203 204 198 199 163 164 128 129 93 99 63 69 33)
 
 ((COLOR_IDX=RANDOM%(${#RBC[@]}-1)))
@@ -154,11 +157,6 @@ LIST_COLORS() {
   echo
 }
 
-! [[ -a "$DIGITS_DEFAULT_FILE" ]] && {
-  __err "error: $DIGITS_DEFAULT_FILE not found"
-  exit 1
-}
-
 # options
 
 _opts=$(LC_ALL=C getopt                   \
@@ -232,14 +230,21 @@ while :; do
     --file)
       shift
       [[ $1 =~ \.digits$ ]] && _FILE="$1" || _FILE="$1.digits"
-      ! [[ -a "$CONFIG_PATH/$_FILE" ]] && {
+      if [[ ! -a "$DIGITS_PATH/$_FILE" ]] && [[ ! -a "$CUSTOM_DIGITS_PATH/$_FILE" ]]; then
         __err "error: --file $_FILE not found"
         exit 1
-      } || _FILE="$CONFIG_PATH/$_FILE"
+      else
+        [[ -a "$DIGITS_PATH/$_FILE" ]] && _FILE="$DIGITS_PATH/$_FILE" || \
+          _FILE="$CUSTOM_DIGITS_PATH/$_FILE"
+      fi
       shift
       ;;
     -l | --list-files)
-      find "$CONFIG_PATH" -name "*.digits"
+      files="$( (
+        find "$DIGITS_PATH" -name "*.digits" 2> /dev/null 
+        find "$CUSTOM_DIGITS_PATH" -name "*.digits" 2> /dev/null) )"
+      [[ ! $files ]] && { __err "error: no digits file found"; exit 1; }
+      echo -e "$files"
       exit 0
       ;;
     --preset)
@@ -303,6 +308,13 @@ while :; do
   esac
 done
 
+! [[ -a "$DIGITS_DEFAULT_FILE" ]] && {
+  __err "error: $DIGITS_DEFAULT_FILE not found"
+  exit 1
+}
+
+_FILE="${_FILE:-$DIGITS_DEFAULT_FILE}"
+
 read_option() {
   local file option
   file="$_FILE"
@@ -321,8 +333,6 @@ read_option() {
   echo "null"
   return 1
 }
-
-_FILE="${_FILE:-$DIGITS_DEFAULT_FILE}"
 
 DH="$(read_option "height")"    || { __err "error: $_FILE: missing 'height' value"; exit 1; }
 DW="$(read_option "width")"     || { __err "error: $_FILE: missing 'width' value"; exit 1; }
@@ -510,9 +520,9 @@ to_hms() {
   printf "%02d:  :%02d:%02d:%02d:%s:%s:%s:%s" "$H" "$H" "$M" "$S" "$(date "+%s")" "$W" "$D" "$m"
 }
 
-if [[ $_AA ]]; then set_alarm || { __err "invalid alarm time"; exit 1; }; fi
+if [[ $_AA ]]; then set_alarm || { __err "error: invalid alarm time"; exit 1; }; fi
 if [[ $_AA ]]; then AT=$__AT; unset __AT; fi
-if [[ $_TA ]]; then set_timer || { __err "invalid timer duration"; exit 1; }; fi
+if [[ $_TA ]]; then set_timer || { __err "error: invalid timer duration"; exit 1; }; fi
 if [[ $_TT ]]; then activate_timer || EXIT_CLOCK "what ?"; fi
 
 _DF="+%I:%p:%H:%M:%S:%s:%a:%d:%m:%z"

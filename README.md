@@ -6,7 +6,7 @@
 
 *depends on: bash, coreutils, ncurses, alsa-utils*
 
-## Table of Contents
+# Table of Contents
 
 * [INSTALLATION](#installation)
 * [DISPLAY](#display)
@@ -15,6 +15,7 @@
 * [TIMER](#timer)
 * [KEY BINDINGS](#key-bindings)
 * [DIGITS FILE](#digits-file)
+* [UNINSTALL](#uninstall)
 * [CHANGELOG](#changelog)
 
 
@@ -26,7 +27,7 @@
 
 ## Install **bigtime**
 
-`./install.sh`
+`make install`
 
 # DISPLAY <a name="display"></a>
 
@@ -164,7 +165,7 @@ To display the time for a different timezone:
 
 Basically a digit file contains instructions on how to draw digits on the screen.  
 They have the *.digits* extension and must be stored in **bigtime** configuration  
-directory: `$HOME/.config/bigtime`
+directory: `$HOME/.config/bigtime/digits`
 
 ## Size
 
@@ -189,7 +190,7 @@ They are sequences of 0s and 1s, for instance:
 represents digit 0, and it is stored as:  
 `0=11111;11011;11011;11011;11111`
 
-By default, **bigtime** replaces 0 by whitespace and 1 by ∎.  
+By default, **bigtime** replaces 0 by whitespace and 1 by "∎".  
 Characters and spaces can be hardcoded as well, i.e:  
 `0=@@@@@;@@_@@;@@_@@;@@_@@;@@@@@`
 
@@ -212,6 +213,13 @@ sep_width=1
 separator=0;0;0;0;1
 blank=0;0;0;0;0
 ```
+
+**You can find more examples in /etc/bigtime/digits directory**
+
+# UNINSTALL <a name="uninstall"></a>
+
+`make uninstall`
+
 # CHANGELOG <a name="changelog"></a>
 
 ## Version 20200728-1.2.1
@@ -224,6 +232,7 @@ is explicitly pressed, if alarm is disabled or if a new alarm is set.
 * Added timezone (+0000 format).
 * rainbow and random mode are mutually exclusive.
 * Changed default digits file.
+* New installation process.
 
 ## Version 20200727-1.2
 

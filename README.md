@@ -1,4 +1,4 @@
-# **bigtime**
+# ***-BiGTiME-***
 
 ![screenshot](screenshot.png)
 
@@ -6,58 +6,73 @@
 
 *depends on: bash, coreutils, ncurses, alsa-utils*
 
-## 1. Installation
+## Table of Contents
 
-### 1.1 Clone this repository:
+* [INSTALLATION](#installation)
+* [DISPLAY](#display)
+* [USAGE](#usage)
+* [ALARM](#alarm)
+* [TIMER](#timer)
+* [KEY BINDINGS](#key-bindings)
+* [DIGITS FILE](#digits-file)
+* [CHANGELOG](#changelog)
+
+
+# INSTALLATION <a name="installation"></a>
+
+## Clone this repository:
 
 `git clone https://github.com/teegre/bigtime.git`
 
-### 1.2 Install **bigtime**
+## Install **bigtime**
 
 `./install.sh`
 
-## 2. Display
+# DISPLAY <a name="display"></a>
 
 *Vertical display with date and small seconds:*  
 `bigtime -dsv`  
 ```
-∎∎∎∎∎ ∎∎∎∎∎ SA
-∎∎ ∎∎ ∎∎ ∎∎ 07
-∎∎ ∎∎ ∎∎∎∎∎ 25
-∎∎ ∎∎ ∎∎ ∎∎
-∎∎∎∎∎ ∎∎∎∎∎ PM
+ ∎∎∎  ∎∎∎∎∎ TU
+∎   ∎     ∎ 07
+∎ ∎ ∎    ∎  28
+∎   ∎   ∎
+ ∎∎∎   ∎    PM
 
-∎∎ ∎∎ ∎∎ ∎∎
-∎∎ ∎∎ ∎∎ ∎∎
-∎∎∎∎∎ ∎∎∎∎∎
-   ∎∎    ∎∎
-   ∎∎    ∎∎ 13
+∎∎∎∎   ∎∎∎
+∎     ∎   ∎
+∎∎∎∎     ∎
+    ∎   ∎
+∎∎∎∎  ∎∎∎∎∎ 46
 ```
 
 *Horizontal display with big seconds:*  
-`bigtime -S`
+`bigtime -S`  
 ```
-∎∎∎∎∎ ∎∎∎∎∎    ∎∎ ∎∎ ∎∎∎∎∎    ∎∎ ∎∎ ∎∎∎∎∎
-∎∎ ∎∎ ∎∎ ∎∎ ∎∎ ∎∎ ∎∎ ∎∎ ∎∎ ∎∎ ∎∎ ∎∎ ∎∎
-∎∎ ∎∎ ∎∎∎∎∎    ∎∎∎∎∎ ∎∎∎∎∎    ∎∎∎∎∎ ∎∎∎∎∎
-∎∎ ∎∎ ∎∎ ∎∎ ∎∎    ∎∎ ∎∎ ∎∎ ∎∎    ∎∎    ∎∎
-∎∎∎∎∎ ∎∎∎∎∎       ∎∎ ∎∎∎∎∎       ∎∎ ∎∎∎∎∎ PM
+ ∎∎∎  ∎∎∎∎∎     ∎∎∎∎    ∎         ∎     ∎
+∎   ∎     ∎     ∎      ∎∎        ∎∎    ∎
+∎ ∎ ∎    ∎      ∎∎∎∎    ∎         ∎   ∎∎∎∎
+∎   ∎   ∎    ∎      ∎   ∎    ∎    ∎   ∎   ∎
+ ∎∎∎   ∎     ∎  ∎∎∎∎   ∎∎∎   ∎   ∎∎∎   ∎∎∎  PM
+
 ```
 
-### 2.1 Indicators
+## Indicators
 Indicator are displayed on the left hand side of the clock:
 
-* s   - hourly time signal
-* a   - daily alarm
-* t   - timer
-* A - alarm display mode
-* [A] - alarm setting mode
-* T - timer display mode
-* [T] - timer setting mode
+* `s`  - hourly time signal activated.
+* `a`  - daily alarm activated.
+* `t`  - timer activated.
+* `>a` - alarm display mode.
+* `a<` - alarm setting mode.
+* `a!` - alarm is ringing.
+* `>t` - timer display mode.
+* `t<` - timer setting mode.
+* `t!` - timer is ringing.
 
-## 3. Usage
+## USAGE <a name="usage"></a>
 
-bigtime [option value...option value]
+bigtime [OPTION [VALUE] ... OPTION [VALUE]]
 
 OPTIONS:
 
@@ -85,9 +100,9 @@ OPTIONS:
 * -h, --help               - print this help message and exit.
 * -V, --version            - print program's version and exit.
 
-## 4. Alarm
+# ALARM <a name="alarm"></a>
 
-### 4.1 From the command line
+## From the command line
 To set a daily alarm starting tomorrow at 7:00 AM:  
 `bigtime --alarm "7:00 tomorrow"`
 
@@ -97,7 +112,7 @@ To test the alarm :
 Press <kbd>space</kbd> to stop the alarm.  
 It will then be set for the next day.
 
-### 4.2 From within the application
+## From within the application
 
 Press <kbd>a</kbd> to set a new alarm.  
 To modify an existing alarm, press <kbd>space</kbd> and <kbd>a</kbd>.  
@@ -109,13 +124,13 @@ When done, press <kbd>a</kbd> to enable the alarm.
 
 Or press <kbd>space</kbd> to cancel.
 
-## 5 Timer
+# TIMER <a name="timer"></a>
 
-### 5.1 From the command line
+## From the command line
 To set a 3 minutes and 30 seconds timer:  
 `bigtime --timer "0:03:30"`
 
-### 5.2 From within the application
+## From within the application
 
 Press <kbd>t</kbd> to set a new timer.  
 To modify an existing timer, press <kbd>space</kbd> (twice if an alarm is set) and <kbd>t</kbd>.  
@@ -127,7 +142,7 @@ When done, press <kbd>t</kbd> to confirm.
 
 Or press <kbd>space</kbd> to cancel.
 
-## 6. Key bindings
+# KEY BINDINGS <a name="key-bindings"></a>
 
 * <kbd>a</kbd>     - toggle daily alarm; set / confirm new alarm
 * <kbd>h</kbd>     - toggle hourly time signal
@@ -140,18 +155,18 @@ Or press <kbd>space</kbd> to cancel.
 * <kbd>R</kbd>     - refresh screen
 * <kbd>space</kbd> - toggle display mode / stop alarm/timer / cancel (alarm/timer setting mode)
 
-## 7. Timezone
+# TIMEZONE <a name="timezone"></a>
 
 To display the time for a different timezone:  
 ```TZ=Europe/Paris bigtime```
 
-## 8. Custom digits file
+# DIGITS FILE <a name="digits-file"></a>
 
 Basically a digit file contains instructions on how to draw digits on the screen.  
 They have the *.digits* extension and must be stored in **bigtime** configuration  
 directory: `$HOME/.config/bigtime`
 
-### 8.1 Size
+## Size
 
 All digits must have the same size (in characters) which is defined as follow:  
 `height=5`  
@@ -160,7 +175,7 @@ All digits must have the same size (in characters) which is defined as follow:
 The separator can have a different width but must have the same height as digits:  
 `sep_width=1`
 
-### 8.2 Digits, separator and blank
+## Digits, separator and blank
 
 They are sequences of 0s and 1s, for instance:  
 
@@ -178,7 +193,7 @@ By default, **bigtime** replaces 0 by whitespace and 1 by ∎.
 Characters and spaces can be hardcoded as well, i.e:  
 `0=@@@@@;@@_@@;@@_@@;@@_@@;@@@@@`
 
-### 8.3 Example: narrow.digits file
+## Example: narrow.digits file
 
 ```
 width=3
@@ -197,9 +212,9 @@ sep_width=1
 separator=0;0;0;0;1
 blank=0;0;0;0;0
 ```
-## 9. Changelog
+# CHANGELOG <a name="changelog"></a>
 
-### Version 20200728-1.2.1
+## Version 20200728-1.2.1
 
 * Automatic snooze: after 1 minute, alarm stops and the clock enter snooze mode.  
 Alarm will sound again after 5 minutes. Snooze mode is deactivated only if <kbd>space</kbd>  
@@ -210,16 +225,16 @@ is explicitly pressed, if alarm is disabled or if a new alarm is set.
 * rainbow and random mode are mutually exclusive.
 * Changed default digits file.
 
-### Version 20200727-1.2
+## Version 20200727-1.2
 
 * New rainbow and random effects.
 * Fixed minor bugs
 
-### Version 20200725-1.1
+## Version 20200725-1.1
 
 * Added a little splash screen.
 
-### Version 20200725-1.0
+## Version 20200725-1.0
 
 * Complete rewrite
 * Added timer

@@ -204,7 +204,7 @@ while :; do
     -a | --alarm        ) _AA=1; shift; _AT="$1"; shift ;;
     -i | --signal       ) _HTSA=1; shift ;;
     -t | --timer        ) _TA=1; shift; _TT="$1"; shift ;;
-    -r | --rainbow      ) _RB=1; unset _FG; shift ;;
+    -r | --rainbow      ) _RB=1; unset _RC _FG; shift ;;
     -n | --random       ) _RC=1; unset _RB _FG; shift ;;
     -C | --list-colors  ) LIST_COLORS ;;
 
@@ -332,7 +332,7 @@ _CHR="${_CHR:-"∎"}"
 
 ### DIGITS
 ### dynamically declare an array for each digit (_D1, _D1... _D9)
-### where 1s are replaces par _CHR and 0s by _SPC
+### where 1s are replaced par _CHR and 0s by _SPC
 for ((i=0;i<10;i++)); do
   digit="$(read_option "$i")" || { __err "error: $_FILE: digit $i is missing"; return 1; }
   IFS=$'\n' read -d "" -ra digit <<< "${digit//$';'/$'\n'}"
@@ -870,40 +870,31 @@ erase_hd() {
 }
 
 splash() {
-  local y x
+  local __y __x
   if [[ ! $_VL ]]; then
     local logo="-BiGTiME-"
-    ((y=(TERMH-1)/2))
-    ((x=(TERMW-${#logo})/2))
-    tput cup $((y)) $((x))
+    ((__y=(TERMH-1)/2))
+    ((__x=(TERMW-${#logo})/2))
+    tput cup $((__y)) $((__x))
     [[ $_RB || $_RC ]] && rnd_color
     echo "$logo" | print_rainbow
   else
-    local l1 l2 l3 l4 l5 l6
-    l1="B"; l2="i"; l3="G"; l4="T"; l5="M"; l6="E"
-    ((y=(TERMH-7)/2))
-    ((x=(TERMW-1)/2))
+    local l1 l2 l3 l4
+    l1="Bi"; l2="-G"; l3="Ti"; l4="ME"
+    ((__y=(TERMH-4)/2))
+    ((__x=(TERMW-2)/2))
     [[ $_RB || $_RC ]] && rnd_color
-    tput cup $((y)) $((x))
+    tput cup $((__y)) $((__x))
     echo "$l1" | print_rainbow
     [[ $_RB || $_RC ]] && rnd_color
-    tput cup $((y+1)) $((x))
-    echo "$l2" | print_rainbow
+    tput cup $((__y+1)) $((__x))
+    echo $"$l2" | print_rainbow
     [[ $_RB || $_RC ]] && rnd_color
-    tput cup $((y+2)) $((x))
+    tput cup $((__y+2)) $((__x))
     echo "$l3" | print_rainbow
     [[ $_RB || $_RC ]] && rnd_color
-    tput cup $((y+3)) $((x))
+    tput cup $((__y+3)) $((__x))
     echo "$l4" | print_rainbow
-    [[ $_RB || $_RC ]] && rnd_color
-    tput cup $((y+4)) $((x))
-    echo "$l2" | print_rainbow
-    [[ $_RB || $_RC ]] && rnd_color
-    tput cup $((y+5)) $((x))
-    echo "$l5" | print_rainbow
-    [[ $_RB || $_RC ]] && rnd_color
-    tput cup $((y+6)) $((x))
-    echo "$l6" | print_rainbow
   fi
   sleep 0.25
   play_sound welcome
@@ -956,17 +947,7 @@ while :; do
   
   [[ $_REDRAW == 1 ]] && continue
 
-  # TIME and DATE
-  # index | description
-  # 0     | hour (01..12)
-  # 1     | AM or PM
-  # 2     | hour (00..23)
-  # 3     | minute (00..59)
-  # 4     | second (00..59)
-  # 5     | seconds since the epoch
-  # 6     | abbr. weekday name
-  # 7     | day of month (01..31)
-  # 8     | month (01..12)
+  _sync
 
   DISPLAY_ALARM || DISPLAY_TIMER || DISPLAY_TIME
   TIMER_ELAPSED_TIME
@@ -997,8 +978,6 @@ while :; do
   m2=${_M:1:1}
   s1=${_S:0:1}
   s2=${_S:1:1}
-
-  _sync
 
   # beep
   [[ ! $AR && ! $_AD && ! $_AS && ! $TR && ! $_TD && ! $_TS && $_HTSA && $_M == "00" && $_S == "00" ]] \

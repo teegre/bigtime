@@ -211,19 +211,25 @@ while :; do
 
     -c | --char)
       shift
-      [[ ${#1} != 1 ]] && {
+      if [[ ! $1 =~ [[:alnum:]] ]]; then
+        __err "error: --char should be alphanumeric"
+        exit 1
+      elif [[ ${#1} != 1 ]]; then
         __err "error: --char should be 1 character"
         exit 1
-      }
+      fi
       _CHR="$1"
       shift
       ;;
     -p | --space)
       shift
-      [[ ${#1} != 1 ]] && {
+      if [[ ! $1 =~ [[:alnum:]] ]]; then
+        __err "error: --space should be alphanumeric"
+        exit 1
+      elif [[ ${#1} != 1 ]]; then
         __err "error: --space should be 1 character"
         exit 1
-      }
+      fi
       _SPC="$1"
       shift
       ;;
@@ -370,7 +376,7 @@ for option in "${options[@]}"; do
   # replace 0s and 1s
   for ((i=0;i<DH;i++)); do
     # check whether width matches declared one
-    ((${#opt[$i]}!=SW)) &&{ __err -u "error: $option, width mismatch: col $((i+1))"; exit 1; }
+    ((${#opt[$i]}!=SW)) &&{ __err -u "error: $option: width mismatch: col $((i+1))"; exit 1; }
     opt[$i]=${opt[$i]//0/"$_SPC"}
     opt[$i]=${opt[$i]//1/"$_CHR"}
     case "$option" in
@@ -1025,7 +1031,7 @@ while :; do
   [[ $_AA && ! $_AD && ! $_AS ]] && [[ $AT == "$_s" ]] && {
     [[ $_FM ]] && time="$(date -d "@$AT" "+%x - %X")" \
       || time="$(LC_TIME=C date -d "@$AT" "+%x - %I:%M:%S %p")"
-    notify-send -u critical "$PROGNAME" "Alarm: $time"
+    notify-send -u critical "$PROGNAME" "Alarm: $time" 2> /dev/null
     unset time
     # set new alarm for tomorrow
     ((AT+=86400))

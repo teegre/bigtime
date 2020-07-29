@@ -18,6 +18,7 @@
 * [UNINSTALL](#uninstall)
 * [CHANGELOG](#changelog)
 
+![screencast](bigtime.gif)
 
 # INSTALLATION <a name="installation"></a>
 
@@ -92,13 +93,13 @@ OPTIONS:
 * -n, --random             - random colors effect (override -r and -F options).
 * -C, --list-colors        - print available colors and exit.
 * -b, --blink              - blinking separators.
-* -a, --alarm [time]       - set daily alarm.
-* -t, --timer [duration]   - set timer (format: [H]H:MM[:SS]).
+* -a, --alarm TIME         - set daily alarm.
+* -t, --timer DURATION     - set timer (format: [H]H:MM[:SS]).
 * -i, --signal             - activate hourly time signal.
 * -v, --vertical           - display clock vertically.
-* --file [filename]        - use a custom digits file (filename only).
+* --file FILENAME          - use a custom digits file (filename only).
 * -l, --list-files         - print available digits files and exit.
-* --preset [0..n]          - use predefined characters (override -c and -p options).
+* --preset 0..N            - use predefined characters (override -c and -p options).
 * -P, --list-presets       - print available presets and exit.
 * -h, --help               - print this help message and exit.
 * -V, --version            - print program's version and exit.
@@ -166,8 +167,6 @@ To display the time for a different timezone:
 # DIGITS FILE <a name="digits-file"></a>
 
 Basically a digit file contains instructions on how to draw digits on the screen.  
-They have the *.digits* extension and must be stored in **bigtime** configuration  
-directory: `$HOME/.config/bigtime/digits`
 
 ## Size
 
@@ -217,6 +216,9 @@ blank=0;0;0;0;0
 ```
 
 **You can find more examples in /etc/bigtime/digits directory**
+
+Custom digits files must be stored in **bigtime** configuration directory:  
+`$HOME/.config/bigtime`
 
 # UNINSTALL <a name="uninstall"></a>
 

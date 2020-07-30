@@ -10,12 +10,13 @@
 
 progname="$(basename "$0")"
 PROGNAME="${progname^^}"
-VERSION="20200728-1.2.1"
+VERSION="20200730-1.2.2"
 
 CONFIG_PATH="/etc/bigtime"
 DIGITS_PATH="$CONFIG_PATH/digits"
 CUSTOM_DIGITS_PATH="$HOME/.config/bigtime"
 SND_PATH="$CONFIG_PATH/snd"
+ICN_PATH="$CONFIG_PATH/icn"
 DIGITS_DEFAULT_FILE="$DIGITS_PATH/standard.digits"
 WELCOME_SOUND="$SND_PATH/welcome.wav"
 BEEP_SOUND="$SND_PATH/beep.wav"
@@ -26,6 +27,10 @@ DIGIT_SOUND="$SND_PATH/digit.wav"
 YES_SOUND="$SND_PATH/confirm.wav"
 ERROR_SOUND="$SND_PATH/error.wav"
 QUIT_SOUND="$SND_PATH/quit.wav"
+ALARM_ICN="$ICN_PATH/alarm.png"
+TIMER_ICN="$ICN_PATH/timer.png"
+
+
 
 TERMH="$(tput lines)"
 TERMW="$(tput cols)"
@@ -838,9 +843,9 @@ SELECT_DIGIT() {
 
 DIGIT_INPUT() {
   ! [[ $_AS || $_TS ]] && return 1
-  local CA
+  local CA CT
   [[ $_AS ]] && CA="$_AT"
-  [[ $_TS ]] && CA="$_TT"
+  [[ $_TS ]] && CT="$_TT"
   local offset
   case $_DS in
     [0-1]) ((offset=_DS)) ;;
@@ -1011,7 +1016,7 @@ while :; do
   # printf "_PB:%s PB:%s" "$_PB" "$PB"
 
   # change terminal title
-  [[ $_T != "$_M" ]] && { _T="$_M"; echo -ne "\033]0;bigtime: $_H:$_M $_p\007"; }
+  [[ $_T != "$_M $_p" ]] && { _T="$_M $_p"; echo -ne "\033]0;bigtime: $_H:$_M $_p\007"; }
 
   # blink
   ((_s % 2 == 0)) && IDX=0 || IDX=1
@@ -1031,7 +1036,7 @@ while :; do
   [[ $_AA && ! $_AD && ! $_AS ]] && [[ $AT == "$_s" ]] && {
     [[ $_FM ]] && time="$(date -d "@$AT" "+%x - %X")" \
       || time="$(LC_TIME=C date -d "@$AT" "+%x - %I:%M:%S %p")"
-    notify-send -u critical "$PROGNAME" "Alarm: $time" 2> /dev/null
+    notify-send -u critical -i "$ALARM_ICN" "$PROGNAME" "$time" 2> /dev/null
     unset time
     # set new alarm for tomorrow
     ((AT+=86400))
@@ -1045,7 +1050,10 @@ while :; do
       && play_sound beep
 
   # timer
-  [[ $_TA && $TL == 0 ]] && { TR=1; unset IT; }
+  [[ $_TA && $TL == 0 ]] && {
+    notify-send -t 10000 -i "$TIMER_ICN" "$PROGNAME" "Time out" 2> /dev/null
+    TR=1; unset IT;
+  }
 
   [[ $AR ]] && [[ $IDX == 0 ]] && { play_sound alarm; }
   [[ $TR ]] && [[ $IDX == 0 ]] && { play_sound timer; }

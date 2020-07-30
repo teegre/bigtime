@@ -226,6 +226,15 @@ Custom digits files must be stored in **bigtime** configuration directory:
 
 # CHANGELOG <a name="changelog"></a>
 
+## Version 20200730-1.2.2
+
+* Terminal title now updates correctly.
+* **-c** and **-p** options only accept 1 alphanumeric character.
+* Fixed bug where it was not possible to set timer after entering a wrong digit.
+* When timed out, now display a notification.
+* Added icons to notifications.
+* Animated GIF added to **README.md**.
+
 ## Version 20200728-1.2.1
 
 * Automatic snooze: after 1 minute, alarm stops and the clock enter snooze mode.  

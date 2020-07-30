@@ -517,7 +517,7 @@ activate_timer() {
 }
 
 reset_timer() {
-  [[ $_TS ]] && { unset _TT TT IT; return 0; }
+  [[ $_TS ]] && { _TT="00:00:00"; unset TT IT; return 0; }
   return 1
 }
 

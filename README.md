@@ -8,6 +8,7 @@
 
 # Table of Contents
 
+* [INSPIRATION](#inspiration)
 * [INSTALLATION](#installation)
 * [DISPLAY](#display)
 * [USAGE](#usage)
@@ -19,6 +20,17 @@
 * [CHANGELOG](#changelog)
 
 ![screencast](bigtime.gif)
+
+# INSPIRATION <a name "inspiration"></a>
+
+## The Concept
+![watch](watch.jpg)
+## The Sound
+![gameboy](gameboy.jpg)
+## The Colors
+![nyancat](nyancat.jpg)
+## The Name
+[Pater Gabriel: Big Time](https://invidio.us/watch?v=PBAl9cchQac)
 
 # INSTALLATION <a name="installation"></a>
 
@@ -230,10 +242,11 @@ Custom digits files must be stored in **bigtime** configuration directory:
 
 * Terminal title now updates correctly.
 * **-c** and **-p** options only accept 1 alphanumeric character.
-* Fixed bug where it was not possible to set timer after entering a wrong digit.
+* Fixed bug: set timer after entering a wrong digit.
+* Fixed bug: set timer after a reset.
 * When timed out, now display a notification.
 * Added icons to notifications.
-* Animated GIF added to **README.md**.
+* Inspiration section, some pictures and animated GIF added to **README.md**.
 
 ## Version 20200728-1.2.1
 

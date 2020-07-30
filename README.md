@@ -30,7 +30,7 @@
 ## The Colors
 ![nyancat](nyancat.jpg)
 ## The Name
-[Pater Gabriel: Big Time](https://invidio.us/watch?v=PBAl9cchQac)
+[Peter Gabriel: Big Time](https://invidio.us/watch?v=PBAl9cchQac)
 
 # INSTALLATION <a name="installation"></a>
 

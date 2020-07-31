@@ -17,6 +17,7 @@
 * [KEY BINDINGS](#key-bindings)
 * [DIGITS FILE](#digits-file)
 * [UNINSTALL](#uninstall)
+* [CREDITS](#credits)
 * [CHANGELOG](#changelog)
 
 ![screencast](bigtime.gif)
@@ -34,13 +35,13 @@
 
 # INSTALLATION <a name="installation"></a>
 
+You can find **bigtime** in the [Arch User Repository](https://aur.archlinux.org/packages/bigtime).
+
 ## Clone this repository:
 
 `git clone https://github.com/teegre/bigtime.git`
 
 ## Install **bigtime**
-
-You can find **bigtime** in the [Arch User Repository](https://aur.archlinux.org/packages/bigtime).
 
 `make install`
 
@@ -76,15 +77,16 @@ You can find **bigtime** in the [Arch User Repository](https://aur.archlinux.org
 ## Indicators
 Indicator are displayed on the left hand side of the clock:
 
-* `s`  - hourly time signal activated.
-* `a`  - daily alarm activated.
-* `t`  - timer activated.
-* `>a` - alarm display mode.
-* `a<` - alarm setting mode.
-* `a!` - alarm is ringing.
-* `>t` - timer display mode.
-* `t<` - timer setting mode.
-* `t!` - timer is ringing.
+* `s`   - hourly time signal activated.
+* `a`   - daily alarm activated.
+* `t`   - timer activated.
+* `>a`  - alarm display mode.
+* `a<`  - alarm setting mode.
+* `a!`  - alarm is ringing.
+* `Zzz` - alarm snooze mode.
+* `>t`  - timer display mode.
+* `t<`  - timer setting mode.
+* `t!`  - timer is ringing.
 
 ## USAGE <a name="usage"></a>
 
@@ -92,12 +94,10 @@ bigtime [OPTION [VALUE] ... OPTION [VALUE]]
 
 OPTIONS:
 
-* -c, --char "CHAR"        - character for digits (default is ∎).
-* -p, --space "CHAR"       - character for whitespaces (default is " ").
-* -f                       - display time in 24h format.
 * -s, --small-seconds      - show seconds (normal size).
 * -S, --big-seconds        - show seconds (big size).
 * -d, --date               - show date.
+* -f                       - display time in 24h format.
 * -z, --timezone           - show timezone (i.e. +0200).
 * -F, --foreground 0..N    - set foreground color.
 * -B, --background 0..N    - set background color.
@@ -105,28 +105,26 @@ OPTIONS:
 * -n, --random             - random colors effect (override -r and -F options).
 * -C, --list-colors        - print available colors and exit.
 * -b, --blink              - blinking separators.
-* -a, --alarm TIME         - set daily alarm.
-* -t, --timer DURATION     - set timer (format: [H]H:MM[:SS]).
+* -a, --alarm TIME         - set daily alarm (TIME format: [H]H:MM[ AM|am|PM|pm])
+* -t, --timer DURATION     - set timer (DURATION format: [H]H:MM[:SS]).
 * -i, --signal             - activate hourly time signal.
 * -v, --vertical           - display clock vertically.
 * --file FILENAME          - use a custom digits file (filename only).
+* -w, --preview            - (with --file) display a preview of the selected file and exit.
 * -l, --list-files         - print available digits files and exit.
-* --preset 0..N            - use predefined characters (override -c and -p options).
-* -P, --list-presets       - print available presets and exit.
 * -h, --help               - print this help message and exit.
 * -V, --version            - print program's version and exit.
 
-# ALARM <a name="alarm"></a>
+# ![alarm](icn/alarm.png) ALARM <a name="alarm"></a>
 
 ## From the command line
-To set a daily alarm starting tomorrow at 7:00 AM:  
-`bigtime --alarm "7:00 tomorrow"`
+To set a daily alarm starting at 7:00 AM:  
+`bigtime --alarm "7:00 AM"`
 
-To test the alarm :  
+To test the alarm (actually don't set an alarm):  
 `bigtime --alarm "now"`
 
 Press <kbd>space</kbd> to stop the alarm.  
-It will then be set for the next day.
 
 ## From within the application
 
@@ -140,7 +138,7 @@ When done, press <kbd>a</kbd> to enable the alarm.
 
 Or press <kbd>space</kbd> to cancel.
 
-# TIMER <a name="timer"></a>
+# ![timer](icn/timer.png) TIMER <a name="timer"></a>
 
 ## From the command line
 To set a 3 minutes and 30 seconds timer:  
@@ -178,65 +176,87 @@ To display the time for a different timezone:
 
 # DIGITS FILE <a name="digits-file"></a>
 
-Basically a digit file contains instructions on how to draw digits on the screen.  
+In a nutshell, a *digits file* is a text file with the **.digits** extension.  
+It contains instructions on how to draw digits on the screen.
 
-## Size
+Digits are sequences of 0s and 1s.
 
-All digits must have the same size (in characters) which is defined as follow:  
-`height=5`  
-`width=5`
-
-The separator can have a different width but must have the same height as digits:  
-`sep_width=1`
-
-## Digits, separator and blank
-
-They are sequences of 0s and 1s, for instance:  
+Global settings for digits and separator sizes are defined as follow:
 
 ```
-11111
-11011
-11011
-11011
-11111
-```  
-represents digit 0, and it is stored as:  
-`0=11111;11011;11011;11011;11111`
-
-By default, **bigtime** replaces 0 by whitespace and 1 by "∎".  
-Characters and spaces can be hardcoded as well, i.e:  
-`0=@@@@@;@@_@@;@@_@@;@@_@@;@@@@@`
-
-## Example: narrow.digits file
-
-```
-width=3
 height=5
+width=5
 sep_width=1
-0=111;101;101;101;111
-1=110;010;010;010;010
-2=111;001;111;100;111
-3=111;001;111;001;111
-4=101;101;111;001;001
-5=111;100;111;001;111
-6=111;100;111;101;111
-7=111;001;001;001;001
-8=111;101;111;101;111
-9=111;101;111;001;111
-separator=0;0;0;0;1
+```
+By default, when **bigtime** parses a file, 0s are replaced by whitespaces and 1s by "∎".  
+But one can define characters as shown below:
+
+```
+char=@
+space=-
+```
+
+Digits and separator are defined by a semicolon separated list, as follow:
+
+```
+0=11111;11011;11011;11011;11111
+...
+9=11111;11011;11111;00011;11111
+separator=0;1;0;1;0
 blank=0;0;0;0;0
 ```
+With the characters defined earlier, this:
 
-**You can find more examples in /etc/bigtime/digits directory**
+```
+11111
+11011
+11011
+11011
+11111
+```
+
+Becomes this:
+
+```
+@@@@@
+@@-@@
+@@-@@
+@@-@@
+@@@@@
+```
+
+So far, so good...
+**You can find more examples in "/etc/bigtime/digits" directory**
 
 Custom digits files must be stored in **bigtime** configuration directory:  
 `$HOME/.config/bigtime`
+
+**Note**: Whenever **bigtime** encounters a mistake in a **digits file**,  
+it will throw an error and a useful description.
 
 # UNINSTALL <a name="uninstall"></a>
 
 `make uninstall`
 
+# CREDITS <a name="credits"></a>
+
+* Sound effects made with the excellent [sfxr](http://www.drpetter.se/project_sfxr.html)
+* Icons taken from [Material Design Icons](https://materialdesignicons.com/)
+
 # CHANGELOG <a name="changelog"></a>
+
+## Version 20200731-1.2.3
+
+* Removed **--char**, **--space**, **--preset** and **--list-presets** options.
+* Added optional **char** and **space** settings for digits file.  
+**Bigtime** will use the default characters if these parameters are missing.
+* Stock digits files and documentation have been changed accordingly.
+* Added **--preview** option.
+* Improved alarm setting from the commandline.
+* Added snooze indicator.
+* Added lcd.digits.
+* Added cross.digits.
+* Added CREDITS section to README.md
 
 ## Version 20200730-1.2.2
 

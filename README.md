@@ -115,7 +115,7 @@ OPTIONS:
 * -h, --help               - print this help message and exit.
 * -V, --version            - print program's version and exit.
 
-# ![alarm](icn/alarm.png) ALARM <a name="alarm"></a>
+# ALARM <a name="alarm"></a>
 
 ## From the command line
 To set a daily alarm starting at 7:00 AM:  
@@ -138,7 +138,7 @@ When done, press <kbd>a</kbd> to enable the alarm.
 
 Or press <kbd>space</kbd> to cancel.
 
-# ![timer](icn/timer.png) TIMER <a name="timer"></a>
+# TIMER <a name="timer"></a>
 
 ## From the command line
 To set a 3 minutes and 30 seconds timer:  

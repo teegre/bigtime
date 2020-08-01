@@ -4,7 +4,7 @@
 
 **bigtime** is a customizable clock for the terminal, written in bash.
 
-*depends on: bash, coreutils, ncurses, alsa-utils, libnotify*
+*depends on: alsa-utils, bash, coreutils, libnotify, ncurses*
 
 # Table of Contents
 
@@ -253,7 +253,7 @@ it will throw an error and a useful description.
 * Fixed wrong character in some digits file.
 * Added **--quiet** option (disable sound, alarm, timer and hourly time signal)
 * From now on, timer cannot be less than 5 seconds.
-* Added libnotify depency.
+* Added libnotify dependency.
 
 ## Version 20200731-1.2.3
 

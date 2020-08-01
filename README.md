@@ -4,7 +4,7 @@
 
 **bigtime** is a customizable clock for the terminal, written in bash.
 
-*depends on: bash, coreutils, ncurses, alsa-utils*
+*depends on: bash, coreutils, ncurses, alsa-utils, libnotify*
 
 # Table of Contents
 
@@ -77,7 +77,7 @@ You can find **bigtime** in the [Arch User Repository](https://aur.archlinux.org
 ## Indicators
 Indicator are displayed on the left hand side of the clock:
 
-* `s`   - hourly time signal activated.
+* `×`   - hourly time signal activated.
 * `a`   - daily alarm activated.
 * `t`   - timer activated.
 * `>a`  - alarm display mode.
@@ -112,6 +112,7 @@ OPTIONS:
 * --file FILENAME          - use a custom digits file (filename only).
 * -w, --preview            - (with --file) display a preview of the selected file and exit.
 * -l, --list-files         - print available digits files and exit.
+* -q, --quiet              - disable sound, alarm, timer and hourly time signal.
 * -h, --help               - print this help message and exit.
 * -V, --version            - print program's version and exit.
 
@@ -158,16 +159,16 @@ Or press <kbd>space</kbd> to cancel.
 
 # KEY BINDINGS <a name="key-bindings"></a>
 
-* <kbd>a</kbd>     - toggle daily alarm; set / confirm new alarm
-* <kbd>h</kbd>     - toggle hourly time signal
-* <kbd>j</kbd>     - select next digit (alarm/timer setting mode)
-* <kbd>k</kbd>     - select previous digit (alarm/timer setting mode)
+* <kbd>a</kbd>     - toggle daily alarm; set/confirm new alarm; disable snooze mode.
+* <kbd>h</kbd>     - toggle hourly time signal.
+* <kbd>j</kbd>     - select next digit (setting mode)
+* <kbd>k</kbd>     - select previous digit (setting mode)
 * <kbd>p</kbd>     - toggle 24h format / toggle AM/PM (alarm setting mode)
 * <kbd>q</kbd>     - exit program
 * <kbd>r</kbd>     - reset timer (timer setting mode)
-* <kbd>t</kbd>     - toggle timer; set / confirm new timer
+* <kbd>t</kbd>     - toggle timer; set/confirm new timer
 * <kbd>R</kbd>     - refresh screen
-* <kbd>space</kbd> - toggle display mode / stop alarm/timer / cancel (alarm/timer setting mode)
+* <kbd>space</kbd> - toggle display mode; stop; cancel (setting mode)
 
 # TIMEZONE <a name="timezone"></a>
 
@@ -176,8 +177,8 @@ To display the time for a different timezone:
 
 # DIGITS FILE <a name="digits-file"></a>
 
-In a nutshell, a *digits file* is a text file with the **.digits** extension.  
-It contains instructions on how to draw digits on the screen.
+In a nutshell, a *digits file* is a text file with the **.digits** extension  
+that contains instructions on how to draw digits on the screen.
 
 Digits are sequences of 0s and 1s.
 
@@ -225,7 +226,7 @@ Becomes this:
 @@@@@
 ```
 
-So far, so good...
+So far, so good...  
 **You can find more examples in "/etc/bigtime/digits" directory**
 
 Custom digits files must be stored in **bigtime** configuration directory:  
@@ -244,6 +245,15 @@ it will throw an error and a useful description.
 * Icons taken from [Material Design Icons](https://materialdesignicons.com/)
 
 # CHANGELOG <a name="changelog"></a>
+
+## Version 20200801-1.2.4
+
+* Added **-l** option back.
+* Disable snooze mode with <kbd>a</kbd>.
+* Fixed wrong character in some digits file.
+* Added **--quiet** option (disable sound, alarm, timer and hourly time signal)
+* From now on, timer cannot be less than 5 seconds.
+* Added libnotify depency.
 
 ## Version 20200731-1.2.3
 

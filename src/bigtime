@@ -10,7 +10,7 @@
 
 progname="$(basename "$0")"
 PROGNAME="${progname^^}"
-VERSION="20200731-1.2.3"
+VERSION="20200801-1.2.4"
 
 CONFIG_PATH="/etc/bigtime"
 DIGITS_PATH="$CONFIG_PATH/digits"
@@ -29,8 +29,6 @@ ERROR_SOUND="$SND_PATH/error.wav"
 QUIT_SOUND="$SND_PATH/quit.wav"
 ALARM_ICN="$ICN_PATH/alarm.png"
 TIMER_ICN="$ICN_PATH/timer.png"
-
-
 
 TERMH="$(tput lines)"
 TERMW="$(tput cols)"
@@ -90,6 +88,8 @@ OPTIONS:
         Display a preview of --file and exit.
     -l, --list-files
         Print available digits files and exit.
+    -q, --quiet
+        Disable sound, alarm, timer, and hourly time signal.
     -h, --help
         Print this help message and exit
     -V, --version
@@ -179,29 +179,30 @@ LIST_COLORS() {
 
 # options
 
-_opts=$(LC_ALL=C getopt              \
-  --long "alarm:"                    \
-  --long "background:"               \
-  --long "big-seconds"               \
-  --long "blink"                     \
-  --long "date"                      \
-  --long "file:"                     \
-  --long "foreground:"               \
-  --long "help"                      \
-  --long "list-colors"               \
-  --long "list-files"                \
-  --long "preview"                   \
-  --long "version"                   \
-  --long "rainbow"                   \
-  --long "random"                    \
-  --long "signal"                    \
-  --long "small-seconds"             \
-  --long "timer:"                    \
-  --long "timezone"                  \
-  --long "vertical"                  \
-  --options "a:B:SbdfF:hCwVrnist:zv" \
-  --name "$progname"                 \
-  -- "$@"                            \
+_opts=$(LC_ALL=C getopt                \
+  --long "alarm:"                      \
+  --long "background:"                 \
+  --long "big-seconds"                 \
+  --long "blink"                       \
+  --long "date"                        \
+  --long "file:"                       \
+  --long "foreground:"                 \
+  --long "help"                        \
+  --long "list-colors"                 \
+  --long "list-files"                  \
+  --long "preview"                     \
+  --long "quiet"                       \
+  --long "version"                     \
+  --long "rainbow"                     \
+  --long "random"                      \
+  --long "signal"                      \
+  --long "small-seconds"               \
+  --long "timer:"                      \
+  --long "timezone"                    \
+  --long "vertical"                    \
+  --options "a:B:SbdfF:hClwqVrnist:zv" \
+  --name "$progname"                   \
+  -- "$@"                              \
 ) || exit 1
 
 eval set -- "$_opts"
@@ -219,11 +220,12 @@ while :; do
     -z | --timezone     ) _TZ=1; shift ;;
     -b | --blink        ) _PB=1; shift ;;
     -v | --vertical     ) unset _PB; _VL=1; shift ;;
-    -a | --alarm        ) _AA=1; shift; _AT="$1"; shift ;;
-    -i | --signal       ) _HTSA=1; shift ;;
-    -t | --timer        ) _TA=1; shift; _TT="$1"; shift ;;
+    -a | --alarm        ) [[ $_Q ]] && { shift 2; continue; }; _AA=1; shift; _AT="$1"; shift ;;
+    -i | --signal       ) [[ $_Q ]] && { shift; continue; }; _HTSA=1; shift ;;
+    -t | --timer        ) [[ $_Q ]] && { shift 2; continue; }; _TA=1; shift; _TT="$1"; shift ;;
     -r | --rainbow      ) _RB=1; unset _RC _FG; shift ;;
     -n | --random       ) _RC=1; unset _RB _FG; shift ;;
+    -q | --quiet        ) _Q=1; unset _AA _AT _TA _TT _HTSA; shift ;;
     -C | --list-colors  ) LIST_COLORS; exit 0 ;;
 
     --file)
@@ -481,6 +483,7 @@ PREVIEW_FILE() {
 [[ $_PV ]] && { PREVIEW_FILE; exit 0; }
 
 play_sound() {
+  [[ $_Q ]] && return
   which aplay > /dev/null && {
     case "$1" in
       welcome) aplay --quiet "$WELCOME_SOUND" & ;;
@@ -569,7 +572,7 @@ BACK_HD() {
   unset _hd
   erase_hd
   [[ $_AS && ! $AT ]] && unset _AT _AA
-  [[ $_TS && $_TT == "00:00:00" ]] && unset _TT _TA
+  [[ $_TS && $_TT == "00:00:00" ]] || [[ ! $_TOK ]] && unset _TT _TA
   unset _AD _AS _TD _TS _DS _GD IA IT IZ H1 H2 M1 M2 S1 S2 PB OT
 }
 
@@ -726,6 +729,8 @@ TOGGLE_SELECTION() {
 }
 
 TOGGLE_ALARM() {
+  [[ $_Q ]] && return 0
+  [[ $AZ ]] && { unset AZ IA; play_sound key; return 0; }
   if [[ $_AS ]]; then
     AT=$__AT
     _HD=1
@@ -770,15 +775,17 @@ TOGGLE_ALARM() {
 }
 
 TOGGLE_TIMER() {
+  [[ $_Q ]] && return 0
   if [[ $_TS ]]; then
     _HD=1
     unset _hd
     erase_hd
     unset TC _TS _DS IT IZ H1 H2 M1 M2 S1 S2 OT
-    if [[ ! $_TT || $_TT == "00:00:00" ]]; then
-      unset _TA _TT TT TL IT
+    if [[ ! $_TT || $_TT == "00:00:00" ]] || [[ $_TOK ]]; then
+      unset _TA _TT TT TL _TOK IT
       play_sound key
     else
+      _TOK=1
       play_sound confirm
       activate_timer
     fi
@@ -793,7 +800,7 @@ TOGGLE_TIMER() {
       _TS=1
       _DS=0
       _hd=1
-      unset _HD IT H1
+      unset _HD IT _TOK H1
       play_sound key
       return 0
     }
@@ -805,6 +812,7 @@ TOGGLE_TIMER() {
       _TA=1
       unset IT
       activate_timer || { play_sound error; return 1; }
+      _TOK=1
       play_sound key
       return 0
     fi
@@ -813,7 +821,7 @@ TOGGLE_TIMER() {
     _TC="$_TT"
     _TS=1
     _DS=0
-    unset _TD IT TT H1
+    unset _TD IT TT _TOK H1 S2
     play_sound key
     return 0
   fi
@@ -843,6 +851,7 @@ TOGGLE_AMPM() {
 }
 
 TOGGLE_HTS() {
+  [[ $_Q ]] && return 0
   [[ $_AD || $_AS || $_TD || $_TS ]] && return 1
   if [[ $_HTSA ]]; then
     unset _HTSA
@@ -871,6 +880,7 @@ SELECT_DIGIT() {
 DIGIT_INPUT() {
   ! [[ $_AS || $_TS ]] && return 1
   local CA CT
+  local _d="$1"
   [[ $_AS ]] && CA="$_AT"
   [[ $_TS ]] && CT="$_TT"
   local offset
@@ -880,7 +890,7 @@ DIGIT_INPUT() {
     [4-5]) ((offset=_DS+2)) ;;
   esac
   [[ $_AS ]] && {
-    _AT="${_AT:0:$((offset))}$1${_AT:$((offset+1))}"
+      _AT="${_AT:0:$((offset))}${_d}${_AT:$((offset+1))}"
     if set_alarm; then
       SELECT_DIGIT next
     else
@@ -892,7 +902,8 @@ DIGIT_INPUT() {
     return 0
   }
   [[ $_TS ]] && {
-    _TT="${_TT:0:$((offset))}$1${_TT:$((offset+1))}"
+    [[ ${_TT:0:7} == "00:00:0" ]] && ((_DS==5)) && ((_d<5)) && _d=5
+    _TT="${_TT:0:$((offset))}${_d}${_TT:$((offset+1))}"
     if set_timer; then
       SELECT_DIGIT next
     else
@@ -1033,8 +1044,8 @@ while :; do
   # DEBUG
   # tput cup 0 0; tput el
   # printf "_AA:%s _AT:%s AT:%s __AT:%s _AD:%s _AS:%s _DS:%s" "${_AA:-"-"}" "${_AT:-"--:--:--"}" "${AT:-"-"}" "${__AT:-"-"}" "${_AD:-"-"}" "${_AS:-"-"}" "${_DS:-"-"}"
-  # tput cup 1 0; tput el
-  # printf "_TA:%s _TT:%s TT:%s TL:%s _TD:%s _TS:%s _DS:%s" "${_TA:-"-"}" "${_TT:-"--:--:--"}" "${TT:-"-"}" "${TL:-"-"}" "${_TD:-"-"}" "${_TS:-"-"}" "${_DS:-"-"}"
+  tput cup 1 0; tput el
+  printf "_TA:%s _TT:%s TT:%s TL:%s _TD:%s _TS:%s _DS:%s" "${_TA:-"-"}" "${_TT:-"--:--:--"}" "${TT:-"-"}" "${TL:-"-"}" "${_TD:-"-"}" "${_TS:-"-"}" "${_DS:-"-"}"
   # tput cup 2 0; tput el
   # printf "_TIMEDATE:%s" "$_TIMEDATE"
   # tput cup 3 0; tput el
@@ -1147,7 +1158,7 @@ while :; do
     tput cup $((y)) $((x-3))
     if [[ $_HTSA ]]; then
       [[ $_RB || $_RC ]] && rnd_color
-      echo "s" | print_rainbow
+      echo "×" | print_rainbow
       IH=1
     else
       printf " "

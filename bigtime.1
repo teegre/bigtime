@@ -1,4 +1,4 @@
-.TH BIGTIME 1 20200731\-1.2.3 Linux "User Manuals"
+.TH BIGTIME 1 20200801\-1.2.4 Linux "User Manuals"
 .SH NAME
 \fB\fCbigtime\fR \- customizable clock for the terminal
 .SH SYNOPSIS
@@ -73,6 +73,9 @@ and then in "$HOME/.config/bigtime" directory.
 \fB\-l\fR, \fB\-\-list\-files\fR
 Print available digits files and exit.
 .TP
+\fB\-q\fR, \fB-\-quiet\fR
+Disable sound, alarm, timer and hourly time signal.
+.TP
 \fB\-h\fR, \fB-\-help\fR
 Print this help and exit.
 .TP
@@ -110,9 +113,9 @@ Toggle timer; set/confirm new timer.
 space
 Toggle display mode (alarm, timer and then time); stop alarm/timer; cancel alarm/timer (setting mode).
 .SH DIGITS FILES
-In a nutshell, a \fBdigits file\fR is a text file with the \fB.digits\fR extension.
+In a nutshell, a \fBdigits file\fR is a text file with the \fB.digits\fR extension
 .br
-It contains instructions on how to draw digits on the screen.
+that contains instructions on how to draw digits on the screen.
 .TP
 Digits are sequences of 0s and 1s.
 
@@ -133,7 +136,7 @@ sep_width=1
 .EE
 
 .TQ
-By default, when **bigtime** parses a file, 0s are replaced by whitespaces and 1s by "∎".
+By default, when \fBbigtime\fR parses a file, 0s are replaced by whitespaces and 1s by "∎".
 .TQ
 But one can define characters as shown below:
 
@@ -215,7 +218,7 @@ So far, so good...
 \fBYou can find more examples in\fR "\fI/etc/bigtime/digits\fR" \fBdirectory\fR
 
 .TQ
-Custom digits files must be stored in **bigtime** configuration directory:
+Custom digits files must be stored in \fBbigtime*\fR configuration directory:
 "\fI$HOME/.config/bigtime\fR"
 
 .TQ

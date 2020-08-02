@@ -10,7 +10,7 @@
 
 progname="$(basename "$0")"
 PROGNAME="${progname^^}"
-VERSION="20200801-1.2.4"
+VERSION="20200802-1.2.4.2"
 
 CONFIG_PATH="/etc/bigtime"
 DIGITS_PATH="$CONFIG_PATH/digits"
@@ -121,8 +121,9 @@ CLOCK_SIZE() {
     ((height=DH))
     ((width=DW*4+SW+4))
     [[ $_SD ]] && ((width+=DW*2+SW+3))
+    [[ $_TZ ]] && ((height+=1))
   else
-    ((height=DH*2+1))
+    ((height=DH*2+2))
     ((width=DW*2+2))
     [[ $_SD ]] && ((height+=DH))
   fi
@@ -151,7 +152,23 @@ REDRAW_CLOCK() {
   _REDRAW=0
 }
 
+quit_animation() {
+  _REDRAW=1
+  for ((i=_y-1;i<_y+CLOCKH;i++)); do
+    tput cup $((i)) $((_x-3))
+    tput el
+    if [[ ! $_VL ]]; then
+      sleep 0.0625
+    else
+      sleep 0.03125
+    fi
+  done
+  sleep 0.5.5.5.5.5
+  _REDRAW=0
+}
+
 EXIT_CLOCK() {
+  [[ $1 == "Q" ]] && { quit_animation; shift; }
   tput cnorm
   tput rmcup
   stty sane
@@ -323,6 +340,14 @@ DH="$(read_option "height")"    || { __err "error: $_FILE: missing 'height' valu
 DW="$(read_option "width")"     || { __err "error: $_FILE: missing 'width' value"; exit 1; }
 SW="$(read_option "sep_width")" || { __err "error: $_FILE: missing 'sep_width' value"; exit 1; }
 
+_vl="$(read_option "layout")"
+if [[ $_vl == "vertical" ]]; then
+  _VL=1
+elif [[ $_vl == "horizontal" ]]; then
+  unset _VL
+fi
+set _vl
+
 CLOCK_SIZE || { __err "error: clock doesn't fit"; exit 1; }
 
 _chr="$(read_option "char")"
@@ -372,27 +397,29 @@ for ((i=0;i<10;i++)); do
 done
 
 ### SEPARATOR & BLANK
-options=("separator" "blank")
-for option in "${options[@]}"; do
-  opt="$(read_option "$option")"
-  [[ $opt == "null" ]] && { __err -u "error: $_FILE: missing $option"; exit 1; }
-  IFS=$'\n' read -d "" -ra opt <<< "${opt//$';'/$'\n'}"
-  # check whether height matches declared one
-  ((${#opt[@]}!=DH)) && { __err -u "error: $option: height not equal to $DH"; exit 1; }
-  # replace 0s and 1s
-  for ((i=0;i<DH;i++)); do
-    # check whether width matches declared one
-    ((${#opt[$i]}!=SW)) &&{ __err -u "error: $option: width not equal to $SW: col $((i+1))"; exit 1; }
-    opt[$i]=${opt[$i]//0/"$_SPC"}
-    opt[$i]=${opt[$i]//1/"$_CHR"}
-    case "$option" in
-      separator) declare -a "_P+=(\"${opt[$i]}\")" ;;
-      blank    ) declare -a "_W+=(\"${opt[$i]}\")"
-    esac
+[[ ! $_VL ]] && {
+  options=("separator" "blank")
+  for option in "${options[@]}"; do
+    opt="$(read_option "$option")"
+    [[ $opt == "null" ]] && { __err -u "error: $_FILE: missing $option"; exit 1; }
+    IFS=$'\n' read -d "" -ra opt <<< "${opt//$';'/$'\n'}"
+    # check whether height matches declared one
+    ((${#opt[@]}!=DH)) && { __err -u "error: $option: height not equal to $DH"; exit 1; }
+    # replace 0s and 1s
+    for ((i=0;i<DH;i++)); do
+      # check whether width matches declared one
+      ((${#opt[$i]}!=SW)) &&{ __err -u "error: $option: width not equal to $SW: col $((i+1))"; exit 1; }
+      opt[$i]=${opt[$i]//0/"$_SPC"}
+      opt[$i]=${opt[$i]//1/"$_CHR"}
+      case "$option" in
+        separator) declare -a "_P+=(\"${opt[$i]}\")" ;;
+        blank    ) declare -a "_W+=(\"${opt[$i]}\")"
+      esac
+    done
+    unset opt
   done
-  unset opt
-done
-unset options
+  unset options
+}
 
 # whenever several instances of bigtime are running
 # this is a hack to synchronize them...
@@ -402,7 +429,7 @@ _sync() {
   while ((n!=0)); do
     N="$(date "+%N")"
     n=${N:0:1}
-    sleep 0.05
+    sleep 0.0625
   done
 }
 
@@ -1018,7 +1045,7 @@ while :; do
     a    ) TOGGLE_ALARM ;;
     h    ) TOGGLE_HTS ;;
     p    ) TOGGLE_AMPM ;;
-    q    ) play_sound quit; EXIT_CLOCK ;;
+    q    ) play_sound quit; EXIT_CLOCK "Q" ;;
     R    ) play_sound key; REDRAW_CLOCK ;;
     r    ) reset_timer && play_sound key ;;
     t    ) TOGGLE_TIMER ;;

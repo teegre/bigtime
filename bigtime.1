@@ -1,4 +1,4 @@
-.TH BIGTIME 1 20200801\-1.2.4 Linux "User Manuals"
+.TH BIGTIME 1 20200802\-1.2.4.2 Linux "User Manuals"
 .SH NAME
 \fB\fCbigtime\fR \- customizable clock for the terminal
 .SH SYNOPSIS
@@ -84,7 +84,7 @@ Print version information and exit.
 .SH KEY BINDINGS
 .TP
 a
-Toggle daily alarm; set/confirm new alarm.
+Toggle daily alarm; set/confirm new alarm; disable \fBsnooze\fR mode.
 .TP
 h
 Toggle hourly time signal.
@@ -112,6 +112,12 @@ Toggle timer; set/confirm new timer.
 .TP
 space
 Toggle display mode (alarm, timer and then time); stop alarm/timer; cancel alarm/timer (setting mode).
+.SH TIMEZONE
+To display the time for a different timezone, simply prepend \fBTZ\fR environment variable when invoking \fBbigtime\fR.
+
+.br
+.B
+TZ=Europe/Paris bigtime
 .SH DIGITS FILES
 In a nutshell, a \fBdigits file\fR is a text file with the \fB.digits\fR extension
 .br
@@ -128,12 +134,35 @@ Global settings for digits and separator sizes are defined as follow:
 height=5
 .br
 .B
-width=5
+,,width=5
 .br
 .B
 sep_width=1
 .br
 .EE
+
+.TQ
+The \fIlayout\fR optional parameter can be used to force the clock to display in a particular layout.
+
+.EX
+.br
+.B
+layout=horizontal
+.br
+.EE
+
+.TQ
+Or
+
+.EX
+.br
+.B
+layout=vertical
+.br
+.EE
+
+.TQ
+If this parameter is omitted, horizontal mode is the default unless \fB\-\-vertical\fR option is used.
 
 .TQ
 By default, when \fBbigtime\fR parses a file, 0s are replaced by whitespaces and 1s by "∎".
@@ -218,7 +247,7 @@ So far, so good...
 \fBYou can find more examples in\fR "\fI/etc/bigtime/digits\fR" \fBdirectory\fR
 
 .TQ
-Custom digits files must be stored in \fBbigtime*\fR configuration directory:
+Custom digits files must be stored in \fBbigtime\fR configuration directory:
 "\fI$HOME/.config/bigtime\fR"
 
 .TQ

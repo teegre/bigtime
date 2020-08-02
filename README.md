@@ -159,7 +159,7 @@ Or press <kbd>space</kbd> to cancel.
 
 # KEY BINDINGS <a name="key-bindings"></a>
 
-* <kbd>a</kbd>     - toggle daily alarm; set/confirm new alarm; disable snooze mode.
+* <kbd>a</kbd>     - toggle daily alarm; set/confirm new alarm; disable **snooze** mode.
 * <kbd>h</kbd>     - toggle hourly time signal.
 * <kbd>j</kbd>     - select next digit (setting mode)
 * <kbd>k</kbd>     - select previous digit (setting mode)
@@ -182,13 +182,21 @@ that contains instructions on how to draw digits on the screen.
 
 Digits are sequences of 0s and 1s.
 
-Global settings for digits and separator sizes are defined as follow:
+Global settings for digits and separator are defined as follow:
 
 ```
 height=5
 width=5
 sep_width=1
 ```
+The **layout** optional parameter can be used to force the clock to display in a particular layout.
+
+`layout=horizontal`  
+Or  
+`layout=vertical`
+
+If this parameter is omitted, horizontal mode is the default unless **--vertical** option is used.
+
 By default, when **bigtime** parses a file, 0s are replaced by whitespaces and 1s by "∎".  
 But one can define characters as shown below:
 
@@ -246,7 +254,13 @@ it will throw an error and a useful description.
 
 # CHANGELOG <a name="changelog"></a>
 
-## Version 20200801-1.2.4
+## Version 20200802-1.2.4.2
+
+* Added optional **layout** setting to digits file.  
+* Added simple animation when quitting **bigtime**.
+* Added **lcd2.digits**.
+
+## Version 20200801-1.2.4.1
 
 * Added **-l** option back.
 * Disable snooze mode with <kbd>a</kbd>.

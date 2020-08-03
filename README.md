@@ -254,6 +254,10 @@ it will throw an error and a useful description.
 
 # CHANGELOG <a name="changelog"></a>
 
+## Version 20200803-1.2.4.3
+
+* Minor bug fixes
+
 ## Version 20200802-1.2.4.2
 
 * Added optional **layout** setting to digits file.  

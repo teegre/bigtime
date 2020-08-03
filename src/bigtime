@@ -10,7 +10,7 @@
 
 progname="$(basename "$0")"
 PROGNAME="${progname^^}"
-VERSION="20200802-1.2.4.2"
+VERSION="20200803-1.2.4.3"
 
 CONFIG_PATH="/etc/bigtime"
 DIGITS_PATH="$CONFIG_PATH/digits"
@@ -163,7 +163,7 @@ quit_animation() {
       sleep 0.03125
     fi
   done
-  sleep 0.5.5.5.5.5
+  sleep 0.5
   _REDRAW=0
 }
 
@@ -338,7 +338,6 @@ read_option() {
 
 DH="$(read_option "height")"    || { __err "error: $_FILE: missing 'height' value"; exit 1; }
 DW="$(read_option "width")"     || { __err "error: $_FILE: missing 'width' value"; exit 1; }
-SW="$(read_option "sep_width")" || { __err "error: $_FILE: missing 'sep_width' value"; exit 1; }
 
 _vl="$(read_option "layout")"
 if [[ $_vl == "vertical" ]]; then
@@ -346,7 +345,11 @@ if [[ $_vl == "vertical" ]]; then
 elif [[ $_vl == "horizontal" ]]; then
   unset _VL
 fi
-set _vl
+unset _vl
+
+if [[ ! $_VL ]]; then
+  SW="$(read_option "sep_width")" || { __err "error: $_FILE: missing 'sep_width' value"; exit 1; }
+fi
 
 CLOCK_SIZE || { __err "error: clock doesn't fit"; exit 1; }
 

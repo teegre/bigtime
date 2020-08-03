@@ -15,6 +15,7 @@
 * [ALARM](#alarm)
 * [TIMER](#timer)
 * [KEY BINDINGS](#key-bindings)
+* [TIMEZONE](#timezone)
 * [DIGITS FILE](#digits-file)
 * [UNINSTALL](#uninstall)
 * [CREDITS](#credits)

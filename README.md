@@ -255,6 +255,10 @@ it will throw an error and a useful description.
 
 # CHANGELOG <a name="changelog"></a>
 
+## Version 20200804-1.2.4.4
+
+* Bug fixes
+
 ## Version 20200803-1.2.4.3
 
 * Minor bug fixes

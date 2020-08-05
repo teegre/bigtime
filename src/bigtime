@@ -10,7 +10,7 @@
 
 progname="$(basename "$0")"
 PROGNAME="${progname^^}"
-VERSION="20200803-1.2.4.3"
+VERSION="20200805-1.2.4.4"
 
 CONFIG_PATH="/etc/bigtime"
 DIGITS_PATH="$CONFIG_PATH/digits"
@@ -147,7 +147,7 @@ REDRAW_CLOCK() {
   fi
   ((_y=(TERMH-CLOCKH)/2))
   ((_x=(TERMW-CLOCKW)/2))
-  unset H1 H2 M1 M2 S1 S2 S p date PB IA IH IT IZ
+  unset H1 H2 M1 M2 S1 S2 S p date PB IA IH IT IZ OT
   clear
   _REDRAW=0
 }
@@ -558,6 +558,7 @@ set_alarm() {
 set_timer() {
   [[ $_TT =~ ^[0-2]?[0-9]:[0-5][0-9]:?[0-5]?[0-9]?$ ]] && {
     _TT="$(date -d "$_TT" "+%H:%M:%S" 2> /dev/null)" || return 1
+    [[ ${_TT:0:5} == "00:00" ]] && ((${_TT:6:2}<5)) && _TT="00:00:05"
     return 0
   } 
   return 1
@@ -635,7 +636,7 @@ DISPLAY_TIMER() {
       if [[ $TT ]]; then
         _TIMEDATE="$(to_hms "${TL:-0}")"
       else
-          _TIMEDATE="$(printf "%02d:  :%02d:%02d:%02d:%s:%s:%s:%s" "$H" "$H" "$M" "$S" "$(date "+%s")" "$W" "$D" "$m")"
+        _TIMEDATE="$(printf "%s:  :%s:%s:%s:%s:%s:%s:%s" "$H" "$H" "$M" "$S" "$(date "+%s")" "$W" "$D" "$m")"
       fi
     unset _HD
     return 0
@@ -932,8 +933,8 @@ DIGIT_INPUT() {
     return 0
   }
   [[ $_TS ]] && {
-    [[ ${_TT:0:7} == "00:00:0" ]] && ((_DS==5)) && ((_d<5)) && _d=5
     _TT="${_TT:0:$((offset))}${_d}${_TT:$((offset+1))}"
+    [[ ${_TT:0:5} == "00:00" ]] && ((${_TT:6:2}<5)) && _TT="${_TT:0:6}05"
     if set_timer; then
       SELECT_DIGIT next
     else
@@ -947,6 +948,7 @@ DIGIT_INPUT() {
 }
 
 print_hd() {
+  local NT
   [[ ! $_hd ]] && return 1
   if [[ $_FM ]]; then
       NT="$(date "+%H:%M")"
@@ -1104,7 +1106,7 @@ while :; do
   [[ $_AA && ! $_AD && ! $_AS ]] && [[ $AT == "$_s" ]] && {
     [[ $_FM ]] && time="$(date -d "@$AT" "+%x - %X")" \
       || time="$(LC_TIME=C date -d "@$AT" "+%x - %I:%M:%S %p")"
-    notify-send -u critical -i "$ALARM_ICN" "$PROGNAME" "$time" 2> /dev/null
+    notify-send -u critical -h "INT:PID:$$" -i "$ALARM_ICN" "$PROGNAME" "$time" 2> /dev/null
     unset time
     # set new alarm for tomorrow
     ((AT+=86400))
@@ -1119,9 +1121,10 @@ while :; do
       && play_sound beep
 
   # timer
-  [[ $_TA && $TL == 0 ]] && {
+  [[ $_TA && $TL == 0 && ! $TR ]] && {
     notify-send -t 10000 -i "$TIMER_ICN" "$PROGNAME" "Time out" 2> /dev/null
-    TR=1; unset IT;
+    TR=1
+    unset IT
   }
 
   [[ $AR ]] && [[ $IDX == 0 ]] && { play_sound alarm; }

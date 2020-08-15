@@ -6,6 +6,9 @@
 
 *depends on: alsa-utils, bash, coreutils, libnotify, ncurses*
 
+Tested on these terminals:  
+st, xterm, urxvt, sakura and alacritty.
+
 # Table of Contents
 
 * [INSPIRATION](#inspiration)
@@ -106,8 +109,8 @@ OPTIONS:
 * -n, --random             - random colors effect (override -r and -F options).
 * -C, --list-colors        - print available colors and exit.
 * -b, --blink              - blinking separators.
-* -a, --alarm TIME         - set daily alarm (TIME format: [H]H:MM[ AM|am|PM|pm])
-* -t, --timer DURATION     - set timer (DURATION format: [H]H:MM[:SS]).
+* -a, --alarm TIME         - set daily alarm (TIME format: [H]H:MM[AM|am|PM|pm])
+* -t, --timer DURATION     - set timer (DURATION format: [H]H:MM).
 * -i, --signal             - activate hourly time signal.
 * -v, --vertical           - display clock vertically.
 * --file FILENAME          - use a custom digits file (filename only).
@@ -255,13 +258,20 @@ it will throw an error and a useful description.
 
 # CHANGELOG <a name="changelog"></a>
 
+## Version 20200815-1.3
+
+* Bug fixes.
+* Seconds for timer are no longer modifiable.
+* When alarm rings, pressing <kbd>space</kbd> enables snooze mode
+* Pressing <kbd>a</kbd> while alarm rings, stop it and disables snooze mode.
+
 ## Version 20200804-1.2.4.4
 
-* Bug fixes
+* Bug fixes.
 
 ## Version 20200803-1.2.4.3
 
-* Minor bug fixes
+* Minor bug fixes.
 
 ## Version 20200802-1.2.4.2
 

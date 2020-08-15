@@ -1,4 +1,4 @@
-.TH BIGTIME 1 20200805\-1.2.4.4 Linux "User Manuals"
+.TH BIGTIME 1 20200915\-1.3 Linux "User Manuals"
 .SH NAME
 \fB\fCbigtime\fR \- customizable clock for the terminal
 .SH SYNOPSIS
@@ -49,7 +49,7 @@ Set daily alarm.
 .br
 For testing purpose, if keyword "\fBnow\fR" is used instead of a timestring, alarm rings immediately.
 .TP
-\fB\-t\fR, \fB\-\-timer\fR \fI[H]H:MM[:SS]\fR
+\fB\-t\fR, \fB\-\-timer\fR \fI[H]H:MM\fR
 Set timer.
 .TP
 \fB\-i\fR, \fB\-\-signal\fR
@@ -84,7 +84,7 @@ Print version information and exit.
 .SH KEY BINDINGS
 .TP
 a
-Toggle daily alarm; set/confirm new alarm; disable \fBsnooze\fR mode.
+Toggle daily alarm; set/confirm new alarm; stop alarm and disable \fBsnooze\fR mode.
 .TP
 h
 Toggle hourly time signal.
@@ -111,7 +111,7 @@ t
 Toggle timer; set/confirm new timer.
 .TP
 space
-Toggle display mode (alarm, timer and then time); stop alarm/timer; cancel alarm/timer (setting mode).
+Toggle display mode (alarm, timer and then time); snooze/timer; cancel alarm/timer (setting mode).
 .SH TIMEZONE
 To display the time for a different timezone, simply prepend \fBTZ\fR environment variable when invoking \fBbigtime\fR.
 

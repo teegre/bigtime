@@ -258,7 +258,7 @@ it will throw an error and a useful description.
 
 # CHANGELOG <a name="changelog"></a>
 
-## Version 20200815-1.3.1
+## Version 20200816-1.3.1
 
 * Bug fixes.
 

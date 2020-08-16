@@ -10,7 +10,7 @@
 
 progname="$(basename "$0")"
 PROGNAME="${progname^^}"
-VERSION="20200815-1.3"
+VERSION="20200816-1.3.1"
 
 CONFIG_PATH="/etc/bigtime"
 DIGITS_PATH="$CONFIG_PATH/digits"
@@ -98,16 +98,16 @@ OPTIONS:
         Print program version info and exit.
 
 KEYS BINDINGS:
-    a     - toggle/set daily alarm; stop alarm+disable snooze; confirm (alarm setting mode)
+    a     - toggle daily alarm; set/confirm new alarm; disable snooze mode.
     h     - toggle hourly time signal
-    j     - select next digit (alarm/timer setting mode)
-    k     - select previous digit (alarm/timer setting mode)
-    p     - toggle 24h format; toggle AM/PM (alarm setting mode)
-    q     - exit program
-    r     - reset timer (timer setting mode)
-    R     - refresh screen
-    t     - toggle/set timer; confirm (timer setting mode)
-    space - toggle display; snooze/timer; cancel (alarm/timer setting mode)
+    j     - select next digit (setting mode)
+    k     - select previous digit (setting mode)
+    p     - toggle 24h format; toggle AM/PM (alarm setting mode).
+    q     - exit program.
+    r     - reset timer (timer setting mode).
+    R     - refresh screen.
+    t     - toggle timer; set/confirm new timer.
+    space - toggle display; stop ; cancel (setting mode).
 
 EOB
 }
@@ -559,7 +559,7 @@ set_alarm() {
 
 set_timer() {
   [[ $_TT =~ ^[0-2]?[0-9]:[0-5][0-9] ]] && {
-    [[ $_TT == "00;00" || $_TT == "0:00" ]] && return 1
+    [[ $_TT == "00:00" || $_TT == "0:00" ]] && return 1
     _TT="$(date -d "$_TT" "+%H:%M:%S" 2> /dev/null)" || return 1
     return 0
   } 
@@ -575,11 +575,12 @@ activate_timer() {
   M="${T[1]}"
   S="${T[2]}"
   TT="$(date -d "now + $H hours $M minutes $S seconds" "+%s" 2> /dev/null)" || return 1
+  _TOK=1
   return 0
 }
 
 reset_timer() {
-  [[ $_TS ]] && { _TT="00:00:00"; unset TT IT; return 0; }
+  [[ $_TS ]] && { _TT="00:00:00"; unset TT IT _TOK; return 0; }
   return 1
 }
 
@@ -708,7 +709,7 @@ PARSE_DATE() {
 
 TOGGLE_SELECTION() {
   [[ $AR ]]  && { play_sound key; unset AR RA IA; return 0; }
-  [[ $TR ]]  && { play_sound key; unset TR RA _TA _TD IT IZ; _HD=1; return 0; }
+  [[ $TR ]]  && { play_sound key; unset TR RA _TA _TD IT IZ; reset_timer; _HD=1; return 0; }
   [[ $_AS ]] && {
     AT="$AC"
     _AT="$_AC"
@@ -819,7 +820,6 @@ TOGGLE_TIMER() {
       unset _TA _TT TT TL _TOK IT
       play_sound key
     else
-      _TOK=1
       play_sound confirm
       activate_timer
     fi
@@ -846,7 +846,6 @@ TOGGLE_TIMER() {
       _TA=1
       unset IT
       activate_timer || { play_sound error; return 1; }
-      _TOK=1
       play_sound key
       return 0
     fi
@@ -1131,9 +1130,6 @@ while :; do
     unset IA
   } 
 
-  # beep
-  [[ ! $AR && ! $_AD && ! $_AS && ! $TR && ! $_TD && ! $_TS && $_HTSA && $_M == "00" && $_S == "00" ]] \
-      && play_sound beep
 
   # timer
   [[ $_TA && $TL == 0 && ! $TR ]] && {
@@ -1141,6 +1137,10 @@ while :; do
     TR=1
     unset IT
   }
+
+  # beep
+  [[ ! $AR && ! $_AD && ! $_AS && ! $TR && ! $_TD && ! $_TS && $_HTSA && $_M == "00" && $_S == "00" ]] \
+    && play_sound beep
 
   [[ $AR ]] && [[ $IDX == 0 ]] && { play_sound alarm; }
   [[ $TR ]] && [[ $IDX == 0 ]] && { play_sound timer; }

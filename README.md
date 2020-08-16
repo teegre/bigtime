@@ -146,8 +146,8 @@ Or press <kbd>space</kbd> to cancel.
 # TIMER <a name="timer"></a>
 
 ## From the command line
-To set a 3 minutes and 30 seconds timer:  
-`bigtime --timer "0:03:30"`
+To set a 3 minutes timer:  
+`bigtime --timer "0:03"`
 
 ## From within the application
 
@@ -165,14 +165,14 @@ Or press <kbd>space</kbd> to cancel.
 
 * <kbd>a</kbd>     - toggle daily alarm; set/confirm new alarm; disable **snooze** mode.
 * <kbd>h</kbd>     - toggle hourly time signal.
-* <kbd>j</kbd>     - select next digit (setting mode)
-* <kbd>k</kbd>     - select previous digit (setting mode)
-* <kbd>p</kbd>     - toggle 24h format / toggle AM/PM (alarm setting mode)
-* <kbd>q</kbd>     - exit program
-* <kbd>r</kbd>     - reset timer (timer setting mode)
-* <kbd>t</kbd>     - toggle timer; set/confirm new timer
-* <kbd>R</kbd>     - refresh screen
-* <kbd>space</kbd> - toggle display mode; stop; cancel (setting mode)
+* <kbd>j</kbd>     - select next digit (setting mode).
+* <kbd>k</kbd>     - select previous digit (setting mode).
+* <kbd>p</kbd>     - toggle 24h format; toggle AM/PM (alarm setting mode).
+* <kbd>q</kbd>     - exit program.
+* <kbd>r</kbd>     - reset timer (timer setting mode).
+* <kbd>R</kbd>     - refresh screen.
+* <kbd>t</kbd>     - toggle timer; set/confirm new timer.
+* <kbd>space</kbd> - toggle display mode; stop; cancel (setting mode).
 
 # TIMEZONE <a name="timezone"></a>
 
@@ -257,6 +257,10 @@ it will throw an error and a useful description.
 * Icons taken from [Material Design Icons](https://materialdesignicons.com/)
 
 # CHANGELOG <a name="changelog"></a>
+
+## Version 20200815-1.3.1
+
+* Bug fixes.
 
 ## Version 20200815-1.3
 

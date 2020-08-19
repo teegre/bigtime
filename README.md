@@ -35,7 +35,7 @@ st, xterm, urxvt, sakura and alacritty.
 ## The Colors
 ![nyancat](nyancat.jpg)
 ## The Name
-[Peter Gabriel: Big Time](https://invidio.us/watch?v=PBAl9cchQac)
+[Peter Gabriel: Big Time](https://youtube.com/watch?v=PBAl9cchQac)
 
 # INSTALLATION <a name="installation"></a>
 
@@ -257,6 +257,11 @@ it will throw an error and a useful description.
 * Icons taken from [Material Design Icons](https://materialdesignicons.com/)
 
 # CHANGELOG <a name="changelog"></a>
+
+## Version 20200819-1.3.2
+
+* **--random** option now uses system 16 colors palette.
+* when no date calculation is needed, **date** command is replaced by **builtin printf/strftime**.
 
 ## Version 20200816-1.3.1
 

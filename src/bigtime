@@ -10,7 +10,7 @@
 
 progname="$(basename "$0")"
 PROGNAME="${progname^^}"
-VERSION="20200816-1.3.1"
+VERSION="20200819-1.3.2"
 
 CONFIG_PATH="/etc/bigtime"
 DIGITS_PATH="$CONFIG_PATH/digits"
@@ -69,7 +69,7 @@ OPTIONS:
     -r, --rainbow
         Rainbow effect.
     -n, --random
-        Random colors effect.
+        Random colors effect (use system 16 colors palette).
     -C, --list-colors
         Print available colors and exit.
     -b, --blink
@@ -116,6 +116,8 @@ __err() { ( >&2 echo -e "$progname: $1" ) }
 
 which tput > /dev/null || { __err "sorry, it will not work without ncurses"; exit 1; } 
 
+_time() (printf "%($1)T\\n" "-1")
+
 # compute clock size
 CLOCK_SIZE() {
   local height width
@@ -144,7 +146,7 @@ REDRAW_CLOCK() {
   _REDRAW=1
   TERMH="$(tput lines)"
   TERMW="$(tput cols)"
-  if ((CLOCKH>=TERMH || CLOCKW>=TERMW)); then
+  if ! CLOCK_SIZE; then
     EXIT_CLOCK "error: clock doesn't fit"
   fi
   ((_y=(TERMH-CLOCKH)/2))
@@ -440,8 +442,8 @@ _sync() {
 
 rnd_color() { 
   [[ $_RB ]] && ((COLOR_IDX=COLOR_IDX>${#RBC[@]}-2?0:COLOR_IDX+1))
-  [[ $_RC ]] && ((COLOR_IDX=RANDOM%(${#RBC[@]}-1)))
-  COLOR=${RBC[COLOR_IDX]}
+  [[ $_RB ]] && COLOR=${RBC[COLOR_IDX]}
+  [[ $_RC ]] && ((COLOR=RANDOM%15+1))
 }
 
 print_digit() {
@@ -550,7 +552,7 @@ set_alarm() {
       }
     fi
     __AT="$(date -d "$_AT" "+%s" 2> /dev/null)" || return 1
-    _T="$(date "+%s")"
+    _T="$(_time "%s")"
     ((__AT<_T)) && ((__AT+=86400))
     unset _T
     return 0
@@ -591,7 +593,7 @@ to_hms() {
   ((H=T/3600))
   ((M=(T%3600)/60))
   ((S=T%60))
-  printf "%02d:  :%02d:%02d:%02d:%s:%s:%s:%s" "$H" "$H" "$M" "$S" "$(date "+%s")" "$W" "$D" "$m"
+  printf "%02d:  :%02d:%02d:%02d:%s:%s:%s:%s" "$H" "$H" "$M" "$S" "$(_time "%s")" "$W" "$D" "$m"
 }
 
 if [[ $_AA ]]; then set_alarm cmdline || { __err "error: invalid alarm time"; exit 1; }; fi
@@ -599,7 +601,7 @@ if [[ $_AA ]]; then AT=$__AT; unset __AT; fi
 if [[ $_TA ]]; then set_timer || { __err "error: invalid timer duration"; exit 1; }; fi
 if [[ $_TT ]]; then activate_timer || EXIT_CLOCK "what ?"; fi
 
-_DF="+%I:%p:%H:%M:%S:%s:%a:%d:%m:%z"
+_DF="%I:%p:%H:%M:%S:%s:%a:%d:%m:%z"
 
 BACK_HD() {
   _HD=1
@@ -613,8 +615,8 @@ BACK_HD() {
 DISPLAY_ALARM() {
   if [[ $_AD || $_AS ]]; then
     ((a=__AT>0?__AT:AT))
-    _TIMEDATE="$(LC_TIME=C date -d "@$a" "$_DF")" 2> /dev/null || { _HD=1; unset _AD _AS IZ; return 1; }
-    _s="$(date "+%s")"
+    _TIMEDATE="$(LC_TIME=C date -d "@$a" "+$_DF")" 2> /dev/null || { _HD=1; unset _AD _AS IZ; return 1; }
+    _s="$(_time "%s")"
     unset a
     unset _GD
     unset _HD
@@ -631,7 +633,7 @@ DISPLAY_TIMER() {
       H="${T[0]}"
       M="${T[1]}"
       S="${T[2]}"
-      d="$(LC_TIME=C date "+%a:%d:%m")"
+      d="$(LC_TIME=C _time "%a:%d:%m")"
       IFS=$'\n' read -d "" -ra d_array <<< "${d//:/$'\n'}"
       W="${d_array[0]}"
       D="${d_array[1]}"
@@ -639,7 +641,7 @@ DISPLAY_TIMER() {
       if [[ $TT ]]; then
         _TIMEDATE="$(to_hms "${TL:-0}")"
       else
-        _TIMEDATE="$(printf "%s:  :%s:%s:%s:%s:%s:%s:%s" "$H" "$H" "$M" "$S" "$(date "+%s")" "$W" "$D" "$m")"
+        _TIMEDATE="$(printf "%s:  :%s:%s:%s:%s:%s:%s:%s" "$H" "$H" "$M" "$S" "$(_time "%s")" "$W" "$D" "$m")"
       fi
     unset _HD
     return 0
@@ -651,7 +653,7 @@ DISPLAY_TIMER() {
 TIMER_ELAPSED_TIME() {
   [[ $_TA && $TT ]] && {
     local T
-    T="$(date "+%s")" || return 1
+    T="$(_time "%s")" || return 1
     ((TL=TT-T))
     ((TL=TL>0?TL:0))
     return 0
@@ -661,7 +663,7 @@ TIMER_ELAPSED_TIME() {
 
 DISPLAY_TIME() {
   [[ ! $_AD && ! $_TD ]] && {
-    _TIMEDATE="$(LC_TIME=C date "$_DF")"
+    _TIMEDATE="$(LC_TIME=C _time "$_DF")"
     _HD=1
     return 0
   }
@@ -965,9 +967,9 @@ print_hd() {
   local NT
   [[ ! $_hd ]] && return 1
   if [[ $_FM ]]; then
-      NT="$(date "+%H:%M")"
+      NT="$(_time "%H:%M")"
   else
-    NT="$(LC_TIME=C date "+%I:%M %p")"
+    NT="$(LC_TIME=C _time "%I:%M %p")"
   fi
   [[ $OT != "$NT" ]] && {
     tput cup $((_y+DH)) $((_x))

@@ -258,6 +258,10 @@ it will throw an error and a useful description.
 
 # CHANGELOG <a name="changelog"></a>
 
+## Version 20200823-1.3.3
+
+* Snooze duration can now be set.
+
 ## Version 20200819-1.3.2
 
 * **--random** option now uses system 16 colors palette.

@@ -10,7 +10,7 @@
 
 progname="$(basename "$0")"
 PROGNAME="${progname^^}"
-VERSION="20200819-1.3.2"
+VERSION="20200823-1.3.3"
 
 CONFIG_PATH="/etc/bigtime"
 DIGITS_PATH="$CONFIG_PATH/digits"
@@ -80,11 +80,13 @@ OPTIONS:
         Set daily alarm.
     -a, --alarm now
         Test alarm.
+    -o, --snooze [M]M
+        Set snooze duration in minutes (5-15).
     -i, --signal
         Hourly time signal.
     -t, --timer [H]H:MM
         Set timer.
-    --fiLe FILENAME
+    --file FILENAME
         Use a custom digits file (filename only)
     -w, --preview
         Display a preview of --file and exit.
@@ -107,7 +109,7 @@ KEYS BINDINGS:
     r     - reset timer (timer setting mode).
     R     - refresh screen.
     t     - toggle timer; set/confirm new timer.
-    space - toggle display; stop ; cancel (setting mode).
+    space - toggle display; stop; cancel (setting mode).
 
 EOB
 }
@@ -198,37 +200,50 @@ LIST_COLORS() {
   echo
 }
 
-# options
+LIST_FILES() {
+  files="$(
+  (
+    find "$DIGITS_PATH" -name "*.digits" 2> /dev/null 
+    find "$CUSTOM_DIGITS_PATH" -name "*.digits" 2> /dev/null
+  ) )"
+  [[ ! $files ]] && { __err "error: no digits file found"; return 1; }
+  echo -e "$files"
+  return 0
+}
 
-_opts=$(LC_ALL=C getopt                \
-  --long "alarm:"                      \
-  --long "background:"                 \
-  --long "big-seconds"                 \
-  --long "blink"                       \
-  --long "date"                        \
-  --long "file:"                       \
-  --long "foreground:"                 \
-  --long "help"                        \
-  --long "list-colors"                 \
-  --long "list-files"                  \
-  --long "preview"                     \
-  --long "quiet"                       \
-  --long "version"                     \
-  --long "rainbow"                     \
-  --long "random"                      \
-  --long "signal"                      \
-  --long "small-seconds"               \
-  --long "timer:"                      \
-  --long "timezone"                    \
-  --long "vertical"                    \
-  --options "a:B:SbdfF:hClwqVrnist:zv" \
-  --name "$progname"                   \
-  -- "$@"                              \
+
+### OPTIONS
+
+_opts=$(LC_ALL=C getopt                  \
+  --long "alarm:"                        \
+  --long "background:"                   \
+  --long "big-seconds"                   \
+  --long "blink"                         \
+  --long "date"                          \
+  --long "file:"                         \
+  --long "foreground:"                   \
+  --long "help"                          \
+  --long "list-colors"                   \
+  --long "list-files"                    \
+  --long "preview"                       \
+  --long "quiet"                         \
+  --long "rainbow"                       \
+  --long "random"                        \
+  --long "signal"                        \
+  --long "small-seconds"                 \
+  --long "snooze:"                       \
+  --long "timer:"                        \
+  --long "timezone"                      \
+  --long "version"                       \
+  --long "vertical"                      \
+  --options "a:B:SbdfF:hClwqrniso:t:zVv" \
+  --name "$progname"                     \
+  -- "$@"                                \
 ) || exit 1
 
 eval set -- "$_opts"
 
-# options parsing
+### OPTIONS PARSING
 
 while :; do
   case "$1" in
@@ -248,6 +263,20 @@ while :; do
     -n | --random       ) _RC=1; unset _RB _FG; shift ;;
     -q | --quiet        ) _Q=1; unset _AA _AT _TA _TT _HTSA; shift ;;
     -C | --list-colors  ) LIST_COLORS; exit 0 ;;
+    -l | --list-files   ) LIST_FILES; exit $? ;;
+
+    -o | --snooze) 
+      shift
+      _OD="$1"
+      shift
+      if [[ ! $_OD =~ ^[0-9]+$ ]]; then
+        __err "invalid snooze duration."
+        exit 1
+      elif ((_OD<5 || _OD>15)); then
+        __err "snooze duration must be between 5 and 15 minutes."
+        exit 1
+      fi
+      ;;
 
     --file)
       shift
@@ -260,14 +289,6 @@ while :; do
           _FILE="$CUSTOM_DIGITS_PATH/$_FILE"
       fi
       shift
-      ;;
-    -l | --list-files)
-      files="$( (
-        find "$DIGITS_PATH" -name "*.digits" 2> /dev/null 
-        find "$CUSTOM_DIGITS_PATH" -name "*.digits" 2> /dev/null) )"
-      [[ ! $files ]] && { __err "error: no digits file found"; exit 1; }
-      echo -e "$files"
-      exit 0
       ;;
     -w | --preview)
       [[ ! $_FILE ]] && { __err "error: --preview: missing --file option"; exit 1; }
@@ -582,8 +603,8 @@ activate_timer() {
 }
 
 reset_timer() {
-  [[ $_TS ]] && { _TT="00:00:00"; unset TT IT _TOK; return 0; }
-  return 1
+  _TT="00:00:00"
+  unset TR RA TT TL _TA _TD IT _TOK IZ; 
 }
 
 to_hms() {
@@ -600,6 +621,9 @@ if [[ $_AA ]]; then set_alarm cmdline || { __err "error: invalid alarm time"; ex
 if [[ $_AA ]]; then AT=$__AT; unset __AT; fi
 if [[ $_TA ]]; then set_timer || { __err "error: invalid timer duration"; exit 1; }; fi
 if [[ $_TT ]]; then activate_timer || EXIT_CLOCK "what ?"; fi
+
+_OD=${_OD:-9}
+((_OD*=60))
 
 _DF="%I:%p:%H:%M:%S:%s:%a:%d:%m:%z"
 
@@ -711,7 +735,7 @@ PARSE_DATE() {
 
 TOGGLE_SELECTION() {
   [[ $AR ]]  && { play_sound key; unset AR RA IA; return 0; }
-  [[ $TR ]]  && { play_sound key; unset TR RA _TA _TD IT IZ; reset_timer; _HD=1; return 0; }
+  [[ $TR ]]  && { play_sound key; reset_timer; _HD=1; return 0; }
   [[ $_AS ]] && {
     AT="$AC"
     _AT="$_AC"
@@ -1061,15 +1085,15 @@ while :; do
 
   [[ $C ]] && INACTIVITY=0
 
-  # KEY BINDINGS
+  ### KEY BINDINGS
   case "$C" in
     a    ) TOGGLE_ALARM ;;
     h    ) TOGGLE_HTS ;;
     p    ) TOGGLE_AMPM ;;
     q    ) play_sound quit; EXIT_CLOCK "Q" ;;
     R    ) play_sound key; REDRAW_CLOCK ;;
-    r    ) reset_timer && play_sound key ;;
-    t    ) TOGGLE_TIMER ;;
+    r    ) [[ $_TS ]] && reset_timer && play_sound key ;;
+    t    ) if [[ $TR ]]; then reset_timer; else TOGGLE_TIMER; fi ;;
     [0-9]) DIGIT_INPUT "$C" ;;
     j    ) SELECT_DIGIT next ;;
     k    ) SELECT_DIGIT prev ;;
@@ -1089,7 +1113,7 @@ while :; do
   PARSE_TIME
   DISPLAY_DATE && PARSE_DATE
 
-  # DEBUG
+  ### DEBUG
   # tput cup 0 0; tput el
   # printf "_AA:%s _AT:%s AT:%s __AT:%s _AD:%s _AS:%s _DS:%s" "${_AA:-"-"}" "${_AT:-"--:--:--"}" "${AT:-"-"}" "${__AT:-"-"}" "${_AD:-"-"}" "${_AS:-"-"}" "${_DS:-"-"}"
   # tput cup 1 0; tput el
@@ -1104,7 +1128,7 @@ while :; do
   # change terminal title
   [[ $_T != "$_M $_p" ]] && { _T="$_M $_p"; echo -ne "\033]0;bigtime: $_H:$_M $_p\007"; }
 
-  # blink
+  ### BLINK
   ((_s % 2 == 0)) && IDX=0 || IDX=1
 
   h1=${_H:0:1}
@@ -1115,10 +1139,10 @@ while :; do
   s2=${_S:1:1}
 
   [[ $AR && $RA -gt 60 ]] && { unset AR RA IA; }
-  [[ $TR && $RA -gt 15 ]] && { unset TR RA _TA _TD IT IZ; _HD=1; }
-  [[ $AZ ]] && { ((AZ==300)) && { AR=1; RA=0; AZ=1; unset IA; }; }
+  [[ $TR && $RA -gt 15 ]] && { reset_timer; _HD=1; }
+  [[ $AZ ]] && { ((AZ==_OD)) && { AR=1; RA=0; AZ=1; unset IA; }; }
 
-  # alarm
+  ### ALARM
   [[ $_AA && ! $_AD && ! $_AS ]] && [[ $AT == "$_s" ]] && {
     [[ $_FM ]] && time="$(date -d "@$AT" "+%x - %X")" \
       || time="$(LC_TIME=C date -d "@$AT" "+%x - %I:%M:%S %p")"
@@ -1133,14 +1157,14 @@ while :; do
   } 
 
 
-  # timer
+  ### TIMER
   [[ $_TA && $TL == 0 && ! $TR ]] && {
     notify-send -t 10000 -i "$TIMER_ICN" "$PROGNAME" "Time out" 2> /dev/null
     TR=1
     unset IT
   }
 
-  # beep
+  ### BEEP
   [[ ! $AR && ! $_AD && ! $_AS && ! $TR && ! $_TD && ! $_TS && $_HTSA && $_M == "00" && $_S == "00" ]] \
     && play_sound beep
 
@@ -1152,7 +1176,7 @@ while :; do
 
   y=$_y x=$_x
   
-  ## ALARM INDICATOR
+  ### ALARM INDICATOR
   [[ ! $IA ]] && {
     if [[ $_AA ]]; then
       [[ $_RB || $_RC ]] && rnd_color
@@ -1178,7 +1202,7 @@ while :; do
     fi
   }
 
-  ## TIMER INDICATOR
+  ### TIMER INDICATOR
   [[ ! $IT ]] && {
     if [[ $_TA ]]; then
       [[ $_RB || $_RC ]] && rnd_color
@@ -1203,7 +1227,7 @@ while :; do
     fi
   }
 
-  ## HOURLY TIME SIGNAL INDICATOR
+  ### HOURLY TIME SIGNAL INDICATOR
   [[ ! $IH ]] && {
     tput cup $((y)) $((x-3))
     if [[ $_HTSA ]]; then
@@ -1216,7 +1240,7 @@ while :; do
     fi
   }
 
-  ## SMALL TIME
+  ### SMALL TIME
   [[ $_RB || $_RC ]] && rnd_color
   print_hd || print_tz
 

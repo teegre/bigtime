@@ -1,4 +1,4 @@
-.TH BIGTIME 1 20200823\-1.3.3 Linux "User Manuals"
+.TH BIGTIME 1 20200909\-2.0 Linux "User Manuals"
 .SH NAME
 \fB\fCbigtime\fR \- customizable clock for the terminal
 .SH SYNOPSIS
@@ -91,7 +91,10 @@ Print version information and exit.
 a
 Toggle daily alarm; set/confirm new alarm; stop alarm and disable \fBsnooze\fR mode.
 .TP
-h
+f
+Toggle 24h format / toggle AM/PM (alarm setting mode).
+.TP
+i
 Toggle hourly time signal.
 .TP
 j
@@ -100,14 +103,8 @@ Select next digit (alarm/timer setting mode).
 k
 Select previous digit (alarm/timer setting mode).
 .TP
-p
-Toggle 24h format / toggle AM/PM (alarm setting mode).
-.TP
 q
 Exit program.
-.TP
-r
-Reset timer (timer setting mode)
 .TP
 R
 refresh screen.
@@ -131,7 +128,7 @@ that contains instructions on how to draw digits on the screen.
 Digits are sequences of 0s and 1s.
 
 .TQ
-Global settings for digits and separator sizes are defined as follow:
+Global settings for digits and separator geometry are defined as follow:
 
 .EX
 .br
@@ -147,7 +144,7 @@ sep_width=1
 .EE
 
 .TQ
-The \fIlayout\fR optional parameter can be used to force the clock to display in a particular layout.
+The optional \fIlayout\fR parameter can be used to force the clock to display in a particular layout.
 
 .EX
 .br
@@ -168,6 +165,25 @@ layout=vertical
 
 .TQ
 If this parameter is omitted, horizontal mode is the default unless \fB\-\-vertical\fR option is used.
+
+.TQ
+Indicators can be defined as follow:
+
+.EX
+.br
+.B
+signal_indicator=*
+.br
+.B
+alarm_indicator=a
+.br
+.B
+snooze_indicator=z
+.br
+.B
+timer_indicator=t
+.br
+.EE
 
 .TQ
 By default, when \fBbigtime\fR parses a file, 0s are replaced by whitespaces and 1s by "∎".
@@ -192,7 +208,7 @@ Digits and separator are defined by a semicolon separated list, as follow:
 0=11111;11011;11011;11011;11111
 .br
 .B
-...
+[...]
 .br
 .B
 9=11111;11011;11111;00011;11111
@@ -206,7 +222,7 @@ blank=0;0;0;0;0
 .EE
 
 .TQ
-With the characters defined earlier, this:
+With the characters defined earlier, this (0):
 
 .EX
 .B

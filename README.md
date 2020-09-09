@@ -70,27 +70,29 @@ You can find **bigtime** in the [Arch User Repository](https://aur.archlinux.org
 *Horizontal display with big seconds:*  
 `bigtime -S`  
 ```
- ∎∎∎  ∎∎∎∎∎     ∎∎∎∎    ∎         ∎     ∎
-∎   ∎     ∎     ∎      ∎∎        ∎∎    ∎
-∎ ∎ ∎    ∎      ∎∎∎∎    ∎         ∎   ∎∎∎∎
-∎   ∎   ∎    ∎      ∎   ∎    ∎    ∎   ∎   ∎
- ∎∎∎   ∎     ∎  ∎∎∎∎   ∎∎∎   ∎   ∎∎∎   ∎∎∎  PM
+ ∎∎∎  ∎∎∎∎∎   ∎∎∎∎    ∎       ∎     ∎
+∎   ∎     ∎   ∎      ∎∎      ∎∎    ∎
+∎ ∎ ∎    ∎    ∎∎∎∎    ∎       ∎   ∎∎∎∎
+∎   ∎   ∎   ∎     ∎   ∎   ∎   ∎   ∎   ∎
+ ∎∎∎   ∎    ∎ ∎∎∎∎   ∎∎∎  ∎  ∎∎∎   ∎∎∎  PM
 
 ```
 
 ## Indicators
 Indicator are displayed on the left hand side of the clock:
 
-* `×`   - hourly time signal activated.
+* `*`   - hourly time signal activated.
 * `a`   - daily alarm activated.
 * `t`   - timer activated.
 * `>a`  - alarm display mode.
-* `a<`  - alarm setting mode.
+* `a>`  - alarm setting mode.
 * `a!`  - alarm is ringing.
-* `Zzz` - alarm snooze mode.
+* `z`   - alarm snooze mode.
 * `>t`  - timer display mode.
-* `t<`  - timer setting mode.
+* `t>`  - timer setting mode.
 * `t!`  - timer is ringing.
+
+Those are the default indicators but they can be changed (see [DIGITS FILE](#digits-file) section).
 
 ## USAGE <a name="usage"></a>
 
@@ -164,10 +166,10 @@ Or press <kbd>space</kbd> to cancel.
 # KEY BINDINGS <a name="key-bindings"></a>
 
 * <kbd>a</kbd>     - toggle daily alarm; set/confirm new alarm; disable **snooze** mode.
-* <kbd>h</kbd>     - toggle hourly time signal.
+* <kbd>f</kbd>     - toggle 24h format; toggle AM/PM (alarm setting mode).
+* <kbd>i</kbd>     - toggle hourly time signal.
 * <kbd>j</kbd>     - select next digit (setting mode).
 * <kbd>k</kbd>     - select previous digit (setting mode).
-* <kbd>p</kbd>     - toggle 24h format; toggle AM/PM (alarm setting mode).
 * <kbd>q</kbd>     - exit program.
 * <kbd>r</kbd>     - reset timer (timer setting mode).
 * <kbd>R</kbd>     - refresh screen.
@@ -200,6 +202,17 @@ Or
 `layout=vertical`
 
 If this parameter is omitted, horizontal mode is the default unless **--vertical** option is used.
+
+Indicators can be defined as follow:
+
+```
+signal_indicator=i
+alarm_indicator=a
+snooze_indicator=z
+timer_indicator=t
+```
+
+They must be one character only.
 
 By default, when **bigtime** parses a file, 0s are replaced by whitespaces and 1s by "∎".  
 But one can define characters as shown below:
@@ -254,9 +267,16 @@ it will throw an error and a useful description.
 # CREDITS <a name="credits"></a>
 
 * Sound effects made with the excellent [sfxr](http://www.drpetter.se/project_sfxr.html)
-* Icons taken from [Material Design Icons](https://materialdesignicons.com/)
+* Icons for notifications are taken from [Material Design Icons](https://materialdesignicons.com/)
 
 # CHANGELOG <a name="changelog"></a>
+
+## Version 20200909-2.0
+
+* Complete rewrite.
+* Indicators are now customizable.
+* Timer shows in time and alarm display mode.
+* When toggling mode, show the display mode on top of the clock.
 
 ## Version 20200823-1.3.3
 

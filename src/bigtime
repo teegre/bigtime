@@ -1,50 +1,70 @@
 #! /usr/bin/env bash
-######################################
-#  _     _       _   _
-# | |__ (_) __ _| |_(_)_ __ ___   ___
-# | '_ \| |/ _` | __| | '_ ` _ \ / _ \
-# | |_) | | (_| | |_| | | | | | |  __/
-# |_.__/|_|\__, |\__|_|_| |_| |_|\___|
-#          |___/ 
-# ♥ ##################################
 
-progname="$(basename "$0")"
-PROGNAME="${progname^^}"
-VERSION="20200823-1.3.3"
+##  _   _____     _
+## |_)o/__ |o|\/||_
+## |_)|\_| |||  ||_
+## BiGTiME
 
-CONFIG_PATH="/etc/bigtime"
-DIGITS_PATH="$CONFIG_PATH/digits"
-CUSTOM_DIGITS_PATH="$HOME/.config/bigtime"
-SND_PATH="$CONFIG_PATH/snd"
-ICN_PATH="$CONFIG_PATH/icn"
-DIGITS_DEFAULT_FILE="$DIGITS_PATH/standard.digits"
-WELCOME_SOUND="$SND_PATH/welcome.wav"
-BEEP_SOUND="$SND_PATH/beep.wav"
-ALARM_SOUND="$SND_PATH/alarm.wav"
-TIMER_SOUND="$SND_PATH/timer.wav"
-KEY_SOUND="$SND_PATH/key.wav"
-DIGIT_SOUND="$SND_PATH/digit.wav"
-YES_SOUND="$SND_PATH/confirm.wav"
-ERROR_SOUND="$SND_PATH/error.wav"
-QUIT_SOUND="$SND_PATH/quit.wav"
-ALARM_ICN="$ICN_PATH/alarm.png"
-TIMER_ICN="$ICN_PATH/timer.png"
+##  _ _  _  _
+## / / \|_)|_
+## \_\_/| \|_
+## CORE
 
-TERMH="$(tput lines)"
-TERMW="$(tput cols)"
+## CONFIG
+declare -r __path_config="/etc/bigtime"
 
-COLORS="$(tput colors)"
+## ASSETS
+declare -r __path_digits="$__path_config/digits"
 
-# color list taken from C version of lolcat <https://github.com/jaseg/lolcat/blob/master/lolcat.c>
-RBC=(39 38 44 43 49 48 84 83 119 118 154 148 184 178 214 208 209 203 204 198 199 163 164 128 129 93 99 63 69 33)
+declare -r __path_digits_custom="$HOME/.config/bigtime"
+declare -r __f_digits_default="$__path_digits/standard.digits"
 
-((COLOR_IDX=RANDOM%(${#RBC[@]}-1)))
+declare -r __path_snd="$__path_config/snd"
+declare -r __f_snd_welcome="$__path_snd/welcome.wav"
+declare -r __f_snd_beep="$__path_snd/beep.wav"
+declare -r __f_snd_alarm="$__path_snd/alarm.wav"
+declare -r __f_snd_timer="$__path_snd/timer.wav"
+declare -r __f_snd_key="$__path_snd/key.wav"
+declare -r __f_snd_digit="$__path_snd/digit.wav"
+declare -r __f_snd_yes="$__path_snd/confirm.wav"
+declare -r __f_snd_err="$__path_snd/error.wav"
+declare -r __f_snd_quit="$__path_snd/quit.wav"
 
-declare -i CLOCKH
-declare -i CLOCKW
+declare -r __path_icn="$__path_config/icn"
+declare -r __f_icn_alarm="$__path_icn/alarm.png"
+declare -r __f_icn_timer="$__path_icn/timer.png"
 
-__help() {
+## VARIABLES
 
+# GEOMETRY
+declare -i __clock_h __clock_w
+declare -i __digit_h __digit_w __sep_w
+declare -i __pos_y __pos_x
+
+# COLORS 
+# shellcheck disable=SC2155
+declare -ir __color_count=$(tput colors)
+declare -ar __colors=(39 38 44 43 49 48 84 83 119 118 154 148 184 178 214 208 209 203 204 198 199 163 164 128 129 93 99 63 69 33)
+declare -i __color_idx
+declare -i __color_fg
+declare -i __color_bg
+
+((__color_idx=RANDOM%(${#__colors[@]}-1)))
+
+# DISPLAY
+declare -i __display=1
+declare -A __i
+
+# TIME/DATE
+declare -r __format="%I:%p:%H:%M:%S:%a:%d:%m:%z"
+
+## FUNCTIONS
+
+# UTILS
+
+_err() ( >&2 echo -e "$progname: $1" )
+
+_help() {
 cat << 'EOB' >&2
 BIGTIME - customizable digital clock
 
@@ -58,8 +78,7 @@ OPTIONS:
         Show seconds (big size).
     -d, --date
         Show date.
-    -f
-        Display time in 24h format.
+    -f  Display time in 24h format.
     -z, --timezone
         Show timezone (i.e. +0200).
     -F, --foreground 0..N
@@ -76,12 +95,13 @@ OPTIONS:
         Blinking separators.
     -v, --vertical
         Display clock vertically.
-    -a, --alarm [H]H:MM[AM|am|PM|pm]
+    -a, --alarm [H]H:MM [AM|am|PM|pm]
         Set daily alarm.
     -a, --alarm now
         Test alarm.
     -o, --snooze [M]M
         Set snooze duration in minutes (5-15).
+        (Default is 9 minutes.)
     -i, --signal
         Hourly time signal.
     -t, --timer [H]H:MM
@@ -101,12 +121,11 @@ OPTIONS:
 
 KEYS BINDINGS:
     a     - toggle daily alarm; set/confirm new alarm; disable snooze mode.
-    h     - toggle hourly time signal
+    i     - toggle hourly time signal
     j     - select next digit (setting mode)
     k     - select previous digit (setting mode)
-    p     - toggle 24h format; toggle AM/PM (alarm setting mode).
+    f     - toggle 24h format; toggle AM/PM (alarm setting mode).
     q     - exit program.
-    r     - reset timer (timer setting mode).
     R     - refresh screen.
     t     - toggle timer; set/confirm new timer.
     space - toggle display; stop; cancel (setting mode).
@@ -114,105 +133,1095 @@ KEYS BINDINGS:
 EOB
 }
 
-__err() { ( >&2 echo -e "$progname: $1" ) }
+_version() ( echo "$PROGNAME version $__version" )
 
-which tput > /dev/null || { __err "sorry, it will not work without ncurses"; exit 1; } 
+loc() ( tput cup "$@" )
 
-_time() (printf "%($1)T\\n" "-1")
+_sync() {
+  declare -i n=1
+  local N
+  while ((n!=0)); do
+    N="${EPOCHREALTIME#*,}"
+    n=${N:0:1}
+    pause 0.0625
+  done
+  unset n
+}
 
-# compute clock size
-CLOCK_SIZE() {
-  local height width
-  if [[ ! $_VL ]]; then
-    ((height=DH))
-    ((width=DW*4+SW+4))
-    [[ $_SD ]] && ((width+=DW*2+SW+3))
-    [[ $_TZ ]] && ((height+=1))
-  else
-    ((height=DH*2+2))
-    ((width=DW*2+2))
-    [[ $_SD ]] && ((height+=DH))
-  fi
+notify() {
+  case $1 in
+    --alarm) notify-send -u critical -i "$__f_icn_alarm" "$PROGNAME" "$2" ;;
+    --timer) notify-send -i "$__f_icn_timer" "$PROGNAME" "$2"
+  esac
+}
 
-  [[ $_DA ]] && ((height+=1))
+play_sound() {
+  [[ ${__o[q]} ]] && return
+  case $1 in
+    welcome) aplay --quiet "$__f_snd_welcome" & ;;
+    key    ) aplay --quiet "$__f_snd_key" & ;;
+    digit  ) aplay --quiet "$__f_snd_digit" & ;;
+    alarm  ) aplay --quiet "$__f_snd_alarm" & ;;
+    timer  ) aplay --quiet "$__f_snd_timer" & ;;
+    beep   ) aplay --quiet "$__f_snd_beep" & ;;
+    error  ) aplay --quiet "$__f_snd_err" & ;;
+    confirm) aplay --quiet "$__f_snd_yes" & ;;
+    quit   ) aplay --quiet "$__f_snd_quit" ;;
+  esac
+}
 
-  ((CLOCKH=height))
-  ((CLOCKW=width))
+toggle_display() {
+  [[ ${__o[q]} ]] && return 1
 
-  ((CLOCKH>=TERMH || CLOCKW>=TERMW)) && return 1
+  [[ $_a_ring && ! $1 ]] && { unset _a_ring _a_ring_dur; unset __i_alarm; return 0; }
+  [[ $_t_ring && ! $1 ]] && { reset_timer; ((__display!=3)) && return 0; }
+
+  [[ ! ${__o[a]} && ! $_a_set && ! ${__o[t]} && ! $_t_set && ! $1 ]] && return 1
+
+  __u_date=1
+
+  ((__display==2)) && [[ ! $1 ]] && unset __i_alarm
+
+  if [[ $_a_set || $_t_set ]] && [[ ! $1 ]]; then __display=4
+  elif [[ $1 ]]; then __display=$1; else ((__display++)); fi
+
+  ((__display==2)) && [[ ${__o[a]} || $_a_set ]] && {
+    erase_clock_line 
+    unset __i_alarm
+    [[ $_a_set ]] && { __digit_sel=0; unset H1; }
+    mode_display
+    return 0
+  }
+
+  ((__display==2)) && [[ ! ${__o[a]} ]] && ((__display++))
+
+  ((__display==3)) && [[ ${__o[t]} || $_t_set ]] && {
+    erase_clock_line
+    [[ ${__o[v]} ]] && erase_timer_line
+    unset __i_timer S1 S2
+    [[ $_t_set ]] && { __digit_sel=0; unset H1; }
+    mode_display
+    return 0
+  }
+  [[ $__display -gt 2 || $1 ]] && erase_clock_line
+  __display=1
+  __i_mode=1
+  unset __i_alarm __i_timer
+  [[ ${__o[b]} ]] && unset __separator
+  [[ $_a_set ]] && cancel_alarm
+  [[ $_t_set ]] && cancel_timer
+  mode_display
   return 0
 }
 
-# redraw clock
-REDRAW_CLOCK() {
-  _REDRAW=1
-  TERMH="$(tput lines)"
-  TERMW="$(tput cols)"
-  if ! CLOCK_SIZE; then
-    EXIT_CLOCK "error: clock doesn't fit"
+mode_display() {
+  local y x mode
+  case $__display in
+    1) mode="TIME"  ;;
+    2) if [[ $_a_set ]]; then mode="SET ALARM"; else mode="ALARM"; fi ;;
+    3) if [[ $_t_set ]]; then mode="SET TIMER"; else mode="TIMER"; fi ;;
+  esac
+  ((y=__pos_y-1))
+  [[ ${__o[v]} ]] && ((x=__pos_x))
+  [[ ${__o[v]} ]] || ((x=__pos_x+__clock_w-${#mode}))
+  random_color
+  loc $((y)) $((x-(9-${#mode})))
+  tput el
+  loc $((y)) $((x))
+  echo "$mode" | print_rainbow
+  __i_mode=1
+}
+
+erase_display_line() {
+  local y x
+  ((y=__pos_y-1))
+  [[ ${__o[v]} ]] && ((x=__pos_x))
+  [[ ${__o[v]} ]] || ((x=__pos_x+__clock_w-9))
+  loc $((y)) $((x))
+  tput el
+  unset __i_mode
+}
+
+##    _ _  _  _
+##  // / \|_)|_
+## / \_\_/| \|_
+## /CORE
+
+##  _ _    _  _
+## / / \| / \|_)
+## \_\_/|_\_/| \
+## COLOR
+
+set_color() {
+  [[ $2 =~ ^[0-9]+$ ]] || return 1
+  if (($2>=0 && $1<=__color_count-1)); then
+    case $1 in
+      --bg) __color_bg=$2 ;;
+      --fg) __color_fg=$2
+    esac
+    return 0
+  else
+    return 1
   fi
-  ((_y=(TERMH-CLOCKH)/2))
-  ((_x=(TERMW-CLOCKW)/2))
-  unset H1 H2 M1 M2 S1 S2 S p date PB IA IH IT IZ OT
-  clear
-  _REDRAW=0
 }
 
-quit_animation() {
-  _REDRAW=1
-  for ((i=_y-1;i<_y+CLOCKH+1;i++)); do
-    tput cup $((i)) $((_x-4))
-    tput el
-    if [[ ! $_VL ]]; then
-      sleep 0.0625
-    else
-      sleep 0.03125
-    fi
-  done
-  sleep 0.5
-  _REDRAW=0
-}
-
-EXIT_CLOCK() {
-  [[ $1 == "Q" ]] && { quit_animation; shift; }
-  tput cnorm
-  tput rmcup
-  stty sane
-  # update terminal title to default(?) within tmux (...)
-  [[ $TERM =~ ^tmux.*$ ]] && echo -ne "\033]0;$(hostname)\007"
-  [[ $1 ]] && __err "$1"
-  __err "-- bye!"
-  exit 1
-}
-
-LIST_COLORS() {
-  local tc maxcols col on off
-  tc="$(tput setaf 0)"
-  ((maxcols=(TERMW/5)-1))
-  col=0
-  for ((i=0;i<COLORS;i++)); do
+list_colors() {
+  local term_w max_cols term_color col i on off
+  term_w="$(tput cols)"
+  ((max_cols=term_w<75?term_w/5-1:15))
+  for ((i=0;i<__color_count;i++)); do
     on="$(tput setab $((i)))"
+    if ((i==0)); then
+      term_color="$(tput setaf $((__color_count-1)))"
+    else
+      term_color="$(tput setaf 0)"
+    fi
     off="$(tput sgr0)"
-    printf "%s%s %03d %s" "$on" "$tc" "$i" "$off"
+    printf "%s%s %03d %s" "$on" "$term_color" "$i" "$off"
     ((col++))
-    ((col>maxcols/2)) && { printf "\n"; col=0; }
+    ((col>max_cols)) && { printf "\n"; col=0; }
   done
   echo
 }
 
-LIST_FILES() {
+random_color() {
+  [[ ! ${__o[r]} && ! ${__o[n]} ]] && return 1
+  [[ ${__o[r]} ]] && ((__color_idx=__color_idx>${#__colors[@]}-2?0:__color_idx+1))
+  [[ ${__o[r]} ]] && __color=${__colors[$__color_idx]}
+  [[ ${__o[n]} ]] && ((__color=RANDOM%15+1))
+  return 0
+}
+
+##    _ _    _  _
+##  // / \| / \|_)
+## / \_\_/|_\_/| \
+## /COLOR
+
+##  _    _
+## |_o| |_
+## | ||_|_
+## FiLE
+
+check_file() {
+  [[ $1 =~ \.digits$ ]] && __f_digits="$1" || __f_digits="$1.digits"
+  if [[ ! -a "$__path_digits/$__f_digits" && ! -a "$__path_digits_custom/$__f_digits" ]]; then return 1
+  elif [[ -a "$__path_digits/$__f_digits" ]]; then __f_digits="$__path_digits/$__f_digits"
+  else __f_digits="$__path_digits_custom/$__f_digits"
+  fi
+  return 0
+}
+
+list_files() {
+  local files
   files="$(
   (
-    find "$DIGITS_PATH" -name "*.digits" 2> /dev/null 
-    find "$CUSTOM_DIGITS_PATH" -name "*.digits" 2> /dev/null
+    find "$__path_digits" -name "*.digits" 2> /dev/null
+    find "$__path_digits_custom" -name "*.digits" 2> /dev/null
   ) )"
-  [[ ! $files ]] && { __err "error: no digits file found"; return 1; }
+  [[ ! $files ]] && return 1
   echo -e "$files"
   return 0
 }
 
+preview_file() {
+  local y x term_h i
+  term_h="$(tput lines)"
 
-### OPTIONS
+  # shellcheck disable=SC2162
+  IFS=";" read -sdR -p $'\E[6n' y x
+  y="${y#*[}"; x="${x#*[}"
+  # ((y--))
+  ((y+__digit_h>term_h)) && {
+    for ((i=0;i<__digit_h;i++)); do echo; done
+    ((y=term_h-__digit_h))
+  }
+  [[ $__color_bg ]] && tput setab "$__color_bg"
+  [[ $__color_fg ]] && tput setaf "$__color_fg"
+  print_digit $((y)) $((x)) "0"
+  ((x+=__digit_w))
+  [[ ${__o[v]} ]] || {
+    print_separator $((y)) $((x))
+    ((x+=__sep_w))
+  }
+  print_digit $((y)) $((x)) "9"
+  [[ $__color_fg || $__color_bg ]] && tput sgr0
+  echo
+}
+
+read_param() {
+  local __p __v __a
+  __p="$1"
+  while read -r __v; do
+    if [[ $__v =~ ^$__p=.*$ ]]; then
+      IFS=$'\n' read -d "" -ra __a <<< "${__v//=/$'\n'}"
+      if [[ ! ${__a[1]} ]]; then
+        echo "null"
+        return 1
+      else
+        echo "${__a[1]}"
+        return 0
+      fi
+    fi
+  done < "$__f_digits"
+  echo "null"
+  return 1
+}
+
+##    _    _
+##  /|_o| |_
+## / | ||_|_
+## /FiLE
+
+##  _   _  _
+## / | / \/ |/
+## \_|_\_/\_|\
+## CLOCK
+
+clock_geometry() {
+  local term_h term_w
+
+  if [[ ! ${__o[v]} ]]; then
+    ((__clock_h=__digit_h))
+    ((__clock_w=(__digit_w*4)+2+__sep_w))
+    # [[ ${__o[d]} ]] && ((__clock_h+=1))
+    [[ ${__o[S]} ]] && ((__clock_w+=(__digit_w*2)+1+__sep_w))
+    # [[ ${__o[z]} ]] && ((__clock_h+=1))
+  else
+    ((__clock_h=__digit_h*2+1))
+    ((__clock_w=__digit_w*2+1))
+    [[ ${__o[S]} ]] && ((__clock_h+=__digit_h+1))
+  fi
+
+  term_h="$(tput lines)"
+  term_w="$(tput cols)"
+
+  ((__clock_h>=term_h || __clock_w>=term_w)) && return 1
+
+  ((__pos_y=(term_h-__clock_h)/2))
+  ((__pos_x=(term_w-__clock_w)/2))
+}
+
+init_clock() {
+  tput smcup
+  tput civis
+  stty -echo -icanon time 0 min 0
+
+  [[ $__color_fg ]] && tput setaf "$__color_fg"
+  [[ $__color_bg ]] && tput setab "$__color_bg"
+
+  tput clear
+
+  splash
+
+  tput clear
+}
+
+redraw_clock() {
+  if ! clock_geometry; then exit_clock "error: clock doesn't fit."; fi
+  unset H1 H2 M1 M2 S1 S2 S p 
+  unset __i_signal __i_alarm __i_timer
+  unset __time __timezone __separator
+  __u_date=1
+  unset __s_date
+  clear
+}
+
+erase_screen() {
+  local y x h
+  ((y=__pos_y-1))
+  ((x=__pos_x-4))
+  ((h=__clock_h+2))
+  for ((i=y;i<y+h;i++)); do
+    loc $((i)) $((x)); tput el
+    if [[ ! ${__o[v]} ]]; then
+      pause 0.0625
+    else
+      pause 0.03125
+    fi
+  done
+  pause 0.5
+}
+
+splash() {
+  local y x term_h term_w
+  term_h="$(tput lines)"
+  term_w="$(tput cols)"
+  if [[ ! ${__o[v]} ]]; then
+    local logo="-B!GT!ME-"
+    ((y=(term_h-1)/2))
+    ((x=(term_w-${#logo})/2))
+    random_color
+    loc $((y)) $((x))
+    echo "$logo" | print_rainbow
+  else
+    local l1 l2 l3 l4
+    l1="B!"; l2="-G"; l3="T!"; l4="ME"
+    ((y=(term_h-4)/2))
+    ((x=(term_w-2)/2))
+    random_color
+    loc $((y)) $((x))
+    echo "$l1" | print_rainbow
+    random_color
+    loc $((y+1)) $((x))
+    echo "$l2" | print_rainbow
+    random_color
+    loc $((y+2)) $((x))
+    echo "$l3" | print_rainbow
+    random_color
+    loc $((y+3)) $((x))
+    echo "$l4" | print_rainbow
+  fi
+  pause 0.25
+  play_sound welcome
+  pause 1
+  loc $((y)) $((x))
+  [[ ${__o[v]} ]] && tput el1
+  [[ ! ${__o[v]} ]] && tput el
+}
+
+print_indicator() {
+  local pos ind
+  pos="$1"
+  ind="$2"
+  random_color
+  loc $((__pos_y+pos)) $((__pos_x-4))
+  echo "$ind" | print_rainbow
+}
+
+display_clock() {
+  local h1 h2 m1 m2 s1 s2
+  local Y X
+
+  ((Y=__pos_y))
+  ((X=__pos_x))
+
+  smso() ( tput smso )
+  rmso() ( tput rmso )
+
+  h1=${_H:0:1}
+  h2=${_H:1:1}
+  m1=${_M:0:1}
+  m2=${_M:1:1}
+  s1=${_S:0:1}
+  s2=${_S:1:1}
+
+  _tick
+
+  [[ $_a_set || $_t_set ]] && ((__digit_sel==0)) && smso
+  [[ $h1 != "$H1" ]] && print_digit $((Y)) $((X)) "$h1"
+  [[ $_a_set || $_t_set ]] && ((__digit_sel==0)) && rmso
+
+  H1=$h1
+  ((X+=__digit_w+1))
+
+  [[ $_a_set || $_t_set ]] && ((__digit_sel==1)) && smso
+  [[ $h2 != "$H2" ]] && print_digit $((Y)) $((X)) "$h2"
+  [[ $_a_set || $_t_set ]] && ((__digit_sel==1)) && rmso
+
+  H2=$h2
+
+  if [[ ! ${__o[v]} ]]; then
+    ((X+=__digit_w))
+    ((SX=X))
+    ((X+=__sep_w))
+  else
+    ((Y+=__digit_h+1))
+    ((X=__pos_x))
+  fi
+
+  [[ $_a_set || $_t_set ]] && ((__digit_sel==2)) && smso
+  [[ $m1 != "$M1" ]] && print_digit $((Y)) $((X)) "$m1"
+  [[ $_a_set || $_t_set ]] && ((__digit_sel==2)) && rmso
+
+  M1=$m1
+  ((X+=__digit_w+1))
+
+  [[ $_a_set || $_t_set ]] && ((__digit_sel==3)) && smso
+  [[ $m2 != "$M2" ]] && print_digit $((Y)) $((X)) "$m2"
+  [[ $_a_set || $_t_set ]] && ((__digit_sel==3)) && rmso
+
+  M2=$m2
+
+  if [[ ! ${__o[v]} ]]; then
+    [[ ${__o[S]} ]] && ((X+=__digit_w))
+    [[ ! ${__o[S]} ]] && ((X+=__digit_w+1))
+  else
+    if [[ ${__o[S]} ]]; then
+      ((Y+=__digit_h+1))
+      ((X=__pos_x))
+    else
+      ((Y+=__digit_h-1))
+      ((X+=__digit_w))
+    fi
+  fi
+
+  [[ ${__o[b]} && $__display -eq 2 || $_a_set ]] && __tick_idx=0
+  [[ ${__o[b]} && $__display -eq 3 && ! $_t_active || $_t_set ]] && __tick_idx=0
+
+  if [[ ${__o[S]} ]]; then
+    [[ ! ${__o[v]} ]] && {
+      [[ ! $__separator ]] && print_separator $((Y)) $((SX))
+      [[ ! $__separator ]] && print_separator $((Y)) $((X))
+      ((X+=__sep_w))
+    }
+
+    [[ $s1 != "$S1" ]] && print_digit $((Y)) $((X)) "$s1"
+
+    S1=$s1
+    ((X+=__digit_w+1))
+
+    [[ $s2 != "$S2" ]] && print_digit $((Y)) $((X)) "$s2"
+
+    S2=$s2
+    ((X+=__digit_w+1))
+
+  elif [[ ! ${__o[s]} && ! ${__o[v]} ]]; then
+    [[ ! $__separator ]] && print_separator $((Y)) $((SX))
+  fi
+
+  [[ ${__o[s]} ]] || [[ $__display -eq 3 || $_t_set ]] && [[ ! ${__o[S]} ]] && {
+    if [[ ! ${__o[v]} ]]; then
+      [[ ! $__separator ]] && print_separator $((Y)) $((SX))
+      if [[ $S1 != "$s1" ]]; then
+        loc $((Y)) $((X))
+      else
+        loc $((Y)) $((X+1))
+      fi
+    else
+      if [[ $S1 != "$s1" ]]; then
+        loc $((Y)) $((__pos_x+__clock_w+1))
+      else
+        loc $((Y)) $((__pos_x+__clock_w+2))
+      fi
+    fi
+
+    random_color
+    [[ $S1 != "$s1" ]] && echo "$s1" | print_rainbow
+    S1="$s1"
+
+    random_color
+    [[ $S2 != "$s2" ]] && echo "$s2" | print_rainbow
+    S2="$s2"
+
+    S="$_S"
+  }
+
+  [[ ! ${__o[b]} || $__display -eq 2 || $_a_set ]] && __separator=1
+
+  [[ ! ${__o[s]} ]] && [[ $__display -ne 3 || ! $_t_set ]] && [[ ! ${__o[S]} ]] && {
+    [[ ! $S ]] && { loc $((Y)) $((X)); tput el; }
+    unset S
+  }
+
+  [[ $_p ]] && {
+    loc $((__pos_y+__digit_h-1)) $((X))
+    random_color
+    [[ $p != "$_p" ]] && echo "$_p" | print_rainbow
+    p="$_p"
+  }
+
+  [[ ${__o[f]} && $p ]] && {
+    loc $((__pos_y+__digit_h-1)) $((X))
+    tput el
+    unset p
+  }
+}
+
+exit_clock() {
+  [[ $1 == "--quit" ]] && { erase_screen; shift; }
+  tput cnorm
+  tput rmcup
+  stty sane
+  [[ $TERM =~ ^tmux.*$ ]] && echo -en "\033]0;$(hostname)\007"
+  [[ $1 ]] && _err "$1" && exit 1
+  _err "-- bye!"
+  exit 0
+}
+
+
+##    _   _  _
+##  // | / \/ |/
+## / \_|_\_/\_|\
+## /CLOCK
+
+## ___     _ _    ____
+##  |o|\/||_| \ /\ ||_
+##  |||  ||_|_//--\||_
+## TiMEDATE
+
+declare -i __u_date=1
+
+exec {pause_fd}<> <(:)
+pause() ( read -rt "$1" -u $pause_fd )
+
+_time() ( printf "%($1)T\\n" "-1" )
+
+_split_time()  { IFS=$'\n' read -d "" -ra __T_timedate <<< "${1//:/$'\n'}"; }
+
+_format_date() ( date -d "$1"  "+$2" 2> /dev/null )
+
+_from_epoch()  ( date -d "@$1" "+$2" 2> /dev/null )
+
+_to_epoch()    ( date -d "$1"  "+%s" 2> /dev/null )
+
+_tick()        { ((__tick_idx=EPOCHSECONDS%2==0?0:1)); }
+
+_hms_to_sec() {
+  local H M S __w __d __m
+  _split_time "$1:$(_time "%a:%d:%m")"
+  H="${__T_timedate[0]}"
+  M="${__T_timedate[1]}"
+  S="${__T_timedate[2]}"
+  __w="${__T_timedate[3]}"
+  __d="${__T_timedate[4]}"
+  __m="${__T_timedate[5]}"
+  printf "%02d:  :%02d:%02d:%02d:%s:%s:%s" "$H" "$H" "$M" "$S" "$__w" "$__d" "$__m"
+}
+
+_sec_to_hms() {
+  local T H M S __w __d __m
+  T=$1
+  ((H=T/3600))
+  ((M=(T%3600)/60))
+  ((S=T%60))
+  _split_time "$(_time "%a:%d:%m")"
+  __w="${__T_timedate[0]}"
+  __d="${__T_timedate[1]}"
+  __m="${__T_timedate[2]}"
+  printf "%02d:  :%02d:%02d:%02d:%s:%s:%s" "$H" "$H" "$M" "$S" "$__w" "$__d" "$__m"
+}
+
+display_time() {
+  ((__display==1)) || return 1
+  _split_time "$(LC_TIME=C _time "$__format")"
+  return 0
+}
+
+parse_time() {
+  if [[ ${__o[f]} ]]; then
+    _H="${__T_timedate[2]}"  # hour (00-23)
+    [[ $_p ]] && unset _p
+  else
+    _H="${__T_timedate[0]}"  # hour (01-12)
+    _p="${__T_timedate[1]}"  # am/pm
+  fi
+  _M="${__T_timedate[3]}"    # minutes (00-59)
+  _S="${__T_timedate[4]}"    # seconds (00-59)
+  _Z="${__T_timedate[8]}"    # timezone (+0000)
+}
+
+parse_date() {
+  W="${__T_timedate[5]:0:2}" # weekday (MO-SU)
+  W="${W^^}"
+  D="${__T_timedate[6]}"     # day (01-31)
+  m="${__T_timedate[7]}"     # month (01-12)
+  __date="$W $m-$D"
+}
+
+manage_hourly_signal() {
+  [[ ${__o[q]} ]] && return 1
+
+  [[ ${__o[i]} && ! $_a_ring && ! $_t_ring ]] && {
+    case $__display in
+      1  ) [[ $_M == "00" && $_S == "00" ]] && play_sound beep ;;
+      2-3) local mm ss; mm="$(_time "%M")"; ss="$(_time "%S")"; [[ $mm == "00" && $ss == "00" ]] && play_sound beep
+    esac
+  }
+  [[ ! $__i_signal ]] && {
+    [[ ${__o[i]} ]] && { ((__display==1)) && print_indicator 0 " ${__i[i]} "; }
+    [[ ${__o[i]} ]] || { ((__display==1)) && print_indicator 0 "   "; }
+    __i_signal=1
+  }
+}
+
+toggle_hourly_signal() {
+  [[ ${__o[q]} ]] && return 1
+
+  [[ ${__o[i]} ]] && {  unset __o["i"] __i_signal; return 0; }
+  [[ ${__o[i]} ]] || { __o[i]=1; unset __i_signal; return 0; }
+}
+
+erase_clock_line() {
+  loc $((__pos_y+__digit_h)) $((__pos_x))
+  tput el
+  unset __time __timezone
+}
+
+update_date() {
+  [[ ! ${__o[d]} ]] && return 1
+  [[ $_H == "00" ]] || [[ $_H == "12" && $_p == "AM" ]] && [[ $_M == "00" && $_S == "00" ]] && {
+    __u_date=1
+    return 0
+  }
+  return 0
+}
+
+print_date() {
+  [[ ! ${__o[d]} ]] && return 1
+  [[ ! $__u_date ]] && return 1
+  [[ $__s_date == "$__date" ]] && { unset __u_date; return 1; }
+  local y x
+  unset __u_date
+  [[ ${__o[v]} ]] && {
+    ((y=__pos_y))
+    ((x=__pos_x+__clock_w+1))
+    loc $((y)) $((x))
+    random_color
+    echo "$W" | print_rainbow
+    loc $((y+1)) $((x))
+    random_color
+    echo "$m" | print_rainbow
+    loc $((y+2)) $((x))
+    random_color
+    echo "$D" | print_rainbow
+    __s_date="$__date"
+    return 0
+  }
+  ((y=__pos_y-1))
+  ((x=__pos_x))
+  loc $((y)) $((x))
+  random_color
+  echo "$__date" | print_rainbow
+  __s_date="$__date"
+  return 0
+}
+
+print_time() {
+  local t
+  [[ ${__o[f]} ]] && t="$(_time "%H:%M")" || t="$(LC_TIME=C _time "%I:%M %p")"
+  [[ $t != "$__time" ]] && echo -ne "\033]0;bigtime: $t\007"
+  if ((__display>1)); then
+    [[ $t != "$__time" ]] && {
+      random_color
+      loc $((__pos_y+__digit_h)) $((__pos_x))
+      echo "$t" | print_rainbow
+      __time="$t"
+    }
+    return 0
+  fi
+  return 1
+}
+
+print_timezone() {
+  [[ ! ${__o[z]} ]] && return 1
+  if ((__display==1)) && [[ ! $__timezone ]]; then
+    loc $((__pos_y+__digit_h)) $((__pos_x))
+    printf "%s" "$_Z"
+    __timezone=1
+    return 0
+  fi
+  return 1
+}
+
+toggle_ampm() {
+  ((__display==1)) && {
+    [[ ${__o[f]} ]] && { unset __o["f"]; return 0; }
+    [[ ${__o[f]} ]] || { __o[f]=1; return 0; }
+  }
+  ((__display==2)) && toggle_alarm_ampm || return 1
+  return 1
+}
+
+##  ___     _ _    ____
+##  /|o|\/||_| \ /\ ||_
+## / |||  ||_|_//--\||_
+## /TiMEDATE
+
+##            _
+##  /\ |  /\ |_)|\/|
+## /--\|_/--\| \|  |
+## ALARM
+
+set_alarm() {
+  [[ $1 == "cmdline" ]] && {
+    [[ $_a_time == "now" ]] && {
+      _a_ring=1
+      _a_ring_dur=1
+      unset _a_time
+      unset __o["a"]
+      return 0
+    }
+    local f="^[0-2]?[0-9]:[0-5][0-9][[:space:]]?(AM|am|PM|pm)?$"
+    [[ $_a_time =~ $f ]] || return 1
+  }
+  if [[ ${__o[f]} ]]; then
+    _a_time="$(_format_date "$_a_time" "%H:%M:%S")" || {
+      play_sound error
+      return 1
+    }
+  else
+    _a_time="$(LC_TIME=C _format_date "$_a_time" "%I:%M:%S %p")" || {
+      play_sound error
+      return 1
+    }
+  fi
+  __T_a_sec="$(_to_epoch "$_a_time")" || return 1
+  ((__T_a_sec<EPOCHSECONDS)) && ((__T_a_sec+=86400))
+  return 0
+}
+
+activate_alarm() {
+  [[ ${__o[a]} && $__T_a_sec ]] && {
+    ((_a_sec=__T_a_sec))
+    unset __T_a_sec
+    return 0
+  }
+  return 1
+}
+
+set_snooze() {
+  # snooze duration 5-15 minutes (default: 9 minutes)
+  [[ $1 == "--default" ]] && {
+    _snooze_dur="${_snooze_dur:-540}"
+    return 0
+  }
+  _snooze_dur=$1
+  [[ $_snooze_dur =~ ^[0-9]?[0-9]$ ]] || return 1
+  ((_snooze_dur<5 || _snooze_dur>15)) && return 1
+  ((_snooze_dur*=60))
+  return 0
+}
+
+display_alarm() {
+  ((__display!=2)) && return 1
+  if [[ $_a_set ]]; then
+    _split_time "$(LC_TIME=C _from_epoch "$__T_a_sec" "$__format")"
+  elif [[ $_a_sec ]]; then
+    _split_time "$(LC_TIME=C _from_epoch "$_a_sec" "$__format")"
+  fi
+  return 0
+}
+
+cancel_alarm() {
+  [[ $__changed ]] && {
+    ((__T_a_sec=_a_sec))
+    local alarm
+    alarm="$(LC_TIME=C _from_epoch "$__T_a_sec" "$__format")"
+    _split_time "$alarm"
+    parse_time
+    [[ ${__o[f]} ]] && _a_time="$_H:$_M:$_S"
+    [[ ${__o[f]} ]] || _a_time="$_H:$_M:$_S $_p"
+  }
+  unset _a_set __changed
+  unset __digit_sel
+  unset H1 H2 M1 M2
+  return 0
+}
+
+toggle_alarm() {
+  [[ ${__o[q]} ]] && return 1
+
+  [[ $_a_snooze ]] && ((__display==1)) && { # snooze deactivate
+    unset _a_snooze _a_snooze_dur
+    unset _a_ring _a_ring_dur
+    unset __i_alarm
+    return 0
+  }
+
+  ((__display==2)) && { # alarm display mode
+    [[ $_a_set ]] && { # alarm set mode
+      [[ $__changed ]] && { # confirm
+        __o[a]=1
+        play_sound confirm
+        activate_alarm
+        unset __changed _a_set __digit_sel H1 H2 M1 M2
+        toggle_display 1
+        return 1
+      }
+      [[ $__changed ]] || { # discard
+        unset __changed _a_set __digit_sel H1 H2 M1 M2
+        toggle_display 1
+        return 0
+      }
+    }
+    set_alarm
+    _a_set=1
+    toggle_display 2
+    return 0
+  }
+
+  ((__display!=1)) && return 1
+
+  [[ ${__o[a]} ]] && { # alarm off
+    unset __o["a"]
+    unset __i_alarm
+    return 0
+  }
+  [[ ! ${__o[a]} && $_a_sec ]] && { # alarm on
+    __o[a]=1
+    unset __i_alarm
+    return 0
+  }
+  [[ ! ${__o[a]} && ! $_a_sec ]] && { # new alarm
+    _a_time="00:00:00"; set_alarm
+    _a_set=1
+    toggle_display 2
+    return 0
+  }
+  return 1
+}
+
+toggle_alarm_ampm() {
+  [[ $_a_set ]] && [[ ! ${__o[f]} ]] && {
+    play_sound key
+    if [[ $_a_time =~ ^.*AM$ ]]; then _a_time="${_a_time/AM/PM}"
+    else _a_time="${_a_time/PM/AM}"; fi
+    __changed=1
+    set_alarm
+    __u_date=1
+    return 0
+  }
+  return 1
+}
+
+manage_alarm() {
+  [[ ${__o[q]} ]] && return 1
+  
+  [[ ${__o[a]} ]] && ((__display!=2)) && [[ $EPOCHSECONDS == "$_a_sec" ]] && {
+    local t
+    [[ ${__o[f]} ]] && t="$(_time "%H:%M")" || t="$(LC_TIME=C _time "%I:%M %p")"
+    notify --alarm "$t"
+    ((_a_sec+=86400))
+    _a_ring=1; _a_ring_dur=0
+    _a_snooze=1; _a_snooze_dur=0
+    unset __i_alarm
+  }
+  [[ ${__o[a]} ]] && ((_a_snooze_dur==_snooze_dur)) && {
+    _a_ring=1
+    _a_ring_dur=0
+    _a_snooze_dur=0
+    unset __i_alarm
+  }
+  [[ $_a_ring ]] && ((__tick_idx==1)) && play_sound alarm
+  [[ $_a_ring ]] && ((_a_ring_dur++))
+  [[ $_a_snooze ]] && ((_a_snooze_dur++))
+  ((_a_ring_dur==30)) && unset _a_ring _a_ring_dur __i_alarm
+ 
+  [[ ! $__i_alarm ]] && {
+    [[ ${__o[a]} ]] && {
+      ((__display==2)) && { [[ $_a_set ]] && print_indicator 1 " ${__i[a]}>"; }
+      ((__display==2)) && { [[ $_a_set ]] || print_indicator 1 ">${__i[a]} "; }
+      ((__display!=2)) && {
+        [[ $_a_ring ]] && ((__tick_idx==1)) && { print_indicator 1 " ${__i[a]}!"; return 0; }
+        [[ $_a_ring ]] && ((__tick_idx==0)) && { print_indicator 1 "   "; return 0; }
+        [[ ! $_a_ring ]] && [[ $_a_snooze ]] && print_indicator 1 " ${__i[o]} "
+        [[ ! $_a_ring ]] && [[ ! $_a_snooze ]] && print_indicator 1 " ${__i[a]} "
+      }
+    }
+    [[ ${__o[a]} ]] || print_indicator 1 "   "
+    __i_alarm=1
+    return 0
+  }
+  [[ ! ${__o[a]} ]] && return 1
+}
+
+##             _
+##  //\ |  /\ |_)|\/|
+## //--\|_/--\| \|  |
+## /ALARM
+
+## ___     _ _
+##  |o|\/||_|_)
+##  |||  ||_| \
+## TiMER
+
+set_timer() {
+  [[ $_t_time =~ ^[0-2]?[0-9]:[0-5][0-9] ]] && {
+    [[ $_t_time == "00:00" || $_t_time == "0:00" ]] && return 1
+    _t_time="$(_format_date "$_t_time" "%H:%M:%S")" || return 1
+    return 0
+  }
+  return 1
+}
+
+activate_timer() {
+  [[ ! ${__o[t]} ]] && return 1
+  [[ ! ${__o[t]} ]] && return 1
+  local H M
+  _split_time "$_t_time"
+  H="${__T_timedate[0]}"
+  M="${__T_timedate[1]}"
+  _t_sec="$(_format_date "now + $H hours $M minutes" "%s")"
+  unset __T_t_sec
+  _t_active=1
+  unset __i_timer
+  return 0
+}
+
+reset_timer() {
+  [[ ${__o[q]} ]] && return 1
+  unset __o["t"] _t_active _t_time _t_sec _t_time_left
+  unset _t_ring _t_ring_dur __i_timer
+  erase_timer_line
+  return 0
+}
+
+display_timer() {
+  ((__display!=3)) && return 1
+  if [[ $_t_set ]]; then
+    _split_time "$(LC_TIME=C _hms_to_sec "$_t_time")"
+  elif [[ $_t_active ]]; then
+    _split_time "$(LC_TIME=C _sec_to_hms "$_t_time_left")"
+    unset TH TM TS
+  fi
+}
+
+print_timer() {
+  [[ ${__o[q]} ]] && return 1
+  ((__display != 3)) && [[ $_t_active ]] && {
+    local t h m s y x
+    _split_time "$(LC_TIME=C _sec_to_hms "$_t_time_left")"
+    h="${__T_timedate[0]}"
+    m="${__T_timedate[3]}"
+    s="${__T_timedate[4]}"
+
+    [[ ${__o[v]} ]] || {
+      [[ $h != "00" ]] && t="$h:$m:$s"
+      [[ $h == "00" ]] && t="   $m:$s"
+      [[ $h == "00" ]] && [[ $m == "00" ]] && t="     :$s"
+      ((y=__pos_y+__clock_h)); ((x=__pos_x+__clock_w-${#t}))
+      loc $((y)) $((x))
+      echo "$t" | print_rainbow
+      return 0
+    }
+    [[ ${__o[v]} ]] && {
+      ((y=__pos_y+__clock_h-__digit_h)); ((x=__pos_x-3))
+      loc $((y)) $((x)); [[ $TH != "$h" ]] && { echo "$h" | print_rainbow; TH=$h; }; ((y++))
+      loc $((y)) $((x)); [[ $TM != "$m" ]] && { echo "$m" | print_rainbow; TM=$m; }; ((y++))
+      loc $((y)) $((x)); [[ $TS != "$s" ]] && { echo "$s" | print_rainbow; TS=$s; }
+      return 0
+    }
+  }
+  return 1
+}
+
+erase_timer_line() {
+  [[ ${__o[q]} ]] && return 1
+  local y x
+  [[ ${__o[v]} ]] || {
+    ((y=__pos_y+__clock_h)); ((x=__pos_x+__clock_w-8))
+    loc $((y)) $((x)); tput el
+  }
+  [[ ${__o[v]} ]] && {
+    ((y=__pos_y+__clock_h-__digit_h)); ((x=__pos_x-3))
+    loc $((y)) $((x)); echo "  "; ((y++))
+    loc $((y)) $((x)); echo "  "; ((y++))
+    loc $((y)) $((x)); echo "  ";
+  }
+  unset TH TM TS
+}
+
+toggle_timer() {
+  [[ ${__o[q]} ]] && return 1
+
+  ((__display==3)) && { # timer display mode
+    [[ $_t_set ]] && { # timer set mode
+      [[ $__changed ]] && { # confirm
+        __o[t]=1
+        play_sound confirm
+        activate_timer
+        unset __changed _t_set __digit_sel H1 H2 M1 M2
+        toggle_display 1
+        return 1
+      }
+      [[ $__changed ]] || { # discard
+        unset __changed _t_set __digit_sel H1 H2 M1 M2
+        toggle_display 1
+        return 0
+      }
+    }
+    reset_timer
+    _t_time="00:00:00"
+    set_timer
+    _t_set=1
+    toggle_display 3
+    return 0
+  }
+
+ ((__display!=1)) && return 1
+
+  [[ ${__o[t]} ]] && { # timer off
+    unset __o["t"]
+    reset_timer
+    return 0
+  }
+  [[ ! ${__o[t]} && $_t_sec ]] && { # timer on
+    __o[t]=1
+    unset __i_timer
+    return 0
+  }
+  [[ ! ${__o[t]} && ! $_t_sec ]] && { # new timer
+    _t_time="00:00:00"
+    _t_set=1
+    toggle_display 3
+    return 0
+  }
+  return 1
+}
+
+timer_elapse() {
+  [[ ! $_t_active ]] && return 1
+  ((_t_time_left=_t_sec-EPOCHSECONDS))
+  ((_t_time_left=_t_time_left>0?_t_time_left:0))
+  return 0
+}
+
+cancel_timer() {
+  unset _t_set __changed
+  unset __digit_sel
+  unset H1 H2 M1 M2
+  return 0
+}
+
+manage_timer() {
+  [[ ${__o[q]} ]] && return 1
+
+  timer_elapse
+
+  [[ $_t_active && ! $_t_ring ]] && {
+    ((_t_time_left==0)) && {
+      notify --timer "Time out"
+      _t_ring=1; _t_ring_dur=0; unset __i_timer
+      ((__display==3)) && toggle_display 1
+    }
+  }
+
+  [[ $_t_ring  && ! $_a_ring ]] && ((__tick_idx==1)) && play_sound timer
+  [[ $_t_ring ]] && ((_t_ring_dur++))
+  ((_t_ring_dur==15)) && reset_timer
+
+  [[ ! $__i_timer ]] && {
+    [[ ${__o[t]} ]] && {
+      ((__display==3)) && { [[ $_t_set ]] && print_indicator 2 " ${__i[t]}>"; }
+      ((__display==3)) && { [[ $_t_set ]] || print_indicator 2 ">${__i[t]} "; }
+      ((__display!=3)) && {
+        [[ $_t_ring ]] && ((__tick_idx==1)) && { print_indicator 2 " ${__i[t]}!"; return 0; }
+        [[ $_t_ring ]] && ((__tick_idx==0)) && { print_indicator 2 "   "; return 0; }
+        [[ ! $_t_ring ]] && print_indicator 2 " ${__i[t]} "
+      }
+    }
+    [[ ${__o[t]} ]] || print_indicator 2 "   "
+    __i_timer=1
+    return 0
+  }
+  [[ ! ${__o[t]} ]] && return 1
+  return 0
+}
+
+##  ___     _ _
+##  /|o|\/||_|_)
+## / |||  ||_| \
+## /TiMER
+
+##
+## |\/| /\ o|\ |
+## |  |/--\|| \|
+## MAiN
+
+# shellcheck disable=SC2155
+declare -r progname="$(basename "$0")"
+declare -r PROGNAME="${progname^^}"
+declare -r __version="2.0"
 
 _opts=$(LC_ALL=C getopt                  \
   --long "alarm:"                        \
@@ -236,750 +1245,160 @@ _opts=$(LC_ALL=C getopt                  \
   --long "timezone"                      \
   --long "version"                       \
   --long "vertical"                      \
-  --options "a:B:SbdfF:hClwqrniso:t:zVv" \
+  --options "a:B:SbdfF:hClwqrniso:t:zvV" \
   --name "$progname"                     \
   -- "$@"                                \
 ) || exit 1
 
 eval set -- "$_opts"
 
-### OPTIONS PARSING
+declare -A __o
 
-while :; do
-  case "$1" in
-    -h | --help         ) __help; exit 0 ;;
-    -V | --version      ) echo "$PROGNAME version $VERSION"; exit 0 ;;
-    -f                  ) _FM=1; shift ;;
-    -s | --small-seconds) unset _SD; _sD=1; shift ;;
-    -S | --big-seconds  ) unset _sD; _SD=1; shift ;;
-    -d | --date         ) _DA=1; shift ;;
-    -z | --timezone     ) _TZ=1; shift ;;
-    -b | --blink        ) _PB=1; shift ;;
-    -v | --vertical     ) unset _PB; _VL=1; shift ;;
-    -a | --alarm        ) [[ $_Q ]] && { shift 2; continue; }; _AA=1; shift; _AT="$1"; shift ;;
-    -i | --signal       ) [[ $_Q ]] && { shift; continue; }; _HTSA=1; shift ;;
-    -t | --timer        ) [[ $_Q ]] && { shift 2; continue; }; _TA=1; shift; _TT="$1"; shift ;;
-    -r | --rainbow      ) _RB=1; unset _RC _FG; shift ;;
-    -n | --random       ) _RC=1; unset _RB _FG; shift ;;
-    -q | --quiet        ) _Q=1; unset _AA _AT _TA _TT _HTSA; shift ;;
-    -C | --list-colors  ) LIST_COLORS; exit 0 ;;
-    -l | --list-files   ) LIST_FILES; exit $? ;;
-
-    -o | --snooze) 
-      shift
-      _OD="$1"
-      shift
-      if [[ ! $_OD =~ ^[0-9]+$ ]]; then
-        __err "invalid snooze duration."
-        exit 1
-      elif ((_OD<5 || _OD>15)); then
-        __err "snooze duration must be between 5 and 15 minutes."
-        exit 1
-      fi
-      ;;
-
-    --file)
-      shift
-      [[ $1 =~ \.digits$ ]] && _FILE="$1" || _FILE="$1.digits"
-      if [[ ! -a "$DIGITS_PATH/$_FILE" ]] && [[ ! -a "$CUSTOM_DIGITS_PATH/$_FILE" ]]; then
-        __err "error: --file $_FILE not found"
-        exit 1
-      else
-        [[ -a "$DIGITS_PATH/$_FILE" ]] && _FILE="$DIGITS_PATH/$_FILE" || \
-          _FILE="$CUSTOM_DIGITS_PATH/$_FILE"
-      fi
-      shift
-      ;;
-    -w | --preview)
-      [[ ! $_FILE ]] && { __err "error: --preview: missing --file option"; exit 1; }
-      shift
-      _PV=1
-      ;;
-    -F | --foreground)
-      shift
-      if [[ $1 =~ ^[0-9]+$ ]]; then
-        if [[ $1 -ge 0 ]] && [[ $1 -le $((COLORS-1)) ]]; then
-          _FG="$1"
-        else
-          __err "error: --foreground should be a numeric value between 0 and $((COLORS-1))"
-          exit 1
-        fi
-      else
-        __err "error: --foreground should be a numeric value between 0 and $((COLORS-1))"
-        exit 1
-      fi
-      unset _RB _RC
-      shift
-      ;;
-    -B | --background)
-      shift
-      if [[ $1 =~ ^[0-9]+$ ]]; then
-        if [[ $1 -ge 0 ]] && [[ $1 -le $((COLORS-1)) ]]; then
-          _BG="$1"
-        else
-          __err "error: --background should be a numeric value between 0 and $((COLORS-1))"
-          exit 1
-        fi
-      else
-        __err "error: --background should be a numeric value between 0 and $((COLORS-1))"
-        exit 1
-      fi
-      shift
-      ;;
-    --) shift; break ;;
-    *)
-      [[ ! $1 ]] && break
-      __err "error: invalid option '$1'"
-      exit 1
+while :
+do
+  case $1 in
+    -a | --alarm        ) [[ ${__o[q]} ]] && { shift 2; continue; }; __o[a]=1; _a_time="$2"; shift 2 ;;
+    -B | --background   ) set_color --bg "$2" || { _err "error: invalid background color."; exit 1; }; shift 2 ;;
+    -b | --blink        ) [[ ${__o[v]} ]] && { shift; continue; }; __o[b]=1; shift ;;
+    -C | --list-colors  ) list_colors; exit 0 ;;
+    -d | --date         ) __o[d]=1; shift ;;
+    -F | --foreground   ) set_color --fg "$2" || { _err "error: invalid foreground color."; exit 1; }; shift 2 ;;
+    --file              ) check_file "$2" || { _err "error: --file $__f_digits not found."; exit 1; }; shift 2 ;;
+    -f                  ) __o[f]=1; shift ;;
+    -h | --help         ) _help; exit 0 ;;
+    -i | --signal       ) [[ ${__o[q]} ]] && { shift; continue; }; __o[i]=1; shift ;;
+    -l | --list-files   ) list_files || { _err "error: no digits files found."; exit 1; }; exit 0 ;;
+    -n | --random       ) __o[n]=1; unset __o["r"] _color_fg; shift ;;
+    -o | --snooze       ) [[ ${__o[q]} ]] && { shift 2; continue; }; set_snooze "$2" || { _err "error: invalid snooze duration."; exit 1; }; shift 2 ;;
+    -q | --quiet        ) __o[q]=1; unset __o["a"] _a_time __o["t"] _t_time __o["i"]; shift ;;
+    -r | --rainbow      ) __o[r]=1; unset __o["n"] _color_fg; shift ;;
+    -S | --big-seconds  ) __o[S]=1; unset __o["s"]; shift ;;
+    -s | --small-seconds) __o[s]=1; unset __o["S"]; shift ;;
+    -t | --timer        ) [[ ${__o[q]} ]] && { shift 2; continue; }; __o[t]=1; _t_time="$2"; shift 2 ;;
+    -V | --version      ) _version; exit 0 ;;
+    -v | --vertical     ) __o[v]=1; unset __o["b"]; shift ;;
+    -w | --preview      ) [[ ! $__f_digits ]] && { _err "error: --preview: missing --file option."; exit 1; }; __o[w]=1; shift ;;
+    -z | --timezone     ) __o[z]=1; shift ;;
+    --                  ) shift; break ;;
+    *                   ) [[ ! $1 ]] && break; _err "error: invalid option '$1'."; exit 1
   esac
 done
 
-! [[ -a "$DIGITS_DEFAULT_FILE" ]] && {
-  __err "error: $DIGITS_DEFAULT_FILE not found"
-  exit 1
-}
-
-_FILE="${_FILE:-$DIGITS_DEFAULT_FILE}"
-
-read_option() {
-  local file option
-  file="$_FILE"
-  option="$1"
-  while read -r line; do
-    if [[ $line =~ ^$option=.*$ ]]; then
-      IFS=$'\n' read -d "" -ra array <<< "${line//=/$'\n'}"
-      if [[ ! ${array[1]} ]]; then
-        echo "null"
-        return 1
-      else
-        echo "${array[1]}"
-        return 0
-      fi
-    fi
-  done < "$file"
-  echo "null"
-  return 1
-}
-
-DH="$(read_option "height")"    || { __err "error: $_FILE: missing 'height' value"; exit 1; }
-DW="$(read_option "width")"     || { __err "error: $_FILE: missing 'width' value"; exit 1; }
-
-_vl="$(read_option "layout")"
-if [[ $_vl == "vertical" ]]; then
-  _VL=1
-elif [[ $_vl == "horizontal" ]]; then
-  unset _VL
-fi
-unset _vl
-
-if [[ ! $_VL ]]; then
-  SW="$(read_option "sep_width")" || { __err "error: $_FILE: missing 'sep_width' value"; exit 1; }
-fi
-
-CLOCK_SIZE || { __err "error: clock doesn't fit"; exit 1; }
-
-_chr="$(read_option "char")"
-if [[ $_chr == "null" ]]; then
-  _CHR="∎"
-  unset _chr
-elif [[ ${#_chr} -ne 1 ]]; then
-  __err "error: $_FILE: 'char' should be 1 character"
-  exit 1
-elif [[ $_chr =~ \\[abcdefnrtv] ]]; then
-  __err "error: $_FILE: 'char' cannot be a backslash escaped character"
-  exit 1
-elif [[ $_chr ]]; then
-  _CHR="$_chr"
-  unset _chr
-fi
-
-_spc="$(read_option "space")"
-if [[ $_spc == "null" ]]; then
-  _SPC=" "
-  unset _spc
-elif [[ ${#_spc} -ne 1 ]]; then
-  __err "error: $_FILE: 'space' should be 1 character"
-  exit 1
-elif [[ $_spc =~ \\[abcdefnrtv] ]]; then
-  __err "error: $_FILE: 'space' cannot be a backslash escaped character"
-  exit 1
-elif [[ $_spc ]]; then
-  _SPC="$_spc"
-  unset _spc
-fi
-
-### DIGITS
-### dynamically declare an array for each digit (_D1, _D1... _D9)
-### where 1s are replaced by _CHR and 0s by _SPC
-for ((i=0;i<10;i++)); do
-  digit="$(read_option "$i")" || { __err "error: $_FILE: digit $i is missing"; exit 1; }
-  IFS=$'\n' read -d "" -ra digit <<< "${digit//$';'/$'\n'}"
-  ((${#digit[@]}!=DH)) && { __err "error: $_FILE: digit $i, height not equal to $DH"; exit 1; }
-  for ((j=0;j<DH;j++)); do
-    ((${#digit[$j]}!=DW)) && { __err "error: $_FILE: digit $i, width not equal to $DW"; exit 1; }
-    digit[$j]=${digit[$j]//0/"$_SPC"}
-    digit[$j]=${digit[$j]//1/"$_CHR"}
-    declare -a "_D$i+=(\"${digit[$j]}\")"
-  done
-  unset digit
-done
-
-### SEPARATOR & BLANK
-[[ ! $_VL ]] && {
-  options=("separator" "blank")
-  for option in "${options[@]}"; do
-    opt="$(read_option "$option")"
-    [[ $opt == "null" ]] && { __err -u "error: $_FILE: missing $option"; exit 1; }
-    IFS=$'\n' read -d "" -ra opt <<< "${opt//$';'/$'\n'}"
-    # check whether height matches declared one
-    ((${#opt[@]}!=DH)) && { __err -u "error: $option: height not equal to $DH"; exit 1; }
-    # replace 0s and 1s
-    for ((i=0;i<DH;i++)); do
-      # check whether width matches declared one
-      ((${#opt[$i]}!=SW)) &&{ __err -u "error: $option: width not equal to $SW: col $((i+1))"; exit 1; }
-      opt[$i]=${opt[$i]//0/"$_SPC"}
-      opt[$i]=${opt[$i]//1/"$_CHR"}
-      case "$option" in
-        separator) declare -a "_P+=(\"${opt[$i]}\")" ;;
-        blank    ) declare -a "_W+=(\"${opt[$i]}\")"
-      esac
-    done
-    unset opt
-  done
-  unset options
-}
-
-# whenever several instances of bigtime are running
-# this is a hack to synchronize them...
-_sync() {
-  declare -i n=1
-  local N
-  while ((n!=0)); do
-    N="$(date "+%N")"
-    n=${N:0:1}
-    sleep 0.0625
-  done
-}
-
-rnd_color() { 
-  [[ $_RB ]] && ((COLOR_IDX=COLOR_IDX>${#RBC[@]}-2?0:COLOR_IDX+1))
-  [[ $_RB ]] && COLOR=${RBC[COLOR_IDX]}
-  [[ $_RC ]] && ((COLOR=RANDOM%15+1))
-}
+##  _   _____
+## | \o/__o|
+## |_/|\_|||
+## DiGiT
 
 print_digit() {
-  local __y __x d D
-  __y=$1; __x=$2; d=$3
+  local y x d i D
+  y=$1 x=$2; d=$3
   shift 3
-  [[ $_RC ]] && rnd_color
-  for ((i=0;i<DH;i++)); do
-    [[ $_RB ]] && rnd_color
-    D=$"_D"$d"[$i]"
-    tput cup $((__y)) $((__x))
+  [[ ${__o[n]} ]] && random_color
+  for ((i=0;i<__digit_h;i++)); do
+    [[ ${__o[r]} ]] && random_color
+    D=$"__d${d}[$i]"
+    tput cup $((y)) $((x))
     echo $"${!D}" | print_rainbow
-    ((__y++))
+    ((y++))
   done
 }
 
 print_separator() {
-  local __y __x blink_array sp
-  __y=$1; __x=$2
+  local y x i ba s
+  y=$1; x=$2
   shift 2
-  [[ $_RC ]] && rnd_color
-  for ((i=0;i<DH;i++)); do
-    [[ $_RB ]] && rnd_color
-    [[ $_PB ]] && {
-      blink_array=("${_P[$i]}" "${_W[$i]}")
-      sp="${blink_array[$IDX]}"
-    } || sp="${_P[$i]}"
-    tput cup $((__y)) $((__x))
-    echo $"$sp" | print_rainbow
-    ((__y++))
+  [[ ${__o[n]} ]] && random_color
+  for ((i=0;i<__digit_h;i++)); do
+    [[ ${__o[r]} ]] && random_color
+    [[ ${__o[b]} ]] && {
+      ba=("${__d_s[$i]}" "${__d_k[$i]}")
+      s="${ba[$__tick_idx]}"
+    } || s="${__d_s[$i]}"
+    loc $((y)) $((x))
+    echo "$s" | print_rainbow
+    ((y++))
   done
 }
 
 print_rainbow() {
-    [[ ! $_RB  && ! $_RC ]] && { while IFS= read -r l; do printf "%s" $"$l"; done; return; }
-    local l L a
-    while IFS= read -r l; do
-        L=${#l}
-        for ((i=0;i<L;i++)); do
-            a="${l:$((i)):1}"
-            [[ $a == " " ]] && { printf "%s" $"$a"; continue; }
-            printf "\033[38;5;%dm%s" "$COLOR" $"$a"
-        done
-        unset COLOR
+  local line
+  [[ ! ${__o[r]} && ! ${__o[n]} ]] && {
+    while IFS= read -r line; do 
+      printf "%s" $"$line"
     done
-}
-
-PREVIEW_FILE() {
-  local __y __x
-  # get cursor position
-  # neat solution from <https://unix.stackexchange.com/questions/88296/get-vertical-cursor-position/183121#183121>
-  # shellcheck disable=SC2162
-  IFS=";" read -sdR -p $'\E[6n' __y __x
-  __y="${__y#*[}"; __x="${__x#*[}"
-  ((__y--))
-  ((__y+DH>TERMH)) && {
-    for ((i=0;i<DH;i++)); do printf $'\n'; done
-    ((__y-=DH))
+    return
   }
-  [[ $_FG ]] && tput setaf "$_FG"
-  [[ $_BG ]] && tput setab "$_BG"
-  print_digit $((__y)) $((__x)) "0"
-  ((__x+=DW+1))
-  print_separator $((__y)) $((__x))
-  ((__x+=SW+1))
-  print_digit $((__y)) $((__x)) "9"
-  [[ $_FG || $_BG ]] && tput sgr0
-  echo
+  local len i a
+  while IFS= read -r line; do
+    len=${#line}
+    for ((i=0;i<len;i++)); do
+      a="${line:$((i)):1}"
+      [[ $a == " " ]] && { printf "%s" $"$a"; continue; }
+      printf "\033[38;5;%dm%s" "$__color" $"$a"
+    done
+    unset __color
+  done
 }
 
-[[ $_PV ]] && { PREVIEW_FILE; exit 0; }
-
-play_sound() {
-  [[ $_Q ]] && return
-  which aplay > /dev/null && {
-    case "$1" in
-      welcome) aplay --quiet "$WELCOME_SOUND" & ;;
-      key    ) aplay --quiet "$KEY_SOUND" & ;;
-      digit  ) aplay --quiet "$DIGIT_SOUND" & ;;
-      alarm  ) aplay --quiet "$ALARM_SOUND" & ;;
-      timer  ) aplay --quiet "$TIMER_SOUND" & ;;
-      beep   ) aplay --quiet "$BEEP_SOUND" & ;;
-      error  ) aplay --quiet "$ERROR_SOUND" & ;;
-      confirm) aplay --quiet "$YES_SOUND" & ;;
-      quit   ) aplay --quiet "$QUIT_SOUND"
-    esac
-  }
-}
-
-set_alarm() {
-  [[ $_AA ]] && {
-    [[ $1 == "cmdline" ]] && {
-      [[ $_AT == "now" ]] && { AR=1; unset _AA _AT; return 0; }
-      local fm="^[0-2]?[0-9]:[0-5][0-9][[:space:]]?(AM|am|PM|pm)?$"
-      [[ ! $_AT =~ $fm ]] && return 1
-    }
-    if [[ $_FM ]]; then
-      _AT="$(date -d "$_AT" "+%H:%M:%S" 2> /dev/null )" || {
-        play_sound error
-        return 1
-      }
-    else
-      _AT="$(LC_TIME=C date -d "$_AT" "+%I:%M:%S %p" 2> /dev/null)" || {
-        play_sound error
-        return 1
-      }
-    fi
-    __AT="$(date -d "$_AT" "+%s" 2> /dev/null)" || return 1
-    _T="$(_time "%s")"
-    ((__AT<_T)) && ((__AT+=86400))
-    unset _T
-    return 0
-  }
-}
-
-set_timer() {
-  [[ $_TT =~ ^[0-2]?[0-9]:[0-5][0-9] ]] && {
-    [[ $_TT == "00:00" || $_TT == "0:00" ]] && return 1
-    _TT="$(date -d "$_TT" "+%H:%M:%S" 2> /dev/null)" || return 1
-    return 0
-  } 
-  return 1
-}
-
-activate_timer() {
-  [[ ! $_TA ]] && return 1
-  [[ ! $_TT ]] && return 1
-  local T H M S
-  IFS=$'\n' read -d "" -ra T <<< "${_TT//:/$'\n'}"
-  H="${T[0]}"
-  M="${T[1]}"
-  S="${T[2]}"
-  TT="$(date -d "now + $H hours $M minutes $S seconds" "+%s" 2> /dev/null)" || return 1
-  _TOK=1
-  return 0
-}
-
-reset_timer() {
-  _TT="00:00:00"
-  unset TR RA TT TL _TA _TD IT _TOK IZ; 
-}
-
-to_hms() {
-  # convert seconds to HH:MM:SS
-  local T H M S
-  T=$1
-  ((H=T/3600))
-  ((M=(T%3600)/60))
-  ((S=T%60))
-  printf "%02d:  :%02d:%02d:%02d:%s:%s:%s:%s" "$H" "$H" "$M" "$S" "$(_time "%s")" "$W" "$D" "$m"
-}
-
-if [[ $_AA ]]; then set_alarm cmdline || { __err "error: invalid alarm time"; exit 1; }; fi
-if [[ $_AA ]]; then AT=$__AT; unset __AT; fi
-if [[ $_TA ]]; then set_timer || { __err "error: invalid timer duration"; exit 1; }; fi
-if [[ $_TT ]]; then activate_timer || EXIT_CLOCK "what ?"; fi
-
-_OD=${_OD:-9}
-((_OD*=60))
-
-_DF="%I:%p:%H:%M:%S:%s:%a:%d:%m:%z"
-
-BACK_HD() {
-  _HD=1
-  unset _hd
-  erase_hd
-  [[ $_AS && ! $AT ]] && unset _AT _AA
-  [[ $_TS && $_TT == "00:00:00" ]] || [[ ! $_TOK ]] && unset _TT _TA
-  unset _AD _AS _TD _TS _DS _GD IA IT IZ H1 H2 M1 M2 S1 S2 PB OT
-}
-
-DISPLAY_ALARM() {
-  if [[ $_AD || $_AS ]]; then
-    ((a=__AT>0?__AT:AT))
-    _TIMEDATE="$(LC_TIME=C date -d "@$a" "+$_DF")" 2> /dev/null || { _HD=1; unset _AD _AS IZ; return 1; }
-    _s="$(_time "%s")"
-    unset a
-    unset _GD
-    unset _HD
-    return 0
-  fi
-  _HD=1
-  return 1
-}
-
-DISPLAY_TIMER() {
-  [[ $_TD || $_TS ]] && {
-      local T H M S d d_array
-      IFS=$'\n' read -d "" -ra T <<< "${_TT//:/$'\n'}"
-      H="${T[0]}"
-      M="${T[1]}"
-      S="${T[2]}"
-      d="$(LC_TIME=C _time "%a:%d:%m")"
-      IFS=$'\n' read -d "" -ra d_array <<< "${d//:/$'\n'}"
-      W="${d_array[0]}"
-      D="${d_array[1]}"
-      m="${d_array[2]}"
-      if [[ $TT ]]; then
-        _TIMEDATE="$(to_hms "${TL:-0}")"
-      else
-        _TIMEDATE="$(printf "%s:  :%s:%s:%s:%s:%s:%s:%s" "$H" "$H" "$M" "$S" "$(_time "%s")" "$W" "$D" "$m")"
-      fi
-    unset _HD
-    return 0
-  }
-  _HD=1
-  return 1
-}
-
-TIMER_ELAPSED_TIME() {
-  [[ $_TA && $TT ]] && {
-    local T
-    T="$(_time "%s")" || return 1
-    ((TL=TT-T))
-    ((TL=TL>0?TL:0))
-    return 0
-  }
-  return 1
-}
-
-DISPLAY_TIME() {
-  [[ ! $_AD && ! $_TD ]] && {
-    _TIMEDATE="$(LC_TIME=C _time "$_DF")"
-    _HD=1
-    return 0
-  }
-  return 1 
-}
-
-PARSE_TIME() {
-  IFS=$'\n' read -d "" -ra TIMEDATE <<< "${_TIMEDATE//:/$'\n'}"
-  # unset _TIMEDATE
-  if [[ $_FM ]]; then
-    _H="${TIMEDATE[2]}"
-  else
-    _H="${TIMEDATE[0]}"
-    _p="${TIMEDATE[1]^^}"
-  fi
-  _M="${TIMEDATE[3]}"
-  _S="${TIMEDATE[4]}"
-  _s="${TIMEDATE[5]}"
-  _Z="${TIMEDATE[9]}"
-  return 0
-}
-
-DISPLAY_DATE() {
-  [[ ! $_DA ]] && return 1
-  [[ ! $_GD ]] && return 0
-  [[ $_H == "00" ]] || [[ $_H == "12" && $_p == "AM" ]] && [[ $_M == "00" && $_S == "00" ]] && {
-    unset _GD
-    return 0
-  }
-  return 1
-}
-
-PARSE_DATE() {
-  [[ ! $_GD ]] && {
-    W="${TIMEDATE[6]:0:2}"
-    W="${W^^}"
-    m="${TIMEDATE[8]}"
-    D="${TIMEDATE[7]}"
-    DATE="$W $m-$D"
-    _GD=1
-    return 0
-  }
-  return 1
-}
-
-TOGGLE_SELECTION() {
-  [[ $AR ]]  && { play_sound key; unset AR RA IA; return 0; }
-  [[ $TR ]]  && { play_sound key; reset_timer; _HD=1; return 0; }
-  [[ $_AS ]] && {
-    AT="$AC"
-    _AT="$_AC"
-    unset AC _AC
-    if [[ ! $AT ]]; then
-      _HD=1
-      unset _hd
-      erase_hd
-      unset _AS _DS _AA IA IZ _GD H1 H2 M1 M2 PB OT
-      play_sound key
-    else
-      AC="$AT"
-      _AC="$_AT"
-      _HD=1
-      _AA=1
-      unset _hd
-      erase_hd
-      unset _AS _DS AC IA IZ _GD H1 H2 M1 M2 PB OT
-      play_sound key
-    fi
-    return 0
-  } 
-  [[ $_TS ]] && {
-    TT="$TC"
-    _TT="$_TC"
-    unset TC _TC
-    if [[ ! $TT ]]; then
-      _HD=1
-      unset _hd
-      erase_hd
-      unset _TS _DS _TA TC IT IZ _GD H1 H2 M1 M2 S1 S2 OT
-      play_sound key
-    else
-      TC="$TT"
-      _TC="$_TT"
-      _HD=1
-      _AT=1
-      unset _hd
-      erase_hd
-      unset _TS _DS IT IZ _GD H1 H2 M1 M2 S1 S2 OT
-      play_sound key
-    fi
-    return 0
-  }
-  [[ $_HD && $_AA ]] && { play_sound key; _AD=1; _hd=1; unset _HD IA PB; return 0; }
-  [[ $_AD && $_TA ]] && { play_sound key; _TD=1; _hd=1; unset _AD _GD PB IA IT S1 S2; return 0; }
-  [[ $_HD && $_TA ]] && { play_sound key; _TD=1; _hd=1; unset _HD IT S1 S2; return 0; }
-  [[ $_AD ]] && { play_sound key; _HD=1; unset _AD _GD IA IZ PB _hd OT; erase_hd; return 0; }
-  [[ $_TD ]] && { play_sound key; _HD=1; unset _TD _GD IT IZ _hd OT; erase_hd; return 0; }
-  return 1
-}
-
-TOGGLE_ALARM() {
-  [[ $_Q ]] && return 0
-  [[ $AR ]] && { unset AR AZ IA; play_sound key; return 0; }
-  [[ $AZ ]] && { unset AZ IA; play_sound key; return 0; }
-  if [[ $_AS ]]; then
-    AT=$__AT
-    _HD=1
-    unset _hd
-    erase_hd
-    unset AC _AS _DS __AT IA IZ _GD PB H1 H2 M1 M2 OT
-    play_sound confirm
-    return 0
-  elif [[ $_HD ]]; then
-    [[ ! $_AA && ! $AT ]] && {
-      [[ $_FM ]] && _AT="00:00:00" || _AT="12:00:00 AM"
-      AC=""
-      _AC=""
-      _AA=1
-      set_alarm || { play_sound error; return 1; }
-      _AS=1
-      _DS=0
-      _hd=1
-      unset _HD IA H1
-      play_sound key
-      return 0
-    }
-    if [[ $_AA ]]; then
-      unset _AA IA RA AZ
-      play_sound key
-      return 0
-    else
-      _AA=1
-      unset IA
-      play_sound key
-      return 0
-    fi
-  elif [[ $_AA && $_AD ]]; then
-    AC="$AT"
-    _AC="$_AT"
-    _AS=1
-    _DS=0
-    unset _AD IA H1
-    play_sound key
-    return 0
-  fi
-}
-
-TOGGLE_TIMER() {
-  [[ $_Q ]] && return 0
-  if [[ $_TS ]]; then
-    _HD=1
-    unset _hd
-    erase_hd
-    unset TC _TS _DS IT IZ H1 H2 M1 M2 S1 S2 OT
-    if [[ ! $_TT || $_TT == "00:00:00" ]] || [[ $_TOK ]]; then
-      unset _TA _TT TT TL _TOK IT
-      play_sound key
-    else
-      play_sound confirm
-      activate_timer
-    fi
-    return 0
-  elif [[ $_HD ]]; then
-    [[ ! $_TA && ! $TT ]] && {
-      TC=""
-      _TC=""
-      _TA=1
-      _TT="00:00:00"
-      set_timer || { play_sound error; return 1; }
-      _TS=1
-      _DS=0
-      _hd=1
-      unset _HD IT _TOK H1
-      play_sound key
-      return 0
-    }
-    if [[ $_TA ]]; then
-      unset _TA TT IT
-      play_sound key
-      return 0
-    else
-      _TA=1
-      unset IT
-      activate_timer || { play_sound error; return 1; }
-      play_sound key
-      return 0
-    fi
-  elif [[ $_TA && $_TD ]]; then
-    TC="$TT"
-    _TC="$_TT"
-    _TS=1
-    _DS=0
-    unset _TD IT TT _TOK H1 S2
-    play_sound key
-    return 0
-  fi
-}
-
-TOGGLE_AMPM() {
-  if [[ $_AS && ! $_FM ]]; then
-    if [[ $_AT =~ .*AM$ ]]; then
-      _AT="${_AT/AM/PM}"
-    else
-      _AT="${_AT/PM/AM}"
-    fi
-    set_alarm
-    play_sound key
-  elif [[ $_HD && ! $_FM ]]; then
-    _AT="$(date -d "$_AT" "+%H:%M:%S")"
-    _FM=1
-    set_alarm
-    unset _p
-    play_sound key
-  elif [[ $_HD ]]; then
-    _AT="$(LC_TIME=C date -d "$_AT" "+%I:%M:%S %p")"
-    unset _FM
-    set_alarm
-    play_sound key
-  fi
-}
-
-TOGGLE_HTS() {
-  [[ $_Q ]] && return 0
-  [[ $_AD || $_AS || $_TD || $_TS ]] && return 1
-  if [[ $_HTSA ]]; then
-    unset _HTSA
-    unset IH
-  else
-    _HTSA=1
-    unset IH
-  fi
-  play_sound key
-}
-
-SELECT_DIGIT() {
-  case "$1" in
+select_digit() {
+  case $1 in
     next)
-      [[ $_AS || $_TS ]] && {
-        case $_DS in
+      [[ $_a_set || $_t_set ]] && {
+        case $__digit_sel in
           0) unset H1 H2 ;;
           1) unset H2 M1 ;;
           2) unset M1 M2 ;;
-          3) unset M2 H1 ;;
+          3) unset M2 H1
         esac
-        ((_DS=_DS==3?0:_DS+1))
+        ((__digit_sel=__digit_sel==3?0:__digit_sel+1))
         play_sound digit
       }
-      ;;
+    ;;
     prev)
-      [[ $_AS || $_TS ]] && {
-        case $_DS in
+      [[ $_a_set || $_t_set ]] && {
+        case $__digit_sel in
           0) unset H1 M2 ;;
           1) unset H1 H2 ;;
           2) unset H2 M1 ;;
-          3) unset M1 M2 ;;
+          3) unset M1 M2
         esac
-        ((_DS=_DS==0?3:_DS-1))
+        ((__digit_sel=__digit_sel==0?3:__digit_sel-1))
         play_sound digit
       }
   esac
 }
 
-DIGIT_INPUT() {
-  ! [[ $_AS || $_TS ]] && return 1
-  local CA CT
-  local _d="$1"
-  [[ $_AS ]] && CA="$_AT"
-  [[ $_TS ]] && CT="$_TT"
+digit_input() {
+  ! [[ $_a_set || $_t_set ]] && return 1
   local offset
-  case $_DS in
-    [0-1]) ((offset=_DS)) ;;
-    [2-3]) ((offset=_DS+1)) ;;
+  case $__digit_sel in
+    [0-1]) ((offset=__digit_sel)) ;;
+    [2-3]) ((offset=__digit_sel+1))
   esac
-  [[ $_AS ]] && {
-    _AT="${_AT:0:$((offset))}${_d}${_AT:$((offset+1))}"
+  [[ $_a_set ]] && {
+    local saved_alarm="$_a_time"
+    _a_time="${_a_time:0:$((offset))}${1}${_a_time:$((offset+1))}"
     if set_alarm; then
-      SELECT_DIGIT next
+      __changed=1
+      __u_date=1
+      select_digit next
     else
       play_sound error
-      _AT="$CA"
+      _a_time="$saved_alarm"
       set_alarm
       return 1
     fi
     return 0
   }
-  [[ $_TS ]] && {
-    _TT="${_TT:0:$((offset))}${_d}${_TT:$((offset+1))}"
+  [[ $_t_set ]] && {
+    local saved_timer="$_t_time"
+    _t_time="${_t_time:0:$((offset))}${1}${_t_time:$((offset+1))}"
     if set_timer; then
-      SELECT_DIGIT next
+      __changed=1
+      select_digit next
     else
       play_sound error
-      _TT="$CT"
+      _t_time="$saved_timer"
       set_timer
       return 1
     fi
@@ -987,407 +1406,219 @@ DIGIT_INPUT() {
   }
 }
 
-print_hd() {
-  local NT
-  [[ ! $_hd ]] && return 1
-  if [[ $_FM ]]; then
-      NT="$(_time "%H:%M")"
-  else
-    NT="$(LC_TIME=C _time "%I:%M %p")"
-  fi
-  [[ $OT != "$NT" ]] && {
-    tput cup $((_y+DH)) $((_x))
-    tput el
-    [[ $_RB || $_RC ]] && rnd_color
-    echo "$NT" | print_rainbow
-    OT="$NT"
-    return 0
-  }
-  return 1
+[[ ! -a "$__f_digits_default" ]] && { _err "error: $__f_digits_default not found."; exit 1; } 
+
+__f_digits="${__f_digits:-$__f_digits_default}"
+
+__digit_h="$(read_param "height")" || { _err "error: $__f_digits: missing 'height'."; exit 1; }
+__digit_w="$(read_param "width")"  || { _err "error: $__f_digits: missing 'width'."; exit 1; }
+
+__clock_layout="$(read_param "layout")"
+
+if [[ ${__clock_layout,,} == "vertical" ]]; then __o["v"]=1
+elif [[ ${__clock_layout,,} == "horizontal" ]]; then unset __o["v"]
+fi
+unset __clock_layout
+
+[[ ! ${__o[v]} ]] && {
+  __sep_w="$(read_param "sep_width")" || { _err "error: $__f_digits: missing 'sep_width'."; exit 1; }
 }
 
-print_tz() {
-  [[ ! $_TZ ]] && return 1
-  [[ ! $_HD ]] && return 1
-  [[ $IZ ]] && return 1
-  tput cup $((_y+DH)) $((_x))
-  [[ $_RB || $_RC ]] && rnd_color
-  echo "$_Z" | print_rainbow
-  IZ=1
-  return 0
+clock_geometry || { _err "error: clock doesn't fit."; exit 1; }
+
+_ch="$(read_param "char")"
+if [[ $_ch == "null" ]]; then
+  __ch="∎"
+  unset _ch
+elif [[ ${#_ch} -ne 1 ]]; then
+  _err "error: $__f_digits: 'char' must be 1 character."
+  exit 1
+elif [[ $_ch =~ \\[abcdefnrtv] ]]; then
+  _err "error: $__f_digits: 'char' cannot be a backslash escaped character."
+  exit 1
+elif [[ $_ch ]]; then
+  __ch="$_ch"
+  unset _ch
+fi
+
+_sp="$(read_param "space")"
+if [[ $_sp == "null" ]]; then
+  __sp=" "
+  unset _sp
+elif [[ ${#_sp} -ne 1 ]]; then
+  _err "error: $__f_digits: 'space' must be 1 character."
+  exit 1
+elif [[ $_sp =~ \\[abcdefnrtv] ]]; then
+  _err "error: $__f_digits: 'space' cannot be a backslash escaped character."
+  exit 1
+elif [[ $_sp ]]; then
+  __sp="$_sp"
+  unset _sp
+fi
+
+## MAKING DIGITS
+for ((i=0;i<10;i++)); do
+  _d="$(read_param "$i")" || { _err "error: $__f_digits: digit $i is missing."; exit 1; }
+  IFS=$'\n' read -d "" -ra _d <<< "${_d//$';'/$'\n'}"
+  ((${#_d[@]}!=__digit_h)) && { _err "error: $__f_digits: digit $i, height mismatch."; exit 1; }
+  for ((j=0;j<__digit_h;j++)); do
+    ((${#_d[$j]}!=__digit_w)) && { _err "error: $__f_digits: digit $i, width mismatch [col $((j+1))]."; exit 1; }
+    _d[$j]="${_d[$j]//0/"$__sp"}"
+    _d[$j]="${_d[$j]//1/"$__ch"}"
+    declare -a "__d$i+=(\"${_d[$j]}\")"
+  done
+  unset _d
+done
+
+## MAKING SEPARATOR+BLANK
+[[ ! ${__o[v]} ]] && {
+  ___p=("separator" "blank")
+  for __p in "${___p[@]}"; do
+    __v="$(read_param "$__p")"
+    [[ $__v == "null" ]] && { _err "error: $__f_digits: missing $__p"; exit 1; }
+    IFS=$'\n' read -d "" -ra __v <<< "${__v//$';'/$'\n'}"
+    ((${#__v[@]}!=__digit_h)) && { _err "error: $__f_digits: $__p, height mismatch."; exit 1; }
+    for ((i=0;i<__digit_h;i++)); do
+      ((${#__v[$i]}!=__sep_w)) && { _err "error: $__f_digits: $__p, width mismatch [col $((i+1))].": exit 1; }
+      __v[$i]="${__v[$i]//0/"$__sp"}"
+      __v[$i]="${__v[$i]//1/"$__ch"}"
+      case $__p in
+        separator) declare -a "__d_s+=(\"${__v[$i]}\")" ;;
+        blank    ) declare -a "__d_k+=(\"${__v[$i]}\")"
+      esac
+    done
+    unset __v
+  done
+  unset __p ___p i j
 }
 
+unset __sp __ch
 
-erase_hd() {
-  tput cup $((_y+DH)) $((_x)); tput el
-}
+## INDICATORS
 
-splash() {
-  local __y __x
-  if [[ ! $_VL ]]; then
-    local logo="-BiGTiME-"
-    ((__y=(TERMH-1)/2))
-    ((__x=(TERMW-${#logo})/2))
-    tput cup $((__y)) $((__x))
-    [[ $_RB || $_RC ]] && rnd_color
-    echo "$logo" | print_rainbow
-  else
-    local l1 l2 l3 l4
-    l1="Bi"; l2="-G"; l3="Ti"; l4="ME"
-    ((__y=(TERMH-4)/2))
-    ((__x=(TERMW-2)/2))
-    [[ $_RB || $_RC ]] && rnd_color
-    tput cup $((__y)) $((__x))
-    echo "$l1" | print_rainbow
-    [[ $_RB || $_RC ]] && rnd_color
-    tput cup $((__y+1)) $((__x))
-    echo $"$l2" | print_rainbow
-    [[ $_RB || $_RC ]] && rnd_color
-    tput cup $((__y+2)) $((__x))
-    echo "$l3" | print_rainbow
-    [[ $_RB || $_RC ]] && rnd_color
-    tput cup $((__y+3)) $((__x))
-    echo "$l4" | print_rainbow
-  fi
-  sleep 0.25
-  play_sound welcome
-  sleep 1
-  tput cup $((__y)) $((__x))
-  [[ ! $_VL ]] && tput el
-  [[ $_VL ]] && tput el1
-}
+_i="$(read_param "signal_indicator")"
+if [[ $_i == "null" ]]; then
+  __i[i]="*"
+elif [[ ${#_i} -ne 1 ]]; then 
+  _err "error: $__f_digits: signal indicator must be 1 character."
+  exit 1
+elif [[ $_i =~ \\[abcdefnrtv] ]]; then
+  _err "error: $__f_digits: signal indicator cannot be a backslash escaped character."
+  exit 1
+else
+  __i[i]="$_i"
+fi
 
-### INIT SCREEN
-tput smcup
-tput civis
-stty -echo -icanon time 0 min 0
+_i="$(read_param "alarm_indicator")"
+if [[ $_i == "null" ]]; then
+  __i[a]="a"
+elif [[ ${#_i} -ne 1 ]]; then 
+  _err "error: $__f_digits: alarm indicator must be 1 character."
+  exit 1
+elif [[ $_i =~ \\[abcdefnrtv] ]]; then
+  _err "error: $__f_digits: alarm indicator cannot be a backslash escaped character."
+  exit 1
+else
+  __i[a]="$_i"
+fi
 
-[[ -n $_FG ]] && tput setaf "$_FG"
-[[ -n $_BG ]] && tput setab "$_BG"
+_i="$(read_param "snooze_indicator")"
+if [[ $_i == "null" ]]; then
+  __i[o]="z"
+elif [[ ${#_i} -ne 1 ]]; then 
+  _err "error: $__f_digits: snooze indicator must be 1 character."
+  exit 1
+elif [[ $_i =~ \\[abcdefnrtv] ]]; then
+  _err "error: $__f_digits: snooze indicator cannot be a backslash escaped character."
+  exit 1
+else
+  __i[o]="$_i"
+fi
 
-((_y=(TERMH-CLOCKH)/2))
-((_x=(TERMW-CLOCKW)/2))
+_i="$(read_param "timer_indicator")"
+if [[ $_i == "null" ]]; then
+  __i[t]="t"
+elif [[ ${#_i} -ne 1 ]]; then 
+  _err "error: $__f_digits: timer indicator must be 1 character."
+  exit 1
+elif [[ $_i =~ \\[abcdefnrtv] ]]; then
+  _err "error: $__f_digits: timer indicator cannot be a backslash escaped character."
+  exit 1
+else
+  __i[t]="$_i"
+fi
 
+unset _i
 
-tput clear
+##    _   _____
+##  /| \o/__o|
+## / |_/|\_|||
+## /DiGiT
 
-splash
+[[ ${__o[w]} ]] && { preview_file; exit 0; }
 
-tput clear
+if [[ ${__o[a]} ]]; then set_alarm cmdline || { _err "error: invalid alarm time."; exit 1; }; fi
+[[ ${__o[a]} ]] && activate_alarm
+set_snooze --default
 
-trap 'EXIT_CLOCK "-- interrupted by user"' INT QUIT
-trap REDRAW_CLOCK WINCH
+if [[ ${__o[t]} ]]; then set_timer || { _err "error: invalid timer duration."; exit 1; }; fi
+[[ ${__o[t]} ]] && activate_timer
 
-while :; do
+init_clock
 
-  #shellcheck disable=SC2162
-  IFS= read C
+trap 'exit_clock "-- interrupted by user."' INT QUIT
+trap redraw_clock WINCH
 
-  [[ $C ]] && INACTIVITY=0
+while :
+do
+  # shellcheck disable=SC2162
+  IFS= read KEY
 
-  ### KEY BINDINGS
-  case "$C" in
-    a    ) TOGGLE_ALARM ;;
-    h    ) TOGGLE_HTS ;;
-    p    ) TOGGLE_AMPM ;;
-    q    ) play_sound quit; EXIT_CLOCK "Q" ;;
-    R    ) play_sound key; REDRAW_CLOCK ;;
-    r    ) [[ $_TS ]] && reset_timer && play_sound key ;;
-    t    ) if [[ $TR ]]; then reset_timer; else TOGGLE_TIMER; fi ;;
-    [0-9]) DIGIT_INPUT "$C" ;;
-    j    ) SELECT_DIGIT next ;;
-    k    ) SELECT_DIGIT prev ;;
-    " "  ) TOGGLE_SELECTION
+  [[ $KEY ]] && __idle=0
+  
+  case $KEY in
+    a    ) toggle_alarm && play_sound key ;;
+    f    ) toggle_ampm && play_sound key ;;
+    i    ) toggle_hourly_signal && play_sound key ;;
+    j    ) select_digit next ;;
+    k    ) select_digit prev ;;
+    q    ) play_sound quit; exit_clock --quit ;;
+    R    ) redraw_clock ;;
+    t    ) toggle_timer && play_sound key ;;
+    [0-9]) digit_input "$KEY" ;;
+    " "  ) toggle_display && play_sound key
   esac
 
-  [[ $_AD || $_TD || $_AS || $_TS ]] && ((INACTIVITY++))
+((__idle++))
 
-  ((INACTIVITY==15)) && { INACTIVITY=0; BACK_HD; }
-  
-  [[ $_REDRAW == 1 ]] && continue
+[[ $__i_mode ]] && ((__idle==4)) && erase_display_line
 
-  _sync
-
-  DISPLAY_ALARM || DISPLAY_TIMER || DISPLAY_TIME
-  TIMER_ELAPSED_TIME
-  PARSE_TIME
-  DISPLAY_DATE && PARSE_DATE
-
-  ### DEBUG
-  # tput cup 0 0; tput el
-  # printf "_AA:%s _AT:%s AT:%s __AT:%s _AD:%s _AS:%s _DS:%s" "${_AA:-"-"}" "${_AT:-"--:--:--"}" "${AT:-"-"}" "${__AT:-"-"}" "${_AD:-"-"}" "${_AS:-"-"}" "${_DS:-"-"}"
-  # tput cup 1 0; tput el
-  # printf "_TA:%s _TT:%s TT:%s TL:%s _TD:%s _TS:%s _DS:%s" "${_TA:-"-"}" "${_TT:-"--:--:--"}" "${TT:-"-"}" "${TL:-"-"}" "${_TD:-"-"}" "${_TS:-"-"}" "${_DS:-"-"}"
-  # tput cup 2 0; tput el
-  # printf "_TIMEDATE:%s" "$_TIMEDATE"
-  # tput cup 3 0; tput el
-  # printf "DATE:%s" "$DATE"
-  # tput cup 4 0; tput el
-  # printf "_PB:%s PB:%s" "$_PB" "$PB"
-
-  # change terminal title
-  [[ $_T != "$_M $_p" ]] && { _T="$_M $_p"; echo -ne "\033]0;bigtime: $_H:$_M $_p\007"; }
-
-  ### BLINK
-  ((_s % 2 == 0)) && IDX=0 || IDX=1
-
-  h1=${_H:0:1}
-  h2=${_H:1:1}
-  m1=${_M:0:1}
-  m2=${_M:1:1}
-  s1=${_S:0:1}
-  s2=${_S:1:1}
-
-  [[ $AR && $RA -gt 60 ]] && { unset AR RA IA; }
-  [[ $TR && $RA -gt 15 ]] && { reset_timer; _HD=1; }
-  [[ $AZ ]] && { ((AZ==_OD)) && { AR=1; RA=0; AZ=1; unset IA; }; }
-
-  ### ALARM
-  [[ $_AA && ! $_AD && ! $_AS ]] && [[ $AT == "$_s" ]] && {
-    [[ $_FM ]] && time="$(date -d "@$AT" "+%x - %X")" \
-      || time="$(LC_TIME=C date -d "@$AT" "+%x - %I:%M:%S %p")"
-    notify-send -u critical -h "INT:PID:$$" -i "$ALARM_ICN" "$PROGNAME" "$time" 2> /dev/null
-    unset time
-    # set new alarm for tomorrow
-    ((AT+=86400))
-    AR=1
-    AZ=1
-    RA=0
-    unset IA
-  } 
+((__idle==20 && __display!=1)) && { toggle_display 1; __idle=0; }
 
 
-  ### TIMER
-  [[ $_TA && $TL == 0 && ! $TR ]] && {
-    notify-send -t 10000 -i "$TIMER_ICN" "$PROGNAME" "Time out" 2> /dev/null
-    TR=1
-    unset IT
-  }
+_sync
 
-  ### BEEP
-  [[ ! $AR && ! $_AD && ! $_AS && ! $TR && ! $_TD && ! $_TS && $_HTSA && $_M == "00" && $_S == "00" ]] \
-    && play_sound beep
+display_time || display_alarm || display_timer
+manage_alarm
+manage_timer
+parse_time
+parse_date
+update_date && print_date
+print_time || print_timezone
+print_timer
+manage_hourly_signal
+display_clock
 
-  [[ $AR ]] && [[ $IDX == 0 ]] && { play_sound alarm; }
-  [[ $TR ]] && [[ $IDX == 0 ]] && { play_sound timer; }
-  [[ $AR ]] && ((RA++))
-  [[ $TR ]] && ((RA++))
-  [[ $AZ ]] && ((AZ++))
-
-  y=$_y x=$_x
-  
-  ### ALARM INDICATOR
-  [[ ! $IA ]] && {
-    if [[ $_AA ]]; then
-      [[ $_RB || $_RC ]] && rnd_color
-      tput cup $((y+1)) $((x-4))
-      [[ $AR && $IDX == 0 ]] && { echo " a!" | print_rainbow; unset IA; }
-      [[ $AR && $IDX == 1 ]] && { echo "   " | print_rainbow; unset IA; }
-      if [[ ! $AR ]]; then
-        if [[ $_AD ]]; then
-          echo ">a " | print_rainbow
-        elif [[ $_AS ]]; then
-          echo " a>" | print_rainbow
-        elif [[ $AZ ]]; then
-          echo "Zzz"
-        else
-          echo " a " | print_rainbow
-        fi
-        IA=1
-      fi
-    else
-      tput cup $((y+1)) $((x-4))
-      printf "   "
-      IA=1
-    fi
-  }
-
-  ### TIMER INDICATOR
-  [[ ! $IT ]] && {
-    if [[ $_TA ]]; then
-      [[ $_RB || $_RC ]] && rnd_color
-      tput cup $((y+2)) $((x-4))
-      [[ $TR && $IDX == 0 ]] && { echo " t!" | print_rainbow;  unset IT; }
-      [[ $TR && $IDX == 1 ]] && { echo "   "; unset IT; }
-      if [[ ! $TR ]]; then
-        if [[ $_TD ]]; then
-          echo ">t " | print_rainbow
-        elif [[ $_TS ]]; then
-          echo " t>" | print_rainbow
-        else
-          echo " t " | print_rainbow
-        fi
-        IT=1
-        unset IA
-      fi
-    else
-      tput cup $((y+2)) $((x-4))
-      printf "   "
-      IT=1
-    fi
-  }
-
-  ### HOURLY TIME SIGNAL INDICATOR
-  [[ ! $IH ]] && {
-    tput cup $((y)) $((x-3))
-    if [[ $_HTSA ]]; then
-      [[ $_RB || $_RC ]] && rnd_color
-      echo "×" | print_rainbow
-      IH=1
-    else
-      printf " "
-      IH=1
-    fi
-  }
-
-  ### SMALL TIME
-  [[ $_RB || $_RC ]] && rnd_color
-  print_hd || print_tz
-
-  [[ $date != "$DATE" ]] && {
-    if [[ $_VL ]]; then
-      [[ $_RB || $_RC ]] && rnd_color
-      tput cup $((y))   $((x+CLOCKW)); echo "$W" | print_rainbow
-      [[ $_RB || $_RC ]] && rnd_color
-      tput cup $((y+1)) $((x+CLOCKW)); echo "$m" | print_rainbow
-      [[ $_RB || $_RC ]] && rnd_color
-      tput cup $((y+2)) $((x+CLOCKW)); echo "$D" | print_rainbow
-    else
-      [[ $_RB || $_RC ]] && rnd_color
-      tput cup $((y-1)) $((x)); echo "$DATE" | print_rainbow
-    fi
-    date="$DATE"
-  }
-
-  [[ $_RB || $_RC ]] && rnd_color
-  [[ $_AS || $_TS ]] && ((_DS==0)) && tput smso
-  [[ $h1 != "$H1" ]] && print_digit $((y)) $((x)) "$h1"
-  [[ $_AS || $_TS ]] && ((_DS==0)) && tput rmso
-
-  H1=$h1
-  ((x+=DW+1))
-
-  [[ $_RB || $_RC ]] && rnd_color
-  [[ $_AS || $_TS ]] && ((_DS==1)) && tput smso
-  [[ $h2 != "$H2" ]] && print_digit $((y)) $((x)) "$h2";
-  [[ $_AS || $_TS ]] && ((_DS==1)) && tput rmso
-
-  H2=$h2
-
-  if [[ ! $_VL ]]; then
-    ((x+=DW+1))
-    ((sx=x))
-    ((x+=SW+1))
-  else
-    ((y+=DH+1))
-    x=$_x
-  fi
-
-  [[ $_RB || $_RC ]] && rnd_color
-  [[ $_AS || $_TS ]] && ((_DS==2)) && tput smso
-  [[ $m1 != "$M1" ]] && print_digit $((y)) $((x)) "$m1"
-  [[ $_AS || $_TS ]] && ((_DS==2)) && tput rmso
-
-  M1=$m1
-  ((x+=DW+1))
-
-  [[ $_RB || $_RC ]] && rnd_color
-  [[ $_AS || $_TS ]] && ((_DS==3)) && tput smso
-  [[ $m2 != "$M2" ]] && print_digit $((y)) $((x)) "$m2"
-  [[ $_AS || $_TS ]] && ((_DS==3)) && tput rmso
-
-  M2=$m2
-
-  if [[ ! $_VL ]]; then
-    ((x+=DW+1))
-  else
-    if [[ $_SD ]]; then
-      ((y+=DH+1))
-      x=$_x
-    else
-      ((y+=DH-1))
-      ((x+=DW+1))
-    fi
-  fi
-
-  if [[ $_SD ]]; then
-    [[ ! $_VL ]] && {
-      [[ ! $PB ]] && print_separator $((y)) $((sx))
-      [[ ! $PB ]] && print_separator $((y)) $((x));
-      ((x+=SW+1))
-    }
-
-    [[ $_RB || $_RC ]] && rnd_color
-    [[ $_TS ]] && ((_DS==4)) && tput smso
-    [[ $s1 != "$S1" ]] && print_digit $((y)) $((x)) "$s1"
-    [[ $_TS ]] && ((_DS==4)) && tput rmso
-
-    S1=$s1
-    ((x+=DW+1))
-
-    [[ $_RB || $_RC ]] && rnd_color
-    [[ $_TS ]] && ((_DS==5)) && tput smso
-    [[ $s2 != "$S2" ]] && print_digit $((y)) $((x)) "$s2"
-    [[ $_TS ]] && ((_DS==5)) && tput rmso
-
-    S2=$s2
-    ((x+=DW+1))
-
-  elif [[ ! $_sD && ! $_VL ]]; then
-    [[ ! $PB ]] && print_separator $((y)) $((sx))
-  fi
-
-  [[ $_sD ]] || [[ $_TD || $_TS ]] && [[ ! $_SD ]] && {
-    if [[ ! $_VL ]]; then
-      [[ ! $PB ]] && print_separator $((y)) $((sx))
-      if [[ $S1 != "$s1" ]]; then
-        tput cup $((y)) $((x))
-      else
-        tput cup $((y)) $((x+1))
-      fi
-    else
-      if [[ $S1 != "$s1" ]]; then
-        tput cup $((y)) $((_x+CLOCKW))
-      else
-        tput cup $((y)) $((_x+CLOCKW+1))
-      fi
-    fi
-
-    [[ $_RB || $_RC ]] && rnd_color
-    [[ $_TS ]] && ((_DS==4)) && tput smso
-    [[ $S1 != "$s1" ]] && echo "$s1" | print_rainbow
-    [[ $_TS ]] && ((_DS==4)) && tput rmso
-    S1="$s1"
-
-    [[ $_RB || $_RC ]] && rnd_color
-    [[ $_TS ]] && ((_DS==5)) && tput smso
-    [[ $S2 != "$s2" ]] && echo "$s2" | print_rainbow
-    [[ $_TS ]] && ((_DS==5)) && tput rmso
-    S2="$s2"
-
-    S="$_S"
-  }
-
-  [[ ! $_PB || $_AD || $_AS ]] && PB=1
-
-  [[ ! $_sD ]] && [[ ! $_TD || ! $_TS ]] && [[ ! $_SD ]] && {
-    [[ ! $S ]] && { tput cup $((y)) $((x)); tput el; }
-    unset S
-  }
-
-  [[ $_p ]] && {
-    [[ $_RB || $_RC ]] && rnd_color
-    tput cup $((_y+DH-1)) $((x))
-    [[ $_p != "$p" ]] && echo "$_p" | print_rainbow
-    p="$_p"
-  }
-
-  [[ $_FM && $p ]] && {
-    tput cup $((_y+DH-1)) $((x))
-    tput el
-    unset p
-  }
-  
-  sleep 0.5
+pause 0.5
 
 done
+
+##
+##  /|\/| /\ o|\ |
+## / |  |/--\|| \|
+## /MAiN
+
+##    _   _____     _
+##  /|_)o/__ |o|\/||_
+## / |_)|\_| |||  ||_
+## /BiGTiME

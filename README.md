@@ -139,7 +139,7 @@ Press <kbd>a</kbd> to set a new alarm.
 To modify an existing alarm, press <kbd>space</kbd> and <kbd>a</kbd>.  
 Enter the desired time.  
 Press <kbd>j</kbd> or <kbd>k</kbd> to select next/previous digit.  
-Press <kbd>p</kbd> to toggle AM/PM.
+Press <kbd>f</kbd> to toggle AM/PM.
 
 When done, press <kbd>a</kbd> to enable the alarm.
 
@@ -157,7 +157,6 @@ Press <kbd>t</kbd> to set a new timer.
 To modify an existing timer, press <kbd>space</kbd> (twice if an alarm is set) and <kbd>t</kbd>.  
 Enter the desired duration.  
 Press <kbd>j</kbd> or <kbd>k</kbd> to select next/previous digit.  
-Press <kbd>r</kbd> to reset current timer.
 
 When done, press <kbd>t</kbd> to confirm.
 

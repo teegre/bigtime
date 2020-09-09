@@ -614,6 +614,7 @@ display_clock() {
   }
 
   [[ $_p ]] && {
+    [[ ${__o[v]} && ! ${__o[S]} ]] && ((X++))
     loc $((__pos_y+__digit_h-1)) $((X))
     random_color
     [[ $p != "$_p" ]] && echo "$_p" | print_rainbow

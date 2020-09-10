@@ -1222,7 +1222,7 @@ manage_timer() {
 # shellcheck disable=SC2155
 declare -r progname="$(basename "$0")"
 declare -r PROGNAME="${progname^^}"
-declare -r __version="2.0"
+declare -r __version="2.0.1"
 
 _opts=$(LC_ALL=C getopt                  \
   --long "alarm:"                        \
@@ -1595,7 +1595,6 @@ do
 [[ $__i_mode ]] && ((__idle==4)) && erase_display_line
 
 ((__idle==20 && __display!=1)) && { toggle_display 1; __idle=0; }
-
 
 _sync
 

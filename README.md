@@ -270,6 +270,10 @@ it will throw an error and a useful description.
 
 # CHANGELOG <a name="changelog"></a>
 
+## Version 20200911-2.0.2
+
+* Fixed timer digit not updated when redrawing clock.
+
 ## Version 20200910-2.0.1
 
 * Fixed misaligned AM/PM indicator in vertical layout.

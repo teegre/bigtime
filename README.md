@@ -108,6 +108,7 @@ OPTIONS:
 * -F, --foreground 0..N    - set foreground color.
 * -B, --background 0..N    - set background color.
 * -r, --rainbow            - rainbow effect (override -n and -F options).
+* -N, --no-separator       - do not display separators (horizontal layout only).
 * -n, --random             - random colors effect (override -r and -F options).
 * -C, --list-colors        - print available colors and exit.
 * -b, --blink              - blinking separators.
@@ -170,14 +171,13 @@ Or press <kbd>space</kbd> to cancel.
 * <kbd>j</kbd>     - select next digit (setting mode).
 * <kbd>k</kbd>     - select previous digit (setting mode).
 * <kbd>q</kbd>     - exit program.
-* <kbd>r</kbd>     - reset timer (timer setting mode).
 * <kbd>R</kbd>     - refresh screen.
 * <kbd>t</kbd>     - toggle timer; set/confirm new timer.
 * <kbd>space</kbd> - toggle display mode; stop; cancel (setting mode).
 
 # TIMEZONE <a name="timezone"></a>
 
-To display the time for a different timezone:  
+To display the time for a different timezone, i.e.:  
 ```TZ=Europe/Paris bigtime```
 
 # DIGITS FILE <a name="digits-file"></a>
@@ -270,9 +270,11 @@ it will throw an error and a useful description.
 
 # CHANGELOG <a name="changelog"></a>
 
-## Version 20200911-2.0.2
+## Version 20200914-2.0.2
 
-* Fixed timer digit not updated when redrawing clock.
+* Fixed timer not updated when redrawing clock.
+* Fixed hourly time signal toggling in alarm and timer mode.
+* Added **--no-separator** option.
 
 ## Version 20200910-2.0.1
 

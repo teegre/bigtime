@@ -87,6 +87,8 @@ OPTIONS:
         Set background color.
     -r, --rainbow
         Rainbow effect.
+    -N, --no-separator
+        Do not display separators (horizontal layout only).
     -n, --random
         Random colors effect (use system 16 colors palette).
     -C, --list-colors
@@ -330,19 +332,27 @@ preview_file() {
   # shellcheck disable=SC2162
   IFS=";" read -sdR -p $'\E[6n' y x
   y="${y#*[}"; x="${x#*[}"
-  # ((y--))
+  ((y--))
+  ((x+=2))
   ((y+__digit_h>term_h)) && {
     for ((i=0;i<__digit_h;i++)); do echo; done
-    ((y=term_h-__digit_h))
+    ((y=term_h-__digit_h-1))
   }
   [[ $__color_bg ]] && tput setab "$__color_bg"
   [[ $__color_fg ]] && tput setaf "$__color_fg"
+  [[ ${__o[n]} || ${__o[r]} ]] && random_color
+  loc $((y))   $((x-2)); echo "${__i[i]}" | print_rainbow
+  [[ ${__o[n]} || ${__o[r]} ]] && random_color
+  loc $((y+1)) $((x-2)); echo "${__i[a]}" | print_rainbow
+  [[ ${__o[n]} || ${__o[r]} ]] && random_color
+  loc $((y+2)) $((x-2)); echo "${__i[t]}" | print_rainbow
   print_digit $((y)) $((x)) "0"
   ((x+=__digit_w))
-  [[ ${__o[v]} ]] || {
+  [[ ! ${__o[v]} && ! ${__o[N]} ]] && {
     print_separator $((y)) $((x))
     ((x+=__sep_w))
   }
+  [[ ${__o[N]} || ${__o[v]} ]] && ((x++))
   print_digit $((y)) $((x)) "9"
   [[ $__color_fg || $__color_bg ]] && tput sgr0
   echo
@@ -382,10 +392,10 @@ clock_geometry() {
 
   if [[ ! ${__o[v]} ]]; then
     ((__clock_h=__digit_h))
-    ((__clock_w=(__digit_w*4)+2+__sep_w))
-    # [[ ${__o[d]} ]] && ((__clock_h+=1))
-    [[ ${__o[S]} ]] && ((__clock_w+=(__digit_w*2)+1+__sep_w))
-    # [[ ${__o[z]} ]] && ((__clock_h+=1))
+    [[ ${__o[N]} ]] && ((__clock_w=(__digit_w*4)+3))
+    [[ ${__o[N]} ]] || ((__clock_w=(__digit_w*4)+2+__sep_w))
+    [[ ${__o[S]} && ! ${__o[N]} ]] && ((__clock_w+=(__digit_w*2)+1+__sep_w))
+    [[ ${__o[S]} && ${__o[N]} ]] && ((__clock_w+=(__digit_w*2)+2))
   else
     ((__clock_h=__digit_h*2+1))
     ((__clock_w=__digit_w*2+1))
@@ -521,10 +531,12 @@ display_clock() {
 
   H2=$h2
 
-  if [[ ! ${__o[v]} ]]; then
+  if [[ ! ${__o[v]} && ! ${__o[N]} ]]; then
     ((X+=__digit_w))
     ((SX=X))
     ((X+=__sep_w))
+  elif [[ ${__o[N]} ]]; then
+    ((X+=__digit_w+1))
   else
     ((Y+=__digit_h+1))
     ((X=__pos_x))
@@ -544,8 +556,11 @@ display_clock() {
   M2=$m2
 
   if [[ ! ${__o[v]} ]]; then
-    [[ ${__o[S]} ]] && ((X+=__digit_w))
-    [[ ! ${__o[S]} ]] && ((X+=__digit_w+1))
+    [[ ${__o[S]} ]] && {
+      [[ ${__o[N]} ]] && ((X+=__digit_w+1))
+      [[ ${__o[N]} ]] || ((X+=__digit_w))
+    }
+    [[ ${__o[S]} ]] || ((X+=__digit_w+1))
   else
     if [[ ${__o[S]} ]]; then
       ((Y+=__digit_h+1))
@@ -560,7 +575,7 @@ display_clock() {
   [[ ${__o[b]} && $__display -eq 3 && ! $_t_active || $_t_set ]] && __tick_idx=0
 
   if [[ ${__o[S]} ]]; then
-    [[ ! ${__o[v]} ]] && {
+    [[ ! ${__o[v]} && ! ${__o[N]} ]] && {
       [[ ! $__separator ]] && print_separator $((Y)) $((SX))
       [[ ! $__separator ]] && print_separator $((Y)) $((X))
       ((X+=__sep_w))
@@ -576,12 +591,12 @@ display_clock() {
     S2=$s2
     ((X+=__digit_w+1))
 
-  elif [[ ! ${__o[s]} && ! ${__o[v]} ]]; then
+  elif [[ ! ${__o[s]} && ! ${__o[v]} && ! ${__o[N]} ]]; then
     [[ ! $__separator ]] && print_separator $((Y)) $((SX))
   fi
 
   [[ ${__o[s]} ]] || [[ $__display -eq 3 || $_t_set ]] && [[ ! ${__o[S]} ]] && {
-    if [[ ! ${__o[v]} ]]; then
+    if [[ ! ${__o[v]} && ! ${__o[N]} ]]; then
       [[ ! $__separator ]] && print_separator $((Y)) $((SX))
       if [[ $S1 != "$s1" ]]; then
         loc $((Y)) $((X))
@@ -739,6 +754,8 @@ manage_hourly_signal() {
 toggle_hourly_signal() {
   [[ ${__o[q]} ]] && return 1
 
+  ((__display==1)) || return 1
+
   [[ ${__o[i]} ]] && {  unset __o["i"] __i_signal; return 0; }
   [[ ${__o[i]} ]] || { __o[i]=1; unset __i_signal; return 0; }
 }
@@ -820,7 +837,7 @@ toggle_ampm() {
     [[ ${__o[f]} ]] && { unset __o["f"]; return 0; }
     [[ ${__o[f]} ]] || { __o[f]=1; return 0; }
   }
-  ((__display==2)) && toggle_alarm_ampm || return 1
+  ((__display==2)) && { toggle_alarm_ampm || return 1; }
   return 1
 }
 
@@ -1225,31 +1242,32 @@ declare -r progname="$(basename "$0")"
 declare -r PROGNAME="${progname^^}"
 declare -r __version="2.0.2"
 
-_opts=$(LC_ALL=C getopt                  \
-  --long "alarm:"                        \
-  --long "background:"                   \
-  --long "big-seconds"                   \
-  --long "blink"                         \
-  --long "date"                          \
-  --long "file:"                         \
-  --long "foreground:"                   \
-  --long "help"                          \
-  --long "list-colors"                   \
-  --long "list-files"                    \
-  --long "preview"                       \
-  --long "quiet"                         \
-  --long "rainbow"                       \
-  --long "random"                        \
-  --long "signal"                        \
-  --long "small-seconds"                 \
-  --long "snooze:"                       \
-  --long "timer:"                        \
-  --long "timezone"                      \
-  --long "version"                       \
-  --long "vertical"                      \
-  --options "a:B:SbdfF:hClwqrniso:t:zvV" \
-  --name "$progname"                     \
-  -- "$@"                                \
+_opts=$(LC_ALL=C getopt                   \
+  --long "alarm:"                         \
+  --long "background:"                    \
+  --long "big-seconds"                    \
+  --long "blink"                          \
+  --long "date"                           \
+  --long "file:"                          \
+  --long "foreground:"                    \
+  --long "help"                           \
+  --long "list-colors"                    \
+  --long "list-files"                     \
+  --long "no-separator"                   \
+  --long "preview"                        \
+  --long "quiet"                          \
+  --long "rainbow"                        \
+  --long "random"                         \
+  --long "signal"                         \
+  --long "small-seconds"                  \
+  --long "snooze:"                        \
+  --long "timer:"                         \
+  --long "timezone"                       \
+  --long "version"                        \
+  --long "vertical"                       \
+  --options "a:B:SbdfF:hClNwqrniso:t:zvV" \
+  --name "$progname"                      \
+  -- "$@"                                 \
 ) || exit 1
 
 eval set -- "$_opts"
@@ -1270,6 +1288,7 @@ do
     -h | --help         ) _help; exit 0 ;;
     -i | --signal       ) [[ ${__o[q]} ]] && { shift; continue; }; __o[i]=1; shift ;;
     -l | --list-files   ) list_files || { _err "error: no digits files found."; exit 1; }; exit 0 ;;
+    -N | --no-separator ) [[ ${__o[v]} ]] && { shift; continue; }; unset __o["b"]; __o[N]=1; shift ;; 
     -n | --random       ) __o[n]=1; unset __o["r"] _color_fg; shift ;;
     -o | --snooze       ) [[ ${__o[q]} ]] && { shift 2; continue; }; set_snooze "$2" || { _err "error: invalid snooze duration."; exit 1; }; shift 2 ;;
     -q | --quiet        ) __o[q]=1; unset __o["a"] _a_time __o["t"] _t_time __o["i"]; shift ;;
@@ -1278,7 +1297,7 @@ do
     -s | --small-seconds) __o[s]=1; unset __o["S"]; shift ;;
     -t | --timer        ) [[ ${__o[q]} ]] && { shift 2; continue; }; __o[t]=1; _t_time="$2"; shift 2 ;;
     -V | --version      ) _version; exit 0 ;;
-    -v | --vertical     ) __o[v]=1; unset __o["b"]; shift ;;
+    -v | --vertical     ) __o[v]=1; unset __o["b"] __o["N"]; shift ;;
     -w | --preview      ) [[ ! $__f_digits ]] && { _err "error: --preview: missing --file option."; exit 1; }; __o[w]=1; shift ;;
     -z | --timezone     ) __o[z]=1; shift ;;
     --                  ) shift; break ;;
@@ -1473,7 +1492,7 @@ for ((i=0;i<10;i++)); do
 done
 
 ## MAKING SEPARATOR+BLANK
-[[ ! ${__o[v]} ]] && {
+[[ ! ${__o[v]} && ! ${__o[N]} ]] && {
   ___p=("separator" "blank")
   for __p in "${___p[@]}"; do
     __v="$(read_param "$__p")"

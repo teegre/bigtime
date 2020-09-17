@@ -1,4 +1,4 @@
-.TH BIGTIME 1 20200914\-2.0.2 Linux "User Manuals"
+.TH BIGTIME 1 20200918\-2.1 Linux "User Manuals"
 .SH NAME
 \fB\fCbigtime\fR \- customizable clock for the terminal
 .SH SYNOPSIS
@@ -71,7 +71,7 @@ Display clock vertically.
 \fB\-\-file\fR \fIFILENAME\fR
 Use given \fIFILENAME\fR to render digits. Filepath and extension are not needed.
 .br
-\fBBigtime\fR looks for \fIdigits file\fR first in "/etc/bigtime" directory
+\fBBigtime\fR looks for \fBdigits file\fR first in "/etc/bigtime" directory
 .br
 and then in "$HOME/.config/bigtime" directory.
 .TP
@@ -79,7 +79,14 @@ and then in "$HOME/.config/bigtime" directory.
 (With \fB\-\-file\fR) display a short preview of the selected file and exit.
 .TP
 \fB\-l\fR, \fB\-\-list\-files\fR
-Print available digits files and exit.
+Print available \fBdigits files\fR and exit.
+.TP
+\fB\-e\fR, \fB\-\-edit\fR \fIFILENAME\fR
+Create a new \fBdigits file\fR from a template, and open it.
+.br
+(Filepath and file extension are not needed.)
+.br
+If the given file already exists, open it for edition.
 .TP
 \fB\-q\fR, \fB-\-quiet\fR
 Disable sound, alarm, timer and hourly time signal.
@@ -118,114 +125,146 @@ Toggle timer; set/confirm new timer.
 space
 Toggle display; stop; cancel (setting mode).
 .SH TIMEZONE
+.TP
 To display the time for a different timezone, simply prepend \fBTZ\fR environment variable when invoking \fBbigtime\fR.
 
-.br
+.TQ
+For example:
+
+.EX
 .B
 TZ=Europe/Paris bigtime
+.EE
 .SH DIGITS FILES
+.PP
 In a nutshell, a \fBdigits file\fR is a text file with the \fB.digits\fR extension
 .br
 that contains instructions on how to draw digits on the screen.
-.TP
-Digits are sequences of 0s and 1s.
+.br
+Digits are sequences of 0s and 1s and are defined as semicolons separated lists.
+.br
+\fBBigtime\fR needs some clue about digits geometry (height and width in characters).
+.br
+Some other *optional* parameters are available, like layout, colors and indicators.
+.br
+If these parameters are omitted or left blank, default values are used or value
+.br
+specified via the commandline options.
 
-.TQ
-Global settings for digits and separator geometry are defined as follow:
+.TP
+\fB\- GEOMETRY \-\fR
+
+.TP
+\fBheight=integer\fR
+height of a digit, in characters.
+.TP
+\fBwidth=integer\fR
+width of a digit, in characters.
+.TP
+\fBsep_width=integer\fR
+width of a separator, in characters.
+.TP
+.B
+These parameters are mandatory.
+.TP
+Example:
 
 .EX
-.br
 .B
 height=5
 .br
 .B
 width=5
-.br
 .B
-sep_width=1
-.br
+sep_width=3
 .EE
+.TP
+\fB\- LAYOUT \-\fR
+
+.TP
+\fBlayout=horizontal|vertical\fR
 
 .TQ
-The optional \fIlayout\fR parameter can be used to force the clock to display in a particular layout.
+The \fBlayout\fR optional parameter can be used to force the clock to display in a particular layout.
 
-.EX
-.br
-.B
-layout=horizontal
-.br
-.EE
+.TP
+\fB\- COLORS \-\fR
 
+.TP
+\fBbackground=integer\fR
+.TP
+\fBforeground=integer|rainbow|random\fR
+.TP
+Color parameters are the equivalent of \fB\-\-foreground\fR and \fB\-\-background\fR options.
 .TQ
-Or
+Integer value is a color number as shown by \fB\-\-list-colors\fR option.
 
-.EX
-.br
-.B
-layout=vertical
-.br
-.EE
+.TP
+\fB\- INDICATORS \-\fR
 
+.TP
+\fBsignal_indicator=char\fR
+.TP
+\fBalarm_indicator=char\fR
+.TP
+\fBsnooze_indicator=char\fR
+.TP
+\fBtimer_indicator=char\fR
+
+.TP
+\fB\- DIGITS \-\fR
+
+.TP
+\fB0-9=0...1;...;0...1\fR
+.TP
+\fBseparator=0...1;...;0...1\fR
+.TP
+\fBblank=0...1;...;0...1\fR
+.TP
+As stated before, a digit is defined by a semicolon separated list.
 .TQ
-If this parameter is omitted, horizontal mode is the default unless \fB\-\-vertical\fR option is used.
-
-.TQ
-Indicators can be defined as follow:
-
-.EX
-.br
-.B
-signal_indicator=*
-.br
-.B
-alarm_indicator=a
-.br
-.B
-snooze_indicator=z
-.br
-.B
-timer_indicator=t
-.br
-.EE
-
-.TQ
-By default, when \fBbigtime\fR parses a file, 0s are replaced by whitespaces and 1s by "∎".
-.TQ
-But one can define characters as shown below:
-
-.EX
-.B
-.br
-char=@
-.B
-.br
-space=\-
-.br
-.EE
-
-.TQ
-Digits and separator are defined by a semicolon separated list, as follow:
+For example:
 
 .EX
 .B
 0=11111;11011;11011;11011;11111
 .br
-.B
 [...]
 .br
 .B
 9=11111;11011;11111;00011;11111
 .br
 .B
-separator=0;1;0;1;0
+separator=000;010;000;010;000
 .br
 .B
-blank=0;0;0;0;0
+blank=000;000;000;000;000
+.EE
+.TP
+\fB\- FILLED SPACE, EMPTY SPACE \-\fR
+
+.TP
+\fBchar=char\fR
+character to display as filled space (1).
+.TP
+\fBspace=char\fR
+character to display as empty space (0).
+.TP
+By default, when \fBbigtime\fR parses a file, 0s are replaced by whitespaces and 1s by "∎".
+.TQ
+But one can define characters as shown below:
+
+.EX
 .br
+.B
+char=@
+.br
+.B
+space=-
 .EE
 
-.TQ
-With the characters defined earlier, this (0):
+.TP
+Given the characters defined earlier, this (0):
 
 .EX
 .B
@@ -242,7 +281,6 @@ With the characters defined earlier, this (0):
 .br
 .B
 11111
-.br
 .EE
 
 .TQ
@@ -251,6 +289,7 @@ Becomes this:
 .EX
 .B
 @@@@@
+.br
 .B
 @@-@@
 .br
@@ -262,22 +301,26 @@ Becomes this:
 .br
 .B
 @@@@@
-.br
 .EE
 
 .TQ
-So far, so good...
-.TQ
-\fBYou can find more examples in\fR "\fI/etc/bigtime/digits\fR" \fBdirectory\fR
+So far, so good...  
 
-.TQ
-Custom digits files must be stored in \fBbigtime\fR configuration directory:
-"\fI$HOME/.config/bigtime\fR"
+.TP
+\fB\- MAKE YOUR OWN DIGITS FILE \-\fR
+.TP
+You can find more examples in "/etc/bigtime/digits" directory
+.TP
+Custom \fBdigits files\fR must be stored in \fBbigtime\fR configuration directory:  
 
+$HOME/.config/bigtime
+.TP
+You can use the \fB\-\-edit\fR option to create a new file from a template and edit it.
+.TP
+Note: Whenever \fBbigtime\fR encounters a mistake in a \fBdigits file\fR,
 .TQ
-\fBNote\fR: Whenever \fBbigtime\fR encounters a mistake in a \fBdigits file\fR, it will throw an error  
-.TQ
-with a useful description.
+it will throw an error and a useful description.
+
 .SH AUTHOR
 Written by Stéphane Meyer (Teegre).
 .SH "REPORTING BUGS"

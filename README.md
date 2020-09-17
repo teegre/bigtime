@@ -108,17 +108,18 @@ OPTIONS:
 * -F, --foreground 0..N    - set foreground color.
 * -B, --background 0..N    - set background color.
 * -r, --rainbow            - rainbow effect (override -n and -F options).
-* -N, --no-separator       - do not display separators (horizontal layout only).
 * -n, --random             - random colors effect (override -r and -F options).
 * -C, --list-colors        - print available colors and exit.
 * -b, --blink              - blinking separators.
+* -N, --no-separator       - do not display separators (horizontal layout only).
 * -a, --alarm TIME         - set daily alarm (TIME format: [H]H:MM[AM|am|PM|pm])
 * -t, --timer DURATION     - set timer (DURATION format: [H]H:MM).
 * -i, --signal             - activate hourly time signal.
 * -v, --vertical           - display clock vertically.
-* --file FILENAME          - use a custom digits file (filename only).
+* --file FILENAME          - use a custom **digits file** (filename only).
 * -w, --preview            - (with --file) display a preview of the selected file and exit.
-* -l, --list-files         - print available digits files and exit.
+* -l, --list-files         - print available **digits files** and exit.
+* -e, --edit FILENAME      - create and/or edit a custom **digits file** (filename only).
 * -q, --quiet              - disable sound, alarm, timer and hourly time signal.
 * -h, --help               - print this help message and exit.
 * -V, --version            - print program's version and exit.
@@ -182,36 +183,74 @@ To display the time for a different timezone, i.e.:
 
 # DIGITS FILE <a name="digits-file"></a>
 
-In a nutshell, a *digits file* is a text file with the **.digits** extension  
+In a nutshell, a **digits file** is a text file with the **.digits** extension  
 that contains instructions on how to draw digits on the screen.
 
-Digits are sequences of 0s and 1s.
+Digits are sequences of 0s and 1s and are defined as semicolons separated lists.  
+**Bigtime** needs some clue about digits geometry (height and width in characters).
 
-Global settings for digits and separator are defined as follow:
+Some other *optional* parameters are available, like layout, colors and indicators.  
+If these parameters are omitted or left blank, default values are used or values  
+specified via the commandline options.
+
+## GEOMETRY
+
+* height=*integer*    - height of a digit, in characters.
+* width=*integer*     - width of a digit, in characters.
+* sep_width=*integer* - width of a separator, in characters.
+
+These parameters are mandatory.
+
+### Example:
 
 ```
 height=5
 width=5
-sep_width=1
+sep_width=3
 ```
+
+## LAYOUT
+
+* layout=*horizontal*|*vertical*
+
 The **layout** optional parameter can be used to force the clock to display in a particular layout.
 
-`layout=horizontal`  
-Or  
-`layout=vertical`
+## COLORS
 
-If this parameter is omitted, horizontal mode is the default unless **--vertical** option is used.
+* background=*integer*
+* foreground=*integer*|*rainbow*|*random*
 
-Indicators can be defined as follow:
+Color parameters are the equivalent of **--foreground** and **--background** options.
+Integer value is a color number as shown by **--list-colors** option.
+
+## INDICATORS
+
+* signal_indicator=*char*
+* alarm_indicator=*char*
+* snooze_indicator=*char*
+* timer_indicator=*char*
+
+## DIGITS
+
+* 0-9=0...1;...;0...1
+* separator=0...1;...;0...1
+* blank=0...1;...;0...1
+
+As stated before, a digit is defined by a semicolon separated list.  
+For example:
 
 ```
-signal_indicator=i
-alarm_indicator=a
-snooze_indicator=z
-timer_indicator=t
+0=11111;11011;11011;11011;11111
+...
+9=11111;11011;11111;00011;11111
+separator=000;010;000;010;000
+blank=000;000;000;000;000
 ```
 
-They must be one character only.
+## FILLED SPACE, EMPTY SPACE
+
+* char=char  - character to display as filled space (1).
+* space=char - character to display as empty space (0).
 
 By default, when **bigtime** parses a file, 0s are replaced by whitespaces and 1s by "∎".  
 But one can define characters as shown below:
@@ -221,16 +260,7 @@ char=@
 space=-
 ```
 
-Digits and separator are defined by a semicolon separated list, as follow:
-
-```
-0=11111;11011;11011;11011;11111
-...
-9=11111;11011;11111;00011;11111
-separator=0;1;0;1;0
-blank=0;0;0;0;0
-```
-With the characters defined earlier, this:
+Given the characters defined earlier, this (0):
 
 ```
 11111
@@ -251,15 +281,22 @@ Becomes this:
 ```
 
 So far, so good...  
-**You can find more examples in "/etc/bigtime/digits" directory**
 
-Custom digits files must be stored in **bigtime** configuration directory:  
+## MAKE YOUR OWN DIGITS FILE
+
+You can find more examples in "/etc/bigtime/digits" directory
+
+Custom **digits files** must be stored in **bigtime** configuration directory:  
 `$HOME/.config/bigtime`
+
+You can use the **--edit** option to create a new file from a template and edit it.
 
 **Note**: Whenever **bigtime** encounters a mistake in a **digits file**,  
 it will throw an error and a useful description.
 
 # UNINSTALL <a name="uninstall"></a>
+
+Are you sure?
 
 `make uninstall`
 
@@ -267,8 +304,18 @@ it will throw an error and a useful description.
 
 * Sound effects made with the excellent [sfxr](http://www.drpetter.se/project_sfxr.html)
 * Icons for notifications are taken from [Material Design Icons](https://materialdesignicons.com/)
+* Last but not least: [Pure Bash Bible](https://github.com/dylanaraps/pure-bash-bible)
 
 # CHANGELOG <a name="changelog"></a>
+
+## Version 20200918-2.1
+
+* Improved file preview. It now displays background color properly.
+* Added some more parameters to **digits file**: **background** and **foreground**  
+* Added **digits file** template.
+* Added **--edit** option that allows to create a custom **digits file** from a template and edit it.
+* Fixed a bug that occured when setting a 9h00 timer... -_-)'
+* Bug fixes.
 
 ## Version 20200914-2.0.2
 
@@ -317,7 +364,7 @@ it will throw an error and a useful description.
 
 ## Version 20200802-1.2.4.2
 
-* Added optional **layout** setting to digits file.  
+* Added optional **layout** setting to **digits file**.  
 * Added simple animation when quitting **bigtime**.
 * Added **lcd2.digits**.
 
@@ -325,7 +372,7 @@ it will throw an error and a useful description.
 
 * Added **-l** option back.
 * Disable snooze mode with <kbd>a</kbd>.
-* Fixed wrong character in some digits file.
+* Fixed wrong character in some **digits file**.
 * Added **--quiet** option (disable sound, alarm, timer and hourly time signal)
 * From now on, timer cannot be less than 5 seconds.
 * Added libnotify dependency.
@@ -333,9 +380,9 @@ it will throw an error and a useful description.
 ## Version 20200731-1.2.3
 
 * Removed **--char**, **--space**, **--preset** and **--list-presets** options.
-* Added optional **char** and **space** settings for digits file.  
+* Added optional **char** and **space** settings for **digits file**.  
 **Bigtime** will use the default characters if these parameters are missing.
-* Stock digits files and documentation have been changed accordingly.
+* Stock **digits files** and documentation have been changed accordingly.
 * Added **--preview** option.
 * Improved alarm setting from the commandline.
 * Added snooze indicator.

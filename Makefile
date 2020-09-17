@@ -17,7 +17,8 @@ install: src/$(PROGNAME).out
 	install -Dm644 digits/*   -t $(DESTDIR)$(ASSETDIR)/digits
 	install -Dm644 snd/*      -t $(DESTDIR)$(ASSETDIR)/snd
 	install -Dm644 icn/*      -t $(DESTDIR)$(ASSETDIR)/icn
-	install -Dm644 $(MANPAGE)  -t $(DESTDIR)$(MANDIR)
+	install -Dm644 digits.template -t $(DESTDIR)$(ASSETDIR)
+	install -Dm644 $(MANPAGE) -t $(DESTDIR)$(MANDIR)
 	install -Dm644 LICENSE    -t $(DESTDIR)$(SHAREDIR)/licenses/$(PROGNAME)
 	install -Dm644 README.md  -t $(DESTDIR)$(SHAREDIR)/doc/$(PROGNAME)
 

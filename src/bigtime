@@ -87,14 +87,14 @@ OPTIONS:
         Set background color.
     -r, --rainbow
         Rainbow effect.
-    -N, --no-separator
-        Do not display separators (horizontal layout only).
     -n, --random
         Random colors effect (use system 16 colors palette).
     -C, --list-colors
         Print available colors and exit.
     -b, --blink
         Blinking separators.
+    -N, --no-separator
+        Do not display separators (horizontal layout only).
     -v, --vertical
         Display clock vertically.
     -a, --alarm [H]H:MM [AM|am|PM|pm]
@@ -114,6 +114,8 @@ OPTIONS:
         Display a preview of --file and exit.
     -l, --list-files
         Print available digits files and exit.
+    -e, --edit FILENAME
+        Create or edit a custom digits file.
     -q, --quiet
         Disable sound, alarm, timer, and hourly time signal.
     -h, --help
@@ -256,11 +258,14 @@ erase_display_line() {
 
 set_color() {
   [[ $2 =~ ^[0-9]+$ ]] || return 1
-  if (($2>=0 && $1<=__color_count-1)); then
+  if (($2>=0 && $2<=__color_count-1)); then
     case $1 in
       --bg) __color_bg=$2 ;;
       --fg) __color_fg=$2
     esac
+    [[ $__color_bg ]] &&
+      [[ $__color_fg ]] &&
+        ((__color_bg==__color_fg)) && return 1
     return 0
   else
     return 1
@@ -306,6 +311,14 @@ random_color() {
 
 check_file() {
   [[ $1 =~ \.digits$ ]] && __f_digits="$1" || __f_digits="$1.digits"
+  [[ $2 == "--edit" ]] && {
+    [[ -a "$__path_digits/$__f_digits" ]] && {
+      _err "error: cannot edit files in $__path_digits directory."
+      exit 1
+    }
+    __f_digits="$__path_digits_custom/$__f_digits"
+    [[ -a "$__f_digits" ]] && return 0 || return 1
+  }
   if [[ ! -a "$__path_digits/$__f_digits" && ! -a "$__path_digits_custom/$__f_digits" ]]; then return 1
   elif [[ -a "$__path_digits/$__f_digits" ]]; then __f_digits="$__path_digits/$__f_digits"
   else __f_digits="$__path_digits_custom/$__f_digits"
@@ -331,29 +344,69 @@ preview_file() {
 
   # shellcheck disable=SC2162
   IFS=";" read -sdR -p $'\E[6n' y x
-  y="${y#*[}"; x="${x#*[}"
+  y="${y#*[}"; x="${x#*[}" # cursor position
   ((y--))
   ((x+=2))
   ((y+__digit_h>term_h)) && {
     for ((i=0;i<__digit_h;i++)); do echo; done
     ((y=term_h-__digit_h-1))
   }
-  [[ $__color_bg ]] && tput setab "$__color_bg"
+
+  if [[ ${__color_bg} ]]; then
+    tput setab "$__color_bg"
+    for ((i=y;i<y+__digit_h;i++)); do
+      loc $((i)) 0; tput el
+    done
+  fi
+
   [[ $__color_fg ]] && tput setaf "$__color_fg"
+
+  _split_time "$(LC_TIME=C _time "%I:%p:%H:%M")"
+  local p h m s h1 h2 m1 m2
+  if  [[ ! ${__o[f]} ]]; then
+    h="${__T_timedate[0]}"
+    p="${__T_timedate[1]}"
+  else
+    h="${__T_timedate[2]}"
+  fi
+  m="${__T_timedate[3]}"
+
+  h1="${h:0:1}"
+  h2="${h:1:1}"
+  m1="${m:0:1}"
+  m2="${m:1:1}"
+
   [[ ${__o[n]} || ${__o[r]} ]] && random_color
-  loc $((y))   $((x-2)); echo "${__i[i]}" | print_rainbow
+  loc $((y))   $((x-2)); tput el; echo "${__i[i]}" | print_rainbow
+
   [[ ${__o[n]} || ${__o[r]} ]] && random_color
-  loc $((y+1)) $((x-2)); echo "${__i[a]}" | print_rainbow
+  loc $((y+1)) $((x-2)); tput el; echo "${__i[a]}" | print_rainbow
+
   [[ ${__o[n]} || ${__o[r]} ]] && random_color
-  loc $((y+2)) $((x-2)); echo "${__i[t]}" | print_rainbow
-  print_digit $((y)) $((x)) "0"
+  loc $((y+2)) $((x-2)); tput el; echo "${__i[t]}" | print_rainbow
+
+  print_digit $((y)) $((x)) "$h1"
+  ((x+=__digit_w+1))
+  print_digit $((y)) $((x)) "$h2"
   ((x+=__digit_w))
-  [[ ! ${__o[v]} && ! ${__o[N]} ]] && {
+
+  [[ ! ${__o[N]} ]] && {
     print_separator $((y)) $((x))
     ((x+=__sep_w))
   }
+
   [[ ${__o[N]} || ${__o[v]} ]] && ((x++))
-  print_digit $((y)) $((x)) "9"
+
+  print_digit $((y)) $((x)) "$m1"
+  ((x+=__digit_w+1))
+  print_digit $((y)) $((x)) "$m2"
+  ((x+=__digit_w+1))
+  
+  [[ $p ]] && {
+    loc $((y+__clock_h-1)) $((x))
+    echo "$p" | print_rainbow
+  }
+
   [[ $__color_fg || $__color_bg ]] && tput sgr0
   echo
 }
@@ -362,7 +415,9 @@ read_param() {
   local __p __v __a
   __p="$1"
   while read -r __v; do
-    if [[ $__v =~ ^$__p=.*$ ]]; then
+    if [[ $__v =~ ^#.*$ ]]; then
+    continue
+    elif [[ $__v =~ ^$__p=.*$ ]]; then
       IFS=$'\n' read -d "" -ra __a <<< "${__v//=/$'\n'}"
       if [[ ! ${__a[1]} ]]; then
         echo "null"
@@ -375,6 +430,28 @@ read_param() {
   done < "$__f_digits"
   echo "null"
   return 1
+}
+
+edit_file() {
+  if check_file "$1" --edit; then
+    _err "edit: $__f_digits"
+    "${EDITOR:-nano}" "$__f_digits"
+  else
+    local size1 size2
+    _err "create new file: $__f_digits"
+    cp "$__path_config/digits.template" "$__f_digits" 2> /dev/null || {
+      _err "error: template file not found."
+      return 1
+    }
+    size1="$(wc -c "$__f_digits")"
+    _err "edit: $__f_digits"
+    "${EDITOR:-nano}" "$__f_digits"
+    size2="$(wc -c "$__f_digits")"
+    [[ $size1 == "$size2" ]] && {
+      rm "$__f_digits"
+      _err "edit: no change, file $__f_digits removed."
+    }
+  fi
 }
 
 ##    _    _
@@ -390,7 +467,7 @@ read_param() {
 clock_geometry() {
   local term_h term_w
 
-  if [[ ! ${__o[v]} ]]; then
+  if [[ ! ${__o[v]} || ${__o[w]} ]]; then
     ((__clock_h=__digit_h))
     [[ ${__o[N]} ]] && ((__clock_w=(__digit_w*4)+3))
     [[ ${__o[N]} ]] || ((__clock_w=(__digit_w*4)+2+__sep_w))
@@ -683,7 +760,7 @@ _to_epoch()    ( date -d "$1"  "+%s" 2> /dev/null )
 
 _tick()        { ((__tick_idx=EPOCHSECONDS%2==0?0:1)); }
 
-_hms_to_sec() {
+_hms_to_ttime() {
   local H M S __w __d __m
   _split_time "$1:$(_time "%a:%d:%m")"
   H="${__T_timedate[0]}"
@@ -692,7 +769,7 @@ _hms_to_sec() {
   __w="${__T_timedate[3]}"
   __d="${__T_timedate[4]}"
   __m="${__T_timedate[5]}"
-  printf "%02d:  :%02d:%02d:%02d:%s:%s:%s" "$H" "$H" "$M" "$S" "$__w" "$__d" "$__m"
+  printf "%s:  :%s:%s:%s:%s:%s:%s" "$H" "$H" "$M" "$S" "$__w" "$__d" "$__m"
 }
 
 _sec_to_hms() {
@@ -1078,7 +1155,7 @@ reset_timer() {
 display_timer() {
   ((__display!=3)) && return 1
   if [[ $_t_set ]]; then
-    _split_time "$(LC_TIME=C _hms_to_sec "$_t_time")"
+    _split_time "$(LC_TIME=C _hms_to_ttime "$_t_time")"
   elif [[ $_t_active ]]; then
     _split_time "$(LC_TIME=C _sec_to_hms "$_t_time_left")"
     unset TH TM TS
@@ -1242,32 +1319,33 @@ declare -r progname="$(basename "$0")"
 declare -r PROGNAME="${progname^^}"
 declare -r __version="2.0.2"
 
-_opts=$(LC_ALL=C getopt                   \
-  --long "alarm:"                         \
-  --long "background:"                    \
-  --long "big-seconds"                    \
-  --long "blink"                          \
-  --long "date"                           \
-  --long "file:"                          \
-  --long "foreground:"                    \
-  --long "help"                           \
-  --long "list-colors"                    \
-  --long "list-files"                     \
-  --long "no-separator"                   \
-  --long "preview"                        \
-  --long "quiet"                          \
-  --long "rainbow"                        \
-  --long "random"                         \
-  --long "signal"                         \
-  --long "small-seconds"                  \
-  --long "snooze:"                        \
-  --long "timer:"                         \
-  --long "timezone"                       \
-  --long "version"                        \
-  --long "vertical"                       \
-  --options "a:B:SbdfF:hClNwqrniso:t:zvV" \
-  --name "$progname"                      \
-  -- "$@"                                 \
+_opts=$(LC_ALL=C getopt                     \
+  --long "alarm:"                           \
+  --long "background:"                      \
+  --long "big-seconds"                      \
+  --long "blink"                            \
+  --long "date"                             \
+  --long "edit:"                            \
+  --long "file:"                            \
+  --long "foreground:"                      \
+  --long "help"                             \
+  --long "list-colors"                      \
+  --long "list-files"                       \
+  --long "no-separator"                     \
+  --long "preview"                          \
+  --long "quiet"                            \
+  --long "rainbow"                          \
+  --long "random"                           \
+  --long "signal"                           \
+  --long "small-seconds"                    \
+  --long "snooze:"                          \
+  --long "timer:"                           \
+  --long "timezone"                         \
+  --long "version"                          \
+  --long "vertical"                         \
+  --options "a:B:Sbde:fF:hClNwqrniso:t:zvV" \
+  --name "$progname"                        \
+  -- "$@"                                   \
 ) || exit 1
 
 eval set -- "$_opts"
@@ -1282,6 +1360,7 @@ do
     -b | --blink        ) [[ ${__o[v]} ]] && { shift; continue; }; __o[b]=1; shift ;;
     -C | --list-colors  ) list_colors; exit 0 ;;
     -d | --date         ) __o[d]=1; shift ;;
+    -e | --edit         ) edit_file "$2"; exit 1 ;;
     -F | --foreground   ) set_color --fg "$2" || { _err "error: invalid foreground color."; exit 1; }; shift 2 ;;
     --file              ) check_file "$2" || { _err "error: --file $__f_digits not found."; exit 1; }; shift 2 ;;
     -f                  ) __o[f]=1; shift ;;
@@ -1441,12 +1520,6 @@ elif [[ ${__clock_layout,,} == "horizontal" ]]; then unset __o["v"]
 fi
 unset __clock_layout
 
-[[ ! ${__o[v]} ]] && {
-  __sep_w="$(read_param "sep_width")" || { _err "error: $__f_digits: missing 'sep_width'."; exit 1; }
-}
-
-clock_geometry || { _err "error: clock doesn't fit."; exit 1; }
-
 _ch="$(read_param "char")"
 if [[ $_ch == "null" ]]; then
   __ch="∎"
@@ -1476,6 +1549,47 @@ elif [[ $_sp ]]; then
   __sp="$_sp"
   unset _sp
 fi
+
+_sep="$(read_param "separator")"
+if [[ $_sep == "null" || ${_sep,,} =~ ^(false|no|off)$ ]]; then
+  [[ ${__o[v]} ]] || { __o[N]=1; unset __o["b"]; }
+fi
+unset _sep
+
+[[ ${__o[v]} || ${__o[N]} ]] || {
+  __sep_w="$(read_param "sep_width")" || { _err "error: $__f_digits: missing 'sep_width'."; exit 1; }
+}
+
+_color_bg="$(read_param "background")"
+[[ $_color_bg != "null" ]] && {
+  set_color --bg "$_color_bg" || {
+    _err "error: $__f_digits: invalid background color."
+    exit 1
+  }
+}
+unset _color_bg
+
+_color_fg="$(read_param "foreground")"
+[[ $_color_fg != "null" ]] && {
+  case $_color_fg in
+    rainbow)
+      __o[r]=1
+      unset __o["n"] __color_fg
+      ;;
+    random)
+      __o[n]=1
+      unset __o["r"] __color_fg
+      ;;
+    *)
+      set_color --fg "$_color_fg" || {
+        _err "error: $__f_digits: invalid foreground color."
+        exit 1
+      }
+  esac
+}
+unset _color_fg
+
+clock_geometry || { _err "error: clock doesn't fit."; exit 1; }
 
 ## MAKING DIGITS
 for ((i=0;i<10;i++)); do

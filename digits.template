@@ -1,0 +1,87 @@
+# NAME: DIGITS TEMPLATE FILE
+# LAST MODIFIED: 2020-09-17
+#
+# GEOMETRY
+#
+# height=5
+height=
+# width=5
+width=
+# sep_width=4
+sep_width=
+
+# PARAMETERS
+#
+# char=█
+char=
+# space=
+space=
+
+## LAYOUT
+# Layout should be either horizontal or vertical;
+# If omitted or left empty, user can choose which one 
+# to use via the command line.
+# 
+# layout=horizontal
+layout=
+
+## INDICATORS
+#
+# signal_indicator=*
+signal_indicator=
+# alarm_indicator=a
+alarm_indicator=
+# snooze_indicator=z
+snooze_indicator=
+# timer_indicator=t
+timer_indicator=
+
+## COLORS
+#
+# color_bg must be an integer (use bigtime --colors to see the list).
+# If omitted or left empty, default value is used
+# or value set from the command line via --background option.
+# color_bg=0
+color_bg=
+# color_fg paramter can be one of the following:
+# - an integer value
+# - rainbow
+# - random
+color_fg=
+
+# DIGITS
+# Semicolon separated list of 0s and 1s.
+# 
+# 0=11111;11011;11011;11011;11111
+0=
+# 1=01110;00110;00110;00110;00110
+1=
+# 2=11111;00011;11111;11000;11111
+2=
+# 3=11111;00011;11111;00011;11111
+3=
+# 4=11011;11011;11111;00011;00011
+4=
+# 5=11111;11000;11111;00011;11111
+5=
+# 6=11111;11000;11111;11011;11111
+6=
+# 7=11111;00011;00011;00011;00011
+7=
+# 8=11111;11011;11111;11011;11111
+8=
+# 9=11111;11011;11111;00011;11111
+9=
+
+# SEPARATOR AND BLANK
+# Semicolon separated list of 0s and 1s.
+# If omitted, left empty or if its value is equal to
+# false, no or off, this paramater is ignored.
+#
+# separator=0000;0110;0000;0110;0000
+separator=
+# If separator is set, blank must also be set.
+#
+# blank=0000;0000;0000;0000;0000
+blank=
+

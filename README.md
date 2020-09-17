@@ -308,6 +308,10 @@ Are you sure?
 
 # CHANGELOG <a name="changelog"></a>
 
+## Version 20200918-2.1.1
+
+* Added new **digits file**: raspberry.
+
 ## Version 20200918-2.1
 
 * Improved file preview. It now displays background color properly.

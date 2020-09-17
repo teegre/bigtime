@@ -1,0 +1,65 @@
+# DIGITS TEMPLATE FILE
+
+# GEOMETRY
+#
+height=5
+width=10
+sep_width=
+
+# PARAMETERS
+#
+char=█
+space=
+
+## LAYOUT
+# Layout should be either horizontal or vertical;
+# If omitted or left empty, user can choose which one 
+# to use via the command line.
+# 
+layout=
+
+## INDICATORS
+#
+signal_indicator=+
+alarm_indicator=x
+snooze_indicator=z
+timer_indicator=ø
+
+## COLORS
+#
+# color_bg must be an integer (use bigtime --colors to see the list).
+# If omitted or left empty, default value is used
+# or value set from the command line via --background option.
+background=
+# color_fg paramter can be one of the following:
+# - an integer value
+# - rainbow
+# - random
+foreground=125
+
+# DIGITS
+# Semicolon separated list of 0s and 1s.
+# 
+0=1111111111;1111111111;1111111111;1111111111;1111111111
+1=0000011111;0000000000;0000000000;0000000000;0000000000
+2=0000011111;0000011111;0000000000;0000000000;0000000000
+3=0000011111;0000011111;0000011111;0000000000;0000000000
+4=0000011111;0000011111;0000011111;0000011111;0000000000
+5=0000011111;0000011111;0000011111;0000011111;0000011111
+6=0000011111;0000011111;0000011111;0000011111;1111111111
+7=0000011111;0000011111;0000011111;1111111111;1111111111
+8=0000011111;0000011111;1111111111;1111111111;1111111111
+9=0000011111;1111111111;1111111111;1111111111;1111111111
+
+# SEPARATOR AND BLANK
+# Semicolon separated list of 0s and 1s.
+# If omitted, left empty or if its value is equal to
+# false, no or off, this paramater is ignored.
+#
+# separator=0000;0110;0000;0110;0000
+separator=
+# If separator is set, blank must also be set.
+#
+# blank=0000;0000;0000;0000;0000
+blank=
+

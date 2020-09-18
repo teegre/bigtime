@@ -1,4 +1,7 @@
-# DIGITS TEMPLATE FILE
+# DIGITS FILE
+# NAME: BLOCK
+# AUTHOR: TEEGRE
+# LAST MODIFIED: 2020-09-18
 
 # GEOMETRY
 #
@@ -7,9 +10,9 @@ width=10
 sep_width=
 
 # PARAMETERS
-#
+# ▀▁▂▃▄▅▆▇█▉▊▋▌▍▎▏▐░▒▓▔▕▖▗▘▙▚▛▜▝▞▟
 char=█
-space=
+space=▐
 
 ## LAYOUT
 # Layout should be either horizontal or vertical;
@@ -20,10 +23,12 @@ layout=
 
 ## INDICATORS
 #
-signal_indicator=+
-alarm_indicator=x
-snooze_indicator=z
-timer_indicator=ø
+am_indicator=▟
+pm_indicator=▜
+signal_indicator=▒
+alarm_indicator=▒
+snooze_indicator=░
+timer_indicator=▒
 
 ## COLORS
 #
@@ -35,7 +40,7 @@ background=
 # - an integer value
 # - rainbow
 # - random
-foreground=125
+foreground=
 
 # DIGITS
 # Semicolon separated list of 0s and 1s.
@@ -56,10 +61,8 @@ foreground=125
 # If omitted, left empty or if its value is equal to
 # false, no or off, this paramater is ignored.
 #
-# separator=0000;0110;0000;0110;0000
 separator=
 # If separator is set, blank must also be set.
 #
-# blank=0000;0000;0000;0000;0000
 blank=
 

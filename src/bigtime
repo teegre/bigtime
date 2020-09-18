@@ -366,6 +366,10 @@ preview_file() {
   if  [[ ! ${__o[f]} ]]; then
     h="${__T_timedate[0]}"
     p="${__T_timedate[1]}"
+    case $p in
+      AM) p="${__i[am]}" ;;
+      PM) p="${__i[pm]}"
+    esac
   else
     h="${__T_timedate[2]}"
   fi
@@ -798,6 +802,10 @@ parse_time() {
   else
     _H="${__T_timedate[0]}"  # hour (01-12)
     _p="${__T_timedate[1]}"  # am/pm
+    case $_p in
+      AM) [[ ${__i[am]} ]] && _p="${__i[am]}" ;;
+      PM) [[ ${__i[pm]} ]] && _p="${__i[pm]}"
+    esac
   fi
   _M="${__T_timedate[3]}"    # minutes (00-59)
   _S="${__T_timedate[4]}"    # seconds (00-59)
@@ -845,7 +853,7 @@ erase_clock_line() {
 
 update_date() {
   [[ ! ${__o[d]} ]] && return 1
-  [[ $_H == "00" ]] || [[ $_H == "12" && $_p == "AM" ]] && [[ $_M == "00" && $_S == "00" ]] && {
+  [[ $_H == "00" ]] || [[ $_H == "12" && $_p == "${__i[am]}" ]] && [[ $_M == "00" && $_S == "00" ]] && {
     __u_date=1
     return 0
   }
@@ -1098,7 +1106,7 @@ manage_alarm() {
       ((__display==2)) && { [[ $_a_set ]] && print_indicator 1 " ${__i[a]}>"; }
       ((__display==2)) && { [[ $_a_set ]] || print_indicator 1 ">${__i[a]} "; }
       ((__display!=2)) && {
-        [[ $_a_ring ]] && ((__tick_idx==1)) && { print_indicator 1 " ${__i[a]}!"; return 0; }
+        [[ $_a_ring ]] && ((__tick_idx==1)) && { print_indicator 1 " ${__i[a]} "; return 0; }
         [[ $_a_ring ]] && ((__tick_idx==0)) && { print_indicator 1 "   "; return 0; }
         [[ ! $_a_ring ]] && [[ $_a_snooze ]] && print_indicator 1 " ${__i[o]} "
         [[ ! $_a_ring ]] && [[ ! $_a_snooze ]] && print_indicator 1 " ${__i[a]} "
@@ -1291,7 +1299,7 @@ manage_timer() {
       ((__display==3)) && { [[ $_t_set ]] && print_indicator 2 " ${__i[t]}>"; }
       ((__display==3)) && { [[ $_t_set ]] || print_indicator 2 ">${__i[t]} "; }
       ((__display!=3)) && {
-        [[ $_t_ring ]] && ((__tick_idx==1)) && { print_indicator 2 " ${__i[t]}!"; return 0; }
+        [[ $_t_ring ]] && ((__tick_idx==1)) && { print_indicator 2 " ${__i[t]} "; return 0; }
         [[ $_t_ring ]] && ((__tick_idx==0)) && { print_indicator 2 "   "; return 0; }
         [[ ! $_t_ring ]] && print_indicator 2 " ${__i[t]} "
       }
@@ -1317,7 +1325,7 @@ manage_timer() {
 # shellcheck disable=SC2155
 declare -r progname="$(basename "$0")"
 declare -r PROGNAME="${progname^^}"
-declare -r __version="2.1.1"
+declare -r __version="2.2"
 
 _opts=$(LC_ALL=C getopt                     \
   --long "alarm:"                           \
@@ -1514,11 +1522,19 @@ __digit_h="$(read_param "height")" || { _err "error: $__f_digits: missing 'heigh
 __digit_w="$(read_param "width")"  || { _err "error: $__f_digits: missing 'width'."; exit 1; }
 
 __clock_layout="$(read_param "layout")"
-
 if [[ ${__clock_layout,,} == "vertical" ]]; then __o["v"]=1
 elif [[ ${__clock_layout,,} == "horizontal" ]]; then unset __o["v"]
 fi
 unset __clock_layout
+
+__sec="$(read_param "seconds")"
+case $__sec in
+  big  ) __o[S]=1; unset __o["s"] ;;
+  small) __o[s]=1; unset __o["S"] ;;
+  null ) ;;
+  *    ) _err "error: $__f_digits: invalid seconds value."; exit 1
+esac
+unset __sec
 
 _ch="$(read_param "char")"
 if [[ $_ch == "null" ]]; then
@@ -1630,6 +1646,11 @@ done
 unset __sp __ch
 
 ## INDICATORS
+_i="$(read_param "am_indicator")"
+[[ $_i != "null" ]] && __i[am]="$_i" || __i[am]="AM"
+
+_i="$(read_param "pm_indicator")"
+[[ $_i != "null" ]] && __i[pm]="$_i" || __i[pm]="PM"
 
 _i="$(read_param "signal_indicator")"
 if [[ $_i == "null" ]]; then

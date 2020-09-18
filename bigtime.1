@@ -1,4 +1,4 @@
-.TH BIGTIME 1 20200918\-2.1.1 Linux "User Manuals"
+.TH BIGTIME 1 20200918\-2.2 Linux "User Manuals"
 .SH NAME
 \fB\fCbigtime\fR \- customizable clock for the terminal
 .SH SYNOPSIS
@@ -86,7 +86,7 @@ Create a new \fBdigits file\fR from a template, and open it.
 .br
 (Filepath and file extension are not needed.)
 .br
-If the given file already exists, open it for edition.
+If the given file already exists, open it for editing.
 .TP
 \fB\-q\fR, \fB-\-quiet\fR
 Disable sound, alarm, timer and hourly time signal.
@@ -145,7 +145,9 @@ Digits are sequences of 0s and 1s and are defined as semicolons separated lists.
 .br
 \fBBigtime\fR needs some clue about digits geometry (height and width in characters).
 .br
-Some other *optional* parameters are available, like layout, colors and indicators.
+Some other \fIoptional\fR parameters are available: \fBlayout\fR, \fBseconds\fR, \fBcolors\fR and \fBindicators\fR.
+.br
+When they are defined, corresponding commandline options are ignored.
 .br
 If these parameters are omitted or left blank, default values are used or value
 .br
@@ -161,11 +163,11 @@ height of a digit, in characters.
 \fBwidth=integer\fR
 width of a digit, in characters.
 .TP
-\fBsep_width=integer\fR
-width of a separator, in characters.
-.TP
 .B
 These parameters are mandatory.
+.TP
+\fBsep_width=integer\fR
+width of a separator, in characters.
 .TP
 Example:
 
@@ -188,6 +190,15 @@ sep_width=3
 The \fBlayout\fR optional parameter can be used to force the clock to display in a particular layout.
 
 .TP
+\fB\- SECONDS \- \fR
+
+.TP
+\fBseconds=big|small\fR
+
+.TQ
+Equivalent to \fB\-\-big-seconds\fR and \fB\-\-small-seconds\fR options.
+
+.TP
 \fB\- COLORS \-\fR
 
 .TP
@@ -203,7 +214,11 @@ Integer value is a color number as shown by \fB\-\-list-colors\fR option.
 \fB\- INDICATORS \-\fR
 
 .TP
-\fBsignal_indicator=char\fR
+\fBam_indicator=string\fR
+.TP
+\fBpm_indicator=string\fR
+.TP
+\fBalarm_indicator=char\fR
 .TP
 \fBalarm_indicator=char\fR
 .TP

@@ -1,5 +1,6 @@
 # NAME: DIGITS TEMPLATE FILE
-# LAST MODIFIED: 2020-09-17
+# AUTHOR: TEEGRE
+# LAST MODIFIED: 2020-09-18
 #
 # GEOMETRY
 #
@@ -12,8 +13,10 @@ sep_width=
 
 # PARAMETERS
 #
+# Filled space
 # char=█
 char=
+# Empty space
 # space=
 space=
 
@@ -25,8 +28,19 @@ space=
 # layout=horizontal
 layout=
 
+## SECONDS
+# Display seconds.
+# Accepted values are big or small.
+# If omitted or left blank, commandline option is used.
+# seconds=
+seconds=
+
 ## INDICATORS
 #
+# am_indicator=AM
+am_indicator=
+# pm_indicator=PM
+pm_indicator=
 # signal_indicator=*
 signal_indicator=
 # alarm_indicator=a
@@ -38,16 +52,16 @@ timer_indicator=
 
 ## COLORS
 #
-# color_bg must be an integer (use bigtime --colors to see the list).
+# background must be an integer (use bigtime --colors to see the list).
 # If omitted or left empty, default value is used
 # or value set from the command line via --background option.
 # color_bg=0
-color_bg=
-# color_fg paramter can be one of the following:
-# - an integer value
-# - rainbow
-# - random
-color_fg=
+background=
+# foreground parameter can be one of the following:
+# * an integer value
+# * rainbow
+# * random
+foreground=
 
 # DIGITS
 # Semicolon separated list of 0s and 1s.

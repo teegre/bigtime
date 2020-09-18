@@ -195,11 +195,9 @@ specified via the commandline options.
 
 ## GEOMETRY
 
-* height=*integer*    - height of a digit, in characters.
-* width=*integer*     - width of a digit, in characters.
-* sep_width=*integer* - width of a separator, in characters.
-
-These parameters are mandatory.
+* height=*integer*    - height of a digit, in characters. **[mandatory]**
+* width=*integer*     - width of a digit, in characters.  **[mandatory]**
+* sep_width=*integer* - width of a separator, in characters. **[optional]**
 
 ### Example:
 
@@ -223,8 +221,16 @@ The **layout** optional parameter can be used to force the clock to display in a
 Color parameters are the equivalent of **--foreground** and **--background** options.
 Integer value is a color number as shown by **--list-colors** option.
 
+## SECONDS
+
+* seconds=*big*|*small*
+
+Equivalent to **--big-seconds** and **--small-seconds** options.
+
 ## INDICATORS
 
+* am_indicator=*string*
+* pm_indicator=*string*
 * signal_indicator=*char*
 * alarm_indicator=*char*
 * snooze_indicator=*char*
@@ -307,6 +313,10 @@ Are you sure?
 * Last but not least: [Pure Bash Bible](https://github.com/dylanaraps/pure-bash-bible)
 
 # CHANGELOG <a name="changelog"></a>
+
+## Version 20200918-2.2
+
+* Added **seconds**, **am_indicator** and **pm_indicator** parameters to **digits file**.
 
 ## Version 20200918-2.1.1
 

@@ -6,7 +6,7 @@
 #
 height=3
 width=4
-sep_width=1
+sep_width=3
 
 # PARAMETERS
 #
@@ -54,6 +54,6 @@ foreground=
 
 # SEPARATOR AND BLANK
 #
-separator=0;0;╹
-blank=0;0;0
+separator=000;000;0╹0
+blank=000;000;000
 

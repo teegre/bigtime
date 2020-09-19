@@ -1519,8 +1519,10 @@ digit_input() {
 
 __f_digits="${__f_digits:-$__f_digits_default}"
 
-__digit_h="$(read_param "height")" || { _err "error: $__f_digits: missing 'height'."; exit 1; }
-__digit_w="$(read_param "width")"  || { _err "error: $__f_digits: missing 'width'."; exit 1; }
+__digit_h="$(read_param "height")" || { _err "error: $__f_digits: missing 'height'."; __f_error=1; }
+__digit_w="$(read_param "width")"  || { _err "error: $__f_digits: missing 'width'."; __f_error=1; }
+
+[[ $__f_error ]] && exit 1
 
 __clock_layout="$(read_param "layout")"
 if [[ ${__clock_layout,,} == "vertical" ]]; then __o["v"]=1
@@ -1533,7 +1535,7 @@ case $__sec in
   big  ) __o[S]=1; unset __o["s"] ;;
   small) __o[s]=1; unset __o["S"] ;;
   null ) ;;
-  *    ) _err "error: $__f_digits: invalid seconds value."; exit 1
+  *    ) _err "error: $__f_digits: invalid seconds value."; __f_error=1
 esac
 unset __sec
 
@@ -1543,10 +1545,10 @@ if [[ $_ch == "null" ]]; then
   unset _ch
 elif [[ ${#_ch} -ne 1 ]]; then
   _err "error: $__f_digits: 'char' must be 1 character."
-  exit 1
+  __f_error=1
 elif [[ $_ch =~ \\[abcdefnrtv] ]]; then
   _err "error: $__f_digits: 'char' cannot be a backslash escaped character."
-  exit 1
+  __f_error=1
 elif [[ $_ch ]]; then
   __ch="$_ch"
   unset _ch
@@ -1558,10 +1560,10 @@ if [[ $_sp == "null" ]]; then
   unset _sp
 elif [[ ${#_sp} -ne 1 ]]; then
   _err "error: $__f_digits: 'space' must be 1 character."
-  exit 1
+  __f_error=1
 elif [[ $_sp =~ \\[abcdefnrtv] ]]; then
   _err "error: $__f_digits: 'space' cannot be a backslash escaped character."
-  exit 1
+  __f_error=1
 elif [[ $_sp ]]; then
   __sp="$_sp"
   unset _sp
@@ -1574,14 +1576,14 @@ fi
 unset _sep
 
 [[ ${__o[v]} || ${__o[N]} ]] || {
-  __sep_w="$(read_param "sep_width")" || { _err "error: $__f_digits: missing 'sep_width'."; exit 1; }
+  __sep_w="$(read_param "sep_width")" || { _err "error: $__f_digits: missing 'sep_width'."; __f_error=1; }
 }
 
 _color_bg="$(read_param "background")"
 [[ $_color_bg != "null" ]] && {
   set_color --bg "$_color_bg" || {
     _err "error: $__f_digits: invalid background color."
-    exit 1
+    __f_error=1
   }
 }
 unset _color_bg
@@ -1600,7 +1602,7 @@ _color_fg="$(read_param "foreground")"
     *)
       set_color --fg "$_color_fg" || {
         _err "error: $__f_digits: invalid foreground color."
-        exit 1
+        __f_error=1
       }
   esac
 }
@@ -1611,15 +1613,17 @@ unset _color_fg
   unset __o["d"]
 }
 
+[[ $__f_error ]] && exit 1
+
 clock_geometry || { _err "error: clock doesn't fit."; exit 1; }
 
 ## MAKING DIGITS
 for ((i=0;i<10;i++)); do
-  _d="$(read_param "$i")" || { _err "error: $__f_digits: digit $i is missing."; exit 1; }
+  _d="$(read_param "$i")" || { _err "error: $__f_digits: digit $i is missing."; __f_error=1; }
   IFS=$'\n' read -d "" -ra _d <<< "${_d//$';'/$'\n'}"
-  ((${#_d[@]}!=__digit_h)) && { _err "error: $__f_digits: digit $i, height mismatch."; exit 1; }
+  ((${#_d[@]}!=__digit_h)) && { _err "error: $__f_digits: digit $i, height mismatch."; __f_error=1; }
   for ((j=0;j<__digit_h;j++)); do
-    ((${#_d[$j]}!=__digit_w)) && { _err "error: $__f_digits: digit $i, width mismatch [col $((j+1))]."; exit 1; }
+    ((${#_d[$j]}!=__digit_w)) && { _err "error: $__f_digits: digit $i, width mismatch [col $((j+1))]."; __f_error=1; }
     _d[$j]="${_d[$j]//0/"$__sp"}"
     _d[$j]="${_d[$j]//1/"$__ch"}"
     declare -a "__d$i+=(\"${_d[$j]}\")"
@@ -1632,11 +1636,11 @@ done
   ___p=("separator" "blank")
   for __p in "${___p[@]}"; do
     __v="$(read_param "$__p")"
-    [[ $__v == "null" ]] && { _err "error: $__f_digits: missing $__p"; exit 1; }
+    [[ $__v == "null" ]] && { _err "error: $__f_digits: missing $__p"; __f_error=1; }
     IFS=$'\n' read -d "" -ra __v <<< "${__v//$';'/$'\n'}"
-    ((${#__v[@]}!=__digit_h)) && { _err "error: $__f_digits: $__p, height mismatch."; exit 1; }
+    ((${#__v[@]}!=__digit_h)) && { _err "error: $__f_digits: $__p, height mismatch."; __f_error=1; }
     for ((i=0;i<__digit_h;i++)); do
-      ((${#__v[$i]}!=__sep_w)) && { _err "error: $__f_digits: $__p, width mismatch [col $((i+1))].": exit 1; }
+      ((${#__v[$i]}!=__sep_w)) && { _err "error: $__f_digits: $__p, width mismatch [col $((i+1))]."; __f_error=1; }
       __v[$i]="${__v[$i]//0/"$__sp"}"
       __v[$i]="${__v[$i]//1/"$__ch"}"
       case $__p in
@@ -1663,10 +1667,10 @@ if [[ $_i == "null" ]]; then
   __i[i]="*"
 elif [[ ${#_i} -ne 1 ]]; then 
   _err "error: $__f_digits: signal indicator must be 1 character."
-  exit 1
+  __f_error=1
 elif [[ $_i =~ \\[abcdefnrtv] ]]; then
   _err "error: $__f_digits: signal indicator cannot be a backslash escaped character."
-  exit 1
+  __f_error=1
 else
   __i[i]="$_i"
 fi
@@ -1676,10 +1680,10 @@ if [[ $_i == "null" ]]; then
   __i[a]="a"
 elif [[ ${#_i} -ne 1 ]]; then 
   _err "error: $__f_digits: alarm indicator must be 1 character."
-  exit 1
+  __f_error=1
 elif [[ $_i =~ \\[abcdefnrtv] ]]; then
   _err "error: $__f_digits: alarm indicator cannot be a backslash escaped character."
-  exit 1
+  __f_error=1
 else
   __i[a]="$_i"
 fi
@@ -1689,10 +1693,10 @@ if [[ $_i == "null" ]]; then
   __i[o]="z"
 elif [[ ${#_i} -ne 1 ]]; then 
   _err "error: $__f_digits: snooze indicator must be 1 character."
-  exit 1
+  __f_error=1
 elif [[ $_i =~ \\[abcdefnrtv] ]]; then
   _err "error: $__f_digits: snooze indicator cannot be a backslash escaped character."
-  exit 1
+  __f_error=1
 else
   __i[o]="$_i"
 fi
@@ -1702,15 +1706,17 @@ if [[ $_i == "null" ]]; then
   __i[t]="t"
 elif [[ ${#_i} -ne 1 ]]; then 
   _err "error: $__f_digits: timer indicator must be 1 character."
-  exit 1
+  __f_error=1
 elif [[ $_i =~ \\[abcdefnrtv] ]]; then
   _err "error: $__f_digits: timer indicator cannot be a backslash escaped character."
-  exit 1
+  __f_error=1
 else
   __i[t]="$_i"
 fi
 
 unset _i
+
+[[ $__f_error ]] && exit 1
 
 ##    _   _____
 ##  /| \o/__o|

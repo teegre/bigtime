@@ -1029,6 +1029,7 @@ toggle_alarm() {
         play_sound confirm
         activate_alarm
         unset __changed _a_set __digit_sel H1 H2 M1 M2
+        unset _a_snooze _a_snooze_dur
         toggle_display 1
         return 1
       }

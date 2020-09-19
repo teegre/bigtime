@@ -565,7 +565,7 @@ splash() {
   fi
   pause 0.25
   play_sound welcome
-  pause 1
+  pause 0.75
   loc $((y)) $((x))
   [[ ${__o[v]} ]] && tput el1
   [[ ! ${__o[v]} ]] && tput el

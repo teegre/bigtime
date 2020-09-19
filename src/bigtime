@@ -187,7 +187,7 @@ toggle_display() {
   ((__display==2)) && [[ ! $1 ]] && unset __i_alarm
 
   if [[ $_a_set || $_t_set ]] && [[ ! $1 ]]; then __display=4
-  elif [[ $1 ]]; then __display=$1; else ((__display++)); fi
+  elif [[ $1 ]]; then __display=$1; __idle=0; else ((__display++)); fi
 
   ((__display==2)) && [[ ${__o[a]} || $_a_set ]] && {
     erase_clock_line 

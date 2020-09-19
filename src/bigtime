@@ -1606,6 +1606,11 @@ _color_fg="$(read_param "foreground")"
 }
 unset _color_fg
 
+[[ ${__o[v]} && ${__o[d]} && $__digit_h -lt 4 ]] && {
+  _err "warning: digit height <= date height; date disabled."
+  unset __o["d"]
+}
+
 clock_geometry || { _err "error: clock doesn't fit."; exit 1; }
 
 ## MAKING DIGITS

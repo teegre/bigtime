@@ -3,7 +3,10 @@
 # LAST MODIFIED: 2020-09-21
 #
 # GEOMETRY
-# Digit geometry
+# height is the number of items in digit lists and
+# width/sep_width is the number of characters in one item.
+# Separator can have a different width than digits, but
+# it must have the same height.
 #
 # height=5
 height=
@@ -14,10 +17,10 @@ sep_width=
 
 # PARAMETERS
 #
-# Filled space
+## Filled space
 # char=█
 char=
-# Empty space
+## Empty space
 # space=
 space=
 
@@ -55,7 +58,7 @@ snooze_indicator=
 timer_indicator=
 
 ## COLORS
-# Colors parameter can be one of the following:
+# colors parameter can be one of the following:
 # * A semicolon separated list of integers which define one color 
 # for each digit plus one for separator:
 # * rainbow
@@ -68,6 +71,8 @@ colors=
 # foreground supersede colors parameter.
 background=
 foreground=
+# Note: commandline options --rainbow, --random and --foreground
+# are priority.
 
 # DIGITS
 # Semicolon separated list of 0s and 1s.

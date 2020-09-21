@@ -24,8 +24,8 @@ seconds=big
 
 ## INDICATORS
 #
-am_indicator= ▓
-pm_indicator=▓▓
+am_indicator= █
+pm_indicator=██
 signal_indicator=━
 alarm_indicator=━
 snooze_indicator=┅

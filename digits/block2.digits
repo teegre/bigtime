@@ -18,6 +18,10 @@ space=
 #
 layout=vertical
 
+## COLORS
+#
+colors=125;91;202;163;214;55;166;197;88;126;0
+
 ## SECONDS
 #
 seconds=big

@@ -7,7 +7,7 @@
 *depends on: alsa-utils, bash, coreutils, libnotify, ncurses*
 
 Tested on these terminals:  
-st, xterm, urxvt, sakura and alacritty.
+st, xterm, urxvt, sakura and alacritty (font used: TerminessTTF Nerd Font Mono).
 
 # Table of Contents
 
@@ -86,11 +86,11 @@ Indicator are displayed on the left hand side of the clock:
 * `t`   - timer activated.
 * `>a`  - alarm display mode.
 * `a>`  - alarm setting mode.
-* `a!`  - alarm is ringing.
+* `a`   - alarm is ringing (blinking).
 * `z`   - alarm snooze mode.
 * `>t`  - timer display mode.
 * `t>`  - timer setting mode.
-* `t!`  - timer is ringing.
+* `t`  - timer is ringing (blinking).
 
 Those are the default indicators but they can be changed (see [DIGITS FILE](#digits-file) section).
 
@@ -186,12 +186,12 @@ To display the time for a different timezone, i.e.:
 In a nutshell, a **digits file** is a text file with the **.digits** extension  
 that contains instructions on how to draw digits on the screen.
 
-Digits are sequences of 0s and 1s and are defined as semicolons separated lists.  
+Digits are sequences of 0s and 1s and are defined as semicolon separated lists.  
 **Bigtime** needs some clue about digits geometry (height and width in characters).
 
 Some other *optional* parameters are available, like layout, colors and indicators.  
 If these parameters are omitted or left blank, default values are used or values  
-specified via the commandline options.
+specified via the command line options.
 
 ## GEOMETRY
 
@@ -215,11 +215,16 @@ The **layout** optional parameter can be used to force the clock to display in a
 
 ## COLORS
 
+* colors=*list*|*rainbow*|*random*
 * background=*integer*
-* foreground=*integer*|*rainbow*|*random*
+* foreground=*integer*
 
-Color parameters are the equivalent of **--foreground** and **--background** options.
+**colors** parameter can be either a semicolon separated list of 11 colors (so that every digit/separator is  
+assigned a color), **rainbow** (equivalent of **--rainbow**), or **random** (equivalent of **--random**).
+
 Integer value is a color number as shown by **--list-colors** option.
+
+*Note:* **colors command line options supersede** these parameters.
 
 ## SECONDS
 
@@ -238,9 +243,9 @@ Equivalent to **--big-seconds** and **--small-seconds** options.
 
 ## DIGITS
 
-* 0-9=0...1;...;0...1
-* separator=0...1;...;0...1
-* blank=0...1;...;0...1
+* 0-9=*list*
+* separator=*list*
+* blank=*list*
 
 As stated before, a digit is defined by a semicolon separated list.  
 For example:
@@ -313,6 +318,18 @@ Are you sure?
 * Last but not least: [Pure Bash Bible](https://github.com/dylanaraps/pure-bash-bible)
 
 # CHANGELOG <a name="changelog"></a>
+
+## Version 20200921-2.3
+
+* New digits file: block2.
+* Improved space parameter implementation.
+* More comments in digits template file.
+* New digits file parameter: **colors**.
+* Fixed: clear text indicator when switching from timer.
+* Better digits file error handling.
+* Disable date if digit height<=date height (-v).
+* New digits file: basic.
+* Disable snooze mode if a new alarm is set.
 
 ## Version 20200918-2.2
 
@@ -398,7 +415,7 @@ Are you sure?
 **Bigtime** will use the default characters if these parameters are missing.
 * Stock **digits files** and documentation have been changed accordingly.
 * Added **--preview** option.
-* Improved alarm setting from the commandline.
+* Improved alarm setting from the command line.
 * Added snooze indicator.
 * Added lcd.digits.
 * Added cross.digits.

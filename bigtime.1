@@ -1,4 +1,4 @@
-.TH BIGTIME 1 20200918\-2.2 Linux "User Manuals"
+.TH BIGTIME 1 20200921\-2.3 Linux "User Manuals"
 .SH NAME
 \fB\fCbigtime\fR \- customizable clock for the terminal
 .SH SYNOPSIS
@@ -137,36 +137,34 @@ TZ=Europe/Paris bigtime
 .EE
 .SH DIGITS FILES
 .PP
-In a nutshell, a \fBdigits file\fR is a text file with the \fB.digits\fR extension
+In a nutshell, a \fBdigits file\fR is a text file with the \fB.digits\fR extension that contains instructions on how to draw digits on the screen.
 .br
-that contains instructions on how to draw digits on the screen.
-.br
-Digits are sequences of 0s and 1s and are defined as semicolons separated lists.
+Digits are sequences of 0s and 1s and are defined as semicolon separated lists.
 .br
 \fBBigtime\fR needs some clue about digits geometry (height and width in characters).
 .br
 Some other \fIoptional\fR parameters are available: \fBlayout\fR, \fBseconds\fR, \fBcolors\fR and \fBindicators\fR.
 .br
-When they are defined, corresponding commandline options are ignored.
+> \fBlayout\fR and \fBseconds\fR parameters supersede corresponding command line options.
 .br
-If these parameters are omitted or left blank, default values are used or value
+> Color parameters are ignored if command line options regarding colors are set.
 .br
-specified via the commandline options.
+> If these parameters are omitted or left blank, default values are used or values specified via the command line options.
 
 .TP
 \fB\- GEOMETRY \-\fR
 
 .TP
-\fBheight=integer\fR
+\fBheight=\fIinteger\fR
 height of a digit, in characters.
 .TP
-\fBwidth=integer\fR
+\fBwidth=\fIinteger\fR
 width of a digit, in characters.
 .TP
 .B
 These parameters are mandatory.
 .TP
-\fBsep_width=integer\fR
+\fBsep_width=\fIinteger\fR
 width of a separator, in characters.
 .TP
 Example:
@@ -190,6 +188,24 @@ sep_width=3
 The \fBlayout\fR optional parameter can be used to force the clock to display in a particular layout.
 
 .TP
+\fB\- COLORS \-\fR
+
+.TP
+\fBcolors=\fIlist\fR|rainbow|random\fR
+.TP
+\fBbackground=\fIinteger\fR
+.TP
+\fBforeground=\fIinteger\fR
+.TP
+\fBcolors\fR parameter can be either a semicolon separated list of 11 colors (so that every digit/separator is
+.TQ
+assigned a color), \fBrainbow\fR (equivalent of \fB\-\-rainbow\fR), or \fBrandom\fR (equivalent of \fB\-\-random\fR).
+.TQ
+Integer value is a color number as shown by \fB\-\-list-colors\fR option.
+.TQ
+\fINote:\fR colors command line options \fBsupersede\fR these parameters.
+
+.TP
 \fB\- SECONDS \- \fR
 
 .TP
@@ -199,42 +215,30 @@ The \fBlayout\fR optional parameter can be used to force the clock to display in
 Equivalent to \fB\-\-big-seconds\fR and \fB\-\-small-seconds\fR options.
 
 .TP
-\fB\- COLORS \-\fR
-
-.TP
-\fBbackground=integer\fR
-.TP
-\fBforeground=integer|rainbow|random\fR
-.TP
-Color parameters are the equivalent of \fB\-\-foreground\fR and \fB\-\-background\fR options.
-.TQ
-Integer value is a color number as shown by \fB\-\-list-colors\fR option.
-
-.TP
 \fB\- INDICATORS \-\fR
 
 .TP
-\fBam_indicator=string\fR
+\fBam_indicator=\fIstring\fR
 .TP
-\fBpm_indicator=string\fR
+\fBpm_indicator=\fIstring\fR
 .TP
-\fBalarm_indicator=char\fR
+\fBalarm_indicator=\fIchar\fR
 .TP
-\fBalarm_indicator=char\fR
+\fBalarm_indicator=\fIchar\fR
 .TP
-\fBsnooze_indicator=char\fR
+\fBsnooze_indicator=\fIchar\fR
 .TP
-\fBtimer_indicator=char\fR
+\fBtimer_indicator=\fIchar\fR
 
 .TP
 \fB\- DIGITS \-\fR
 
 .TP
-\fB0-9=0...1;...;0...1\fR
+\fB0-9=\fIlist\fR\fR
 .TP
-\fBseparator=0...1;...;0...1\fR
+\fBseparator=\fIlist\fR\fR
 .TP
-\fBblank=0...1;...;0...1\fR
+\fBblank=\fIlist\fR\fR
 .TP
 As stated before, a digit is defined by a semicolon separated list.
 .TQ
@@ -259,10 +263,10 @@ blank=000;000;000;000;000
 \fB\- FILLED SPACE, EMPTY SPACE \-\fR
 
 .TP
-\fBchar=char\fR
+\fBchar=\fIchar\fR
 character to display as filled space (1).
 .TP
-\fBspace=char\fR
+\fBspace=\fIchar\fR
 character to display as empty space (0).
 .TP
 By default, when \fBbigtime\fR parses a file, 0s are replaced by whitespaces and 1s by "∎".

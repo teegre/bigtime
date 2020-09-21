@@ -491,6 +491,8 @@ clock_geometry() {
 
   ((__pos_y=(term_h-__clock_h)/2))
   ((__pos_x=(term_w-__clock_w)/2))
+
+  make_grid
 }
 
 init_clock() {
@@ -506,6 +508,8 @@ init_clock() {
   splash
 
   tput clear
+
+  draw_grid
 }
 
 redraw_clock() {
@@ -516,7 +520,9 @@ redraw_clock() {
   __u_date=1
   unset __s_date
   unset TH TM TS
+  make_grid
   clear
+  draw_grid
 }
 
 erase_screen() {
@@ -533,6 +539,30 @@ erase_screen() {
     fi
   done
   pause 0.5
+}
+
+make_grid() {
+  local space
+  space="$(read_param "space")"
+  [[ $space == "null" ]] && return 0
+  [[ $space != $' ' ]] && {
+    local line i j
+    for ((i=0;i<__clock_w;i++)); do
+      line+="$space"
+    done
+    __grid="$line"
+    unset line
+  }
+}
+
+draw_grid() {
+  [[ $__grid ]] || return 0
+  local i
+  for ((i=0;i<__clock_h;i++)); do
+    loc $((__pos_y+i)) $((__pos_x))
+    random_color
+    echo "$__grid" | print_rainbow
+  done
 }
 
 splash() {
@@ -848,7 +878,12 @@ toggle_hourly_signal() {
 
 erase_clock_line() {
   loc $((__pos_y+__digit_h)) $((__pos_x))
-  tput el
+  if [[ $__grid && ${__o[v]} ]]; then
+    random_color
+    echo "$__grid" | print_rainbow
+  else
+    tput el
+  fi
   unset __time __timezone
 }
 
@@ -1327,7 +1362,7 @@ manage_timer() {
 # shellcheck disable=SC2155
 declare -r progname="$(basename "$0")"
 declare -r PROGNAME="${progname^^}"
-declare -r __version="2.2"
+declare -r __version="2.3"
 
 _opts=$(LC_ALL=C getopt                     \
   --long "alarm:"                           \
@@ -1680,10 +1715,10 @@ unset __sp __ch
 
 ## INDICATORS
 _i="$(read_param "am_indicator")"
-[[ $_i != "null" ]] && __i[am]="$_i" || __i[am]="AM"
+[[ $_i != "null" ]] && __i[am]=$"$_i" || __i[am]="AM"
 
 _i="$(read_param "pm_indicator")"
-[[ $_i != "null" ]] && __i[pm]="$_i" || __i[pm]="PM"
+[[ $_i != "null" ]] && __i[pm]=$"$_i" || __i[pm]="PM"
 
 _i="$(read_param "signal_indicator")"
 if [[ $_i == "null" ]]; then

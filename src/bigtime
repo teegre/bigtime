@@ -44,7 +44,7 @@ declare -i __pos_y __pos_x
 # COLORS 
 # shellcheck disable=SC2155
 declare -ir __color_count=$(tput colors)
-declare -ar __colors=(39 38 44 43 49 48 84 83 119 118 154 148 184 178 214 208 209 203 204 198 199 163 164 128 129 93 99 63 69 33)
+declare -a  __colors=(39 38 44 43 49 48 84 83 119 118 154 148 184 178 214 208 209 203 204 198 199 163 164 128 129 93 99 63 69 33)
 declare -i __color_idx
 declare -i __color_fg
 declare -i __color_bg
@@ -292,9 +292,10 @@ list_colors() {
 }
 
 random_color() {
-  [[ ! ${__o[r]} && ! ${__o[n]} ]] && return 1
+  [[ ! ${__o[r]} && ! ${__o[n]} && ! ${__o[c]} ]] && return 1
   [[ ${__o[r]} ]] && ((__color_idx=__color_idx>${#__colors[@]}-2?0:__color_idx+1))
-  [[ ${__o[r]} ]] && __color=${__colors[$__color_idx]}
+  [[ ${__o[c]} ]] && __color_idx="$1"
+  [[ ${__o[r]} || ${__o[c]} ]] && __color=${__colors[$__color_idx]}
   [[ ${__o[n]} ]] && ((__color=RANDOM%15+1))
   return 0
 }
@@ -826,7 +827,7 @@ manage_hourly_signal() {
   [[ ${__o[i]} && ! $_a_ring && ! $_t_ring ]] && {
     case $__display in
       1  ) [[ $_M == "00" && $_S == "00" ]] && play_sound beep ;;
-      2-3) local mm ss; mm="$(_time "%M")"; ss="$(_time "%S")"; [[ $mm == "00" && $ss == "00" ]] && play_sound beep
+      2|3) local mm ss; mm="$(_time "%M")"; ss="$(_time "%S")"; [[ $mm == "00" && $ss == "00" ]] && play_sound beep
     esac
   }
   [[ ! $__i_signal ]] && {
@@ -1402,11 +1403,11 @@ print_digit() {
   local y x d i D
   y=$1 x=$2; d=$3
   shift 3
-  [[ ${__o[n]} ]] && random_color
+  random_color "$d"
   for ((i=0;i<__digit_h;i++)); do
     [[ ${__o[r]} ]] && random_color
     D=$"__d${d}[$i]"
-    tput cup $((y)) $((x))
+    loc $((y)) $((x))
     echo $"${!D}" | print_rainbow
     ((y++))
   done
@@ -1416,7 +1417,7 @@ print_separator() {
   local y x i ba s
   y=$1; x=$2
   shift 2
-  [[ ${__o[n]} ]] && random_color
+  random_color 10
   for ((i=0;i<__digit_h;i++)); do
     [[ ${__o[r]} ]] && random_color
     [[ ${__o[b]} ]] && {
@@ -1431,7 +1432,7 @@ print_separator() {
 
 print_rainbow() {
   local line
-  [[ ! ${__o[r]} && ! ${__o[n]} ]] && {
+  [[ ! ${__o[r]} && ! ${__o[n]} && ! ${__o[c]} ]] && {
     while IFS= read -r line; do 
       printf "%s" $"$line"
     done
@@ -1590,21 +1591,10 @@ unset _color_bg
 
 _color_fg="$(read_param "foreground")"
 [[ $_color_fg != "null" ]] && {
-  case $_color_fg in
-    rainbow)
-      __o[r]=1
-      unset __o["n"] __color_fg
-      ;;
-    random)
-      __o[n]=1
-      unset __o["r"] __color_fg
-      ;;
-    *)
-      set_color --fg "$_color_fg" || {
-        _err "error: $__f_digits: invalid foreground color."
-        __f_error=1
-      }
-  esac
+  set_color --fg "$_color_fg" || {
+    _err "error: $__f_digits: invalid foreground color."
+    __f_error=1
+  }
 }
 unset _color_fg
 
@@ -1612,6 +1602,39 @@ unset _color_fg
   _err "warning: digit height <= date height; date disabled."
   unset __o["d"]
 }
+
+_cc="$(read_param "colors")"
+[[ $_cc != "null" ]] && {
+  if [[ $__color_fg ]]; then
+    _err "warning: $__f_digits: colors ignored; using --foreground instead."
+  elif [[ ${__o[n]} ]]; then
+    _err "warning: $__f_digits: colors ignored; using --random instead."
+  elif [[ ${__o[r]} ]]; then
+    _err "warning: $__f_digits: colors ignored: using --rainbow instead."
+  elif [[ $_cc == "rainbow" ]]; then
+    __o[r]=1
+    unset __color_fg
+  elif [[ $_cc == "random" ]]; then
+    __o[n]=1
+    unset __color_fg
+  else
+    IFS=$'\n' read -d "" -ra __colors <<< "${_cc//';'/$'\n'}"
+    if [[ ${#__colors[@]} -ne 11 ]]; then
+      _err "error: $__f_digits: digit colors list must contain 11 items."
+      __f_error=1
+    else
+      for ((i=0;i<10;i++)); do
+        [[ ${__colors[$i]} =~ [0-9]+ && ${__colors[$i]} -ge 0 &&
+            ${__colors[$i]} -lt $__color_count ]] || {
+          _err "error: $__f_digits: digit colors: invalid color [col $((i+1))]"
+          __f_error=1
+        }
+      done
+    fi
+    [[ $__f_error ]] || __o[c]=1
+  fi
+}
+unset _cc
 
 [[ $__f_error ]] && exit 1
 
@@ -1761,7 +1784,7 @@ do
 
 [[ $__i_mode ]] && ((__idle==4)) && erase_display_line
 
-((__idle==20 && __display!=1)) && { toggle_display 1; __idle=0; }
+((__idle==20 && __display!=1)) && toggle_display 1
 
 _sync
 

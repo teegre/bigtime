@@ -1,8 +1,9 @@
 # NAME: DIGITS TEMPLATE FILE
 # AUTHOR: TEEGRE
-# LAST MODIFIED: 2020-09-18
+# LAST MODIFIED: 2020-09-21
 #
 # GEOMETRY
+# Digit geometry
 #
 # height=5
 height=
@@ -21,7 +22,8 @@ char=
 space=
 
 ## LAYOUT
-# Layout should be either horizontal or vertical;
+# Force clock display layout.
+# Should be either horizontal or vertical.
 # If omitted or left empty, user can choose which one 
 # to use via the command line.
 # 
@@ -32,11 +34,13 @@ layout=
 # Display seconds.
 # Accepted values are big or small.
 # If omitted or left blank, commandline option is used.
+#
 # seconds=
 seconds=
 
 ## INDICATORS
-#
+# Signal, alarm, snooze and timer indicators are ONE character.
+# AM and PM indicators must have the same length.
 # am_indicator=AM
 am_indicator=
 # pm_indicator=PM
@@ -51,16 +55,18 @@ snooze_indicator=
 timer_indicator=
 
 ## COLORS
-#
-# background must be an integer (use bigtime --colors to see the list).
-# If omitted or left empty, default value is used
-# or value set from the command line via --background option.
-# color_bg=0
-background=
-# foreground parameter can be one of the following:
-# * an integer value
+# Colors parameter can be one of the following:
+# * A semicolon separated list of integers which define one color 
+# for each digit plus one for separator:
 # * rainbow
 # * random
+#
+# colors=39;44;38;43;84;49;83;48;119;154;118
+colors=
+# background/foreground must be an integer (use bigtime --list-colors to see the list).
+# If omitted or left empty, default value is used or value(s) set via commandline options.
+# foreground supersede colors parameter.
+background=
 foreground=
 
 # DIGITS

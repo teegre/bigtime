@@ -3,7 +3,7 @@
 # LAST MODIFIED: 2020-09-21
 #
 # GEOMETRY
-# height is the number of items in digit lists and
+# height is the number of items in a digit list and
 # width/sep_width is the number of characters in one item.
 # Separator can have a different width than digits, but
 # it must have the same height.
@@ -17,10 +17,10 @@ sep_width=
 
 # PARAMETERS
 #
-## Filled space
+## Filled space (1)
 # char=█
 char=
-## Empty space
+## Empty space (0)
 # space=
 space=
 
@@ -36,7 +36,7 @@ layout=
 ## SECONDS
 # Display seconds.
 # Accepted values are big or small.
-# If omitted or left blank, commandline option is used.
+# If omitted or left blank, command line option is used.
 #
 # seconds=
 seconds=
@@ -67,11 +67,11 @@ timer_indicator=
 # colors=39;44;38;43;84;49;83;48;119;154;118
 colors=
 # background/foreground must be an integer (use bigtime --list-colors to see the list).
-# If omitted or left empty, default value is used or value(s) set via commandline options.
+# If omitted or left empty, default value is used or value(s) set via command line options.
 # foreground supersede colors parameter.
 background=
 foreground=
-# Note: commandline options --rainbow, --random and --foreground
+# Note: command line options --rainbow, --random and --foreground
 # are priority.
 
 # DIGITS

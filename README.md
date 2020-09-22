@@ -1,6 +1,6 @@
-# ***-BiGTiME-***
+# ***-B!GT!ME-***
 
-![screenshot](screenshot.png)
+![screenshot](img/screenshot.png)
 
 **bigtime** is a customizable clock for the terminal, written in bash.
 
@@ -12,30 +12,65 @@ st, xterm, urxvt, sakura and alacritty (font used: TerminessTTF Nerd Font Mono).
 # Table of Contents
 
 * [INSPIRATION](#inspiration)
+* [EXAMPLES](#examples)
 * [INSTALLATION](#installation)
-* [DISPLAY](#display)
 * [USAGE](#usage)
+* [KEY BINDINGS](#key-bindings)
 * [ALARM](#alarm)
 * [TIMER](#timer)
-* [KEY BINDINGS](#key-bindings)
 * [TIMEZONE](#timezone)
 * [DIGITS FILE](#digits-file)
 * [UNINSTALL](#uninstall)
 * [CREDITS](#credits)
 * [CHANGELOG](#changelog)
 
-![screencast](bigtime.gif)
-
 # INSPIRATION <a name="inspiration"></a>
 
 ## The Concept
-![watch](watch.jpg)
+![watch](img/watch.jpg)
 ## The Sound
-![gameboy](gameboy.jpg)
+![gameboy](img/gameboy.jpg)
 ## The Colors
-![nyancat](nyancat.jpg)
+![nyancat](img/nyancat.jpg)
 ## The Name
 [Peter Gabriel: Big Time](https://youtube.com/watch?v=PBAl9cchQac)
+
+# EXAMPLES <a name="examples"></a>
+
+Here are some examples along with their associated commands
+
+## STANDARD
+![standard](img/standard.png)
+
+`bigtime [master] bigtime`
+
+## SIMPLE
+![screencast](img/bigtime.gif)
+
+`bigtime [master] bigtime --file simple --big-seconds --rainbow`
+
+## BASIC
+![basic](img/basic.png)
+
+`bigtime [master] bigtime --file basic --random`
+
+## BLOCK
+
+![block](img/block.png)
+
+`bigtime --file block`
+
+## DIGITAL
+
+![digital](img/digital.png)
+
+`bigtime [master] bigtime --file digital --date -f --rainbow --small-seconds --vertical`
+
+## BLOCK2
+
+![block2](img/block2.png)
+
+`bigtime [master] bigtime --file block2 --foreground 125`
 
 # INSTALLATION <a name="installation"></a>
 
@@ -49,52 +84,7 @@ You can find **bigtime** in the [Arch User Repository](https://aur.archlinux.org
 
 `make install`
 
-# DISPLAY <a name="display"></a>
-
-*Vertical display with date and small seconds:*  
-`bigtime -dsv`  
-```
- ∎∎∎  ∎∎∎∎∎ TU
-∎   ∎     ∎ 07
-∎ ∎ ∎    ∎  28
-∎   ∎   ∎
- ∎∎∎   ∎    PM
-
-∎∎∎∎   ∎∎∎
-∎     ∎   ∎
-∎∎∎∎     ∎
-    ∎   ∎
-∎∎∎∎  ∎∎∎∎∎ 46
-```
-
-*Horizontal display with big seconds:*  
-`bigtime -S`  
-```
- ∎∎∎  ∎∎∎∎∎   ∎∎∎∎    ∎       ∎     ∎
-∎   ∎     ∎   ∎      ∎∎      ∎∎    ∎
-∎ ∎ ∎    ∎    ∎∎∎∎    ∎       ∎   ∎∎∎∎
-∎   ∎   ∎   ∎     ∎   ∎   ∎   ∎   ∎   ∎
- ∎∎∎   ∎    ∎ ∎∎∎∎   ∎∎∎  ∎  ∎∎∎   ∎∎∎  PM
-
-```
-
-## Indicators
-Indicator are displayed on the left hand side of the clock:
-
-* `*`   - hourly time signal activated.
-* `a`   - daily alarm activated.
-* `t`   - timer activated.
-* `>a`  - alarm display mode.
-* `a>`  - alarm setting mode.
-* `a`   - alarm is ringing (blinking).
-* `z`   - alarm snooze mode.
-* `>t`  - timer display mode.
-* `t>`  - timer setting mode.
-* `t`  - timer is ringing (blinking).
-
-Those are the default indicators but they can be changed (see [DIGITS FILE](#digits-file) section).
-
-## USAGE <a name="usage"></a>
+# USAGE <a name="usage"></a>
 
 bigtime [OPTION [VALUE] ... OPTION [VALUE]]
 
@@ -124,9 +114,38 @@ OPTIONS:
 * -h, --help               - print this help message and exit.
 * -V, --version            - print program's version and exit.
 
+# INDICATORS
+Indicator are displayed on the left hand side of the clock:
+
+* `*`   - hourly time signal activated.
+* `a`   - daily alarm activated.
+* `t`   - timer activated.
+* `>a`  - alarm display mode.
+* `a>`  - alarm setting mode.
+* `a`   - alarm is ringing (blinking).
+* `z`   - alarm snooze mode.
+* `>t`  - timer display mode.
+* `t>`  - timer setting mode.
+* `t`  - timer is ringing (blinking).
+
+These are the default indicators but they can be changed (see [DIGITS FILE](#digits-file) section).
+
+# KEY BINDINGS <a name="key-bindings"></a>
+
+* <kbd>a</kbd>     - toggle daily alarm; set/confirm new alarm; disable **snooze** mode.
+* <kbd>f</kbd>     - toggle 24h format; toggle AM/PM (alarm setting mode).
+* <kbd>i</kbd>     - toggle hourly time signal.
+* <kbd>j</kbd>     - select next digit (setting mode).
+* <kbd>k</kbd>     - select previous digit (setting mode).
+* <kbd>q</kbd>     - exit program.
+* <kbd>R</kbd>     - refresh screen.
+* <kbd>t</kbd>     - toggle timer; set/confirm new timer.
+* <kbd>space</kbd> - toggle display mode; stop; cancel (setting mode).
+
 # ALARM <a name="alarm"></a>
 
 ## From the command line
+
 To set a daily alarm starting at 7:00 AM:  
 `bigtime --alarm "7:00 AM"`
 
@@ -150,31 +169,20 @@ Or press <kbd>space</kbd> to cancel.
 # TIMER <a name="timer"></a>
 
 ## From the command line
+
 To set a 3 minutes timer:  
-`bigtime --timer "0:03"`
+`bigtime --timer 0:03`
 
 ## From within the application
 
 Press <kbd>t</kbd> to set a new timer.  
 To modify an existing timer, press <kbd>space</kbd> (twice if an alarm is set) and <kbd>t</kbd>.  
-Enter the desired duration.  
+Enter the desired duration (from 1 minute to 23 hours and 59 minutes).  
 Press <kbd>j</kbd> or <kbd>k</kbd> to select next/previous digit.  
 
 When done, press <kbd>t</kbd> to confirm.
 
 Or press <kbd>space</kbd> to cancel.
-
-# KEY BINDINGS <a name="key-bindings"></a>
-
-* <kbd>a</kbd>     - toggle daily alarm; set/confirm new alarm; disable **snooze** mode.
-* <kbd>f</kbd>     - toggle 24h format; toggle AM/PM (alarm setting mode).
-* <kbd>i</kbd>     - toggle hourly time signal.
-* <kbd>j</kbd>     - select next digit (setting mode).
-* <kbd>k</kbd>     - select previous digit (setting mode).
-* <kbd>q</kbd>     - exit program.
-* <kbd>R</kbd>     - refresh screen.
-* <kbd>t</kbd>     - toggle timer; set/confirm new timer.
-* <kbd>space</kbd> - toggle display mode; stop; cancel (setting mode).
 
 # TIMEZONE <a name="timezone"></a>
 

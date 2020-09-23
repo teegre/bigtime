@@ -276,6 +276,7 @@ list_colors() {
   local term_w max_cols term_color col i on off
   term_w="$(tput cols)"
   ((max_cols=term_w<75?term_w/5-1:15))
+  off="$(tput sgr0)"
   for ((i=0;i<__color_count;i++)); do
     on="$(tput setab $((i)))"
     if ((i==0)); then
@@ -283,10 +284,27 @@ list_colors() {
     else
       term_color="$(tput setaf 0)"
     fi
-    off="$(tput sgr0)"
     printf "%s%s %03d %s" "$on" "$term_color" "$i" "$off"
     ((col++))
     ((col>max_cols)) && { printf "\n"; col=0; }
+  done
+  echo
+}
+
+print_colors() {
+  local __c _c i txt on off
+  __c="$1"
+  [[ $__c == "null" ]] && { echo "null"; return 0; }
+  IFS=$'\n' read -d "" -ra _c <<< "${__c//;/$'\n'}"
+  off="$(tput sgr0)"
+  for ((i=0;i<${#_c[@]};i++)); do
+    if [[ ${_c[$i]} =~ ^0(0+)?$ ]]; then
+      txt="$(tput setaf $((__color_count-1)))"
+    else
+      txt="$(tput setaf 0)"
+    fi
+    on="$(tput setab "${_c[$i]}")"
+    printf "%s%s %-3s %s" "$on" "$txt" "${_c[$i]}" "$off"
   done
   echo
 }
@@ -350,7 +368,7 @@ preview_file() {
   ((x+=2))
   ((y+__digit_h>term_h)) && {
     for ((i=0;i<__digit_h;i++)); do echo; done
-    ((y=term_h-__digit_h-1))
+    ((y-=__clock_h-1))
   }
 
   if [[ ${__color_bg} ]]; then
@@ -362,8 +380,17 @@ preview_file() {
 
   [[ $__color_fg ]] && tput setaf "$__color_fg"
 
-  _split_time "$(LC_TIME=C _time "%I:%p:%H:%M")"
-  local p h m s h1 h2 m1 m2
+  make_grid
+
+  [[ $__grid ]] && {
+    for ((i=y;i<y+__digit_h;i++)); do
+      loc $((i)) $((x))
+      echo "$__grid"
+    done
+  }
+
+  _split_time "$(LC_TIME=C _time "%I:%p:%H:%M:%S")"
+  local p h m s h1 h2 m1 m2 s1 s2
   if  [[ ! ${__o[f]} ]]; then
     h="${__T_timedate[0]}"
     p="${__T_timedate[1]}"
@@ -375,11 +402,14 @@ preview_file() {
     h="${__T_timedate[2]}"
   fi
   m="${__T_timedate[3]}"
-
+  s="${__T_timedate[4]}"
+  
   h1="${h:0:1}"
   h2="${h:1:1}"
   m1="${m:0:1}"
   m2="${m:1:1}"
+  s1="${s:0:1}"
+  s2="${s:1:1}"
 
   [[ ${__o[n]} || ${__o[r]} ]] && random_color
   loc $((y))   $((x-2)); tput el; echo "${__i[i]}" | print_rainbow
@@ -406,14 +436,46 @@ preview_file() {
   ((x+=__digit_w+1))
   print_digit $((y)) $((x)) "$m2"
   ((x+=__digit_w+1))
+
+  [[ ${__o[S]} ]] && {
+    [[ ! ${__o[N]} ]] && {
+      print_separator $((y)) $((x))
+      ((x+=__sep_w))
+    }
+    print_digit $((y)) $((x)) "$s1"
+    ((x+=__digit_w+1))
+    print_digit $((y)) $((x)) "$s2"
+    ((x+=__digit_w+1))
+  }
+
+  [[ ${__o[s]} ]] && {
+    loc $((y)) $((x))
+    random_color; echo "$s1" | print_rainbow
+    loc $((y)) $((x+1))
+    random_color; echo "$s2" | print_rainbow
+  }
   
   [[ $p ]] && {
+    random_color
     loc $((y+__clock_h-1)) $((x))
     echo "$p" | print_rainbow
   }
 
-  [[ $__color_fg || $__color_bg ]] && tput sgr0
+  tput sgr0
   echo
+
+  local l c fg bg sec
+  l="$(read_param "layout")"
+  c="$(read_param "colors")"
+  fg="$(read_param "foreground")"
+  bg="$(read_param "background")"
+  sec="$(read_param "seconds")"
+  echo "digit geometry: $(read_param "width")x$(read_param "height")"
+  [[ $l   != "null" ]] && { echo    "        layout: $l"; }
+  [[ $c   != "null" ]] && { echo -n "        colors: "; print_colors "$c"; }
+  [[ $fg  != "null" ]] && { echo -n "    foreground: "; print_colors "$(read_param "foreground")"; }
+  [[ $bg  != "null" ]] && { echo -n "    background: "; print_colors "$(read_param "background")"; }
+  [[ $sec != "null" ]] && { echo    "       seconds: $(read_param "seconds")"; }
 }
 
 read_param() {
@@ -1624,6 +1686,33 @@ _color_bg="$(read_param "background")"
 }
 unset _color_bg
 
+_cc="$(read_param "colors")"
+[[ $_cc != "null" && ! $__color_fg && ! ${__o[n]} && ! ${__o[r]} ]] && {
+  if [[ $_cc == "rainbow" ]]; then
+      __o[r]=1
+      unset __color_fg
+  elif [[ $_cc == "random" ]]; then
+      __o[n]=1
+      unset __color_fg
+  else
+    IFS=$'\n' read -d "" -ra __colors <<< "${_cc//';'/$'\n'}"
+    if [[ ${#__colors[@]} -ne 11 ]]; then
+      _err "error: $__f_digits: digit colors list must contain 11 items."
+      __f_error=1
+    else
+      for ((i=0;i<10;i++)); do
+        [[ ${__colors[$i]} =~ [0-9]+ && ${__colors[$i]} -ge 0 &&
+          ${__colors[$i]} -lt $__color_count ]] || {
+            _err "error: $__f_digits: digit colors: invalid color [col $((i+1))]"
+            __f_error=1
+          }
+      done
+    fi
+    [[ $__f_error ]] || __o[c]=1
+  fi
+}
+unset _cc
+
 _color_fg="$(read_param "foreground")"
 [[ $_color_fg != "null" ]] && {
   set_color --fg "$_color_fg" || {
@@ -1638,32 +1727,6 @@ unset _color_fg
   unset __o["d"]
 }
 
-_cc="$(read_param "colors")"
-[[ $_cc != "null" ]] && {
-  if [[ $_cc == "rainbow" ]]; then
-    __o[r]=1
-    unset __color_fg
-  elif [[ $_cc == "random" ]]; then
-    __o[n]=1
-    unset __color_fg
-  else
-    IFS=$'\n' read -d "" -ra __colors <<< "${_cc//';'/$'\n'}"
-    if [[ ${#__colors[@]} -ne 11 ]]; then
-      _err "error: $__f_digits: digit colors list must contain 11 items."
-      __f_error=1
-    else
-      for ((i=0;i<10;i++)); do
-        [[ ${__colors[$i]} =~ [0-9]+ && ${__colors[$i]} -ge 0 &&
-            ${__colors[$i]} -lt $__color_count ]] || {
-          _err "error: $__f_digits: digit colors: invalid color [col $((i+1))]"
-          __f_error=1
-        }
-      done
-    fi
-    [[ $__f_error ]] || __o[c]=1
-  fi
-}
-unset _cc
 
 [[ $__f_error ]] && exit 1
 

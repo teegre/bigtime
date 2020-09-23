@@ -1640,13 +1640,7 @@ unset _color_fg
 
 _cc="$(read_param "colors")"
 [[ $_cc != "null" ]] && {
-  if [[ $__color_fg ]]; then
-    _err "warning: $__f_digits: colors ignored; using --foreground instead."
-  elif [[ ${__o[n]} ]]; then
-    _err "warning: $__f_digits: colors ignored; using --random instead."
-  elif [[ ${__o[r]} ]]; then
-    _err "warning: $__f_digits: colors ignored: using --rainbow instead."
-  elif [[ $_cc == "rainbow" ]]; then
+  if [[ $_cc == "rainbow" ]]; then
     __o[r]=1
     unset __color_fg
   elif [[ $_cc == "random" ]]; then

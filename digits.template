@@ -1,8 +1,9 @@
 # NAME: DIGITS TEMPLATE FILE
 # AUTHOR: TEEGRE
-# LAST MODIFIED: 2020-09-21
+# LAST MODIFIED: 2020-09-24
 #
 # GEOMETRY
+#
 # height is the number of items in a digit list and
 # width/sep_width is the number of characters in one item.
 # Separator can have a different width than digits, but
@@ -17,23 +18,25 @@ sep_width=
 
 # PARAMETERS
 #
-## Filled space (1)
+## FILLED SPACE (1)
 # char=█
 char=
-## Empty space (0)
+## EMPTY SPACE (0)
 # space=
 space=
 
 ## LAYOUT
+#
 # Force clock display layout.
 # Should be either horizontal or vertical.
 # If omitted or left empty, user can choose which one 
 # to use via the command line.
-# 
+#
 # layout=horizontal
 layout=
 
 ## SECONDS
+#
 # Display seconds.
 # Accepted values are big or small.
 # If omitted or left blank, command line option is used.
@@ -42,8 +45,10 @@ layout=
 seconds=
 
 ## INDICATORS
+#
 # Signal, alarm, snooze and timer indicators are ONE character.
 # AM and PM indicators must have the same length.
+#
 # am_indicator=AM
 am_indicator=
 # pm_indicator=PM
@@ -58,6 +63,10 @@ snooze_indicator=
 timer_indicator=
 
 ## COLORS
+#
+# (These parameters are used as default and they are overridden by
+# any related command line option.)
+#
 # colors parameter can be one of the following:
 # * A semicolon separated list of integers which define one color 
 # for each digit plus one for separator:
@@ -66,15 +75,15 @@ timer_indicator=
 #
 # colors=39;44;38;43;84;49;83;48;119;154;118
 colors=
+#
 # background/foreground must be an integer (use bigtime --list-colors to see the list).
-# If omitted or left empty, default value is used or value(s) set via command line options.
+# If omitted or left empty, default values are used or value(s) set via command line options.
 # foreground supersede colors parameter.
 background=
 foreground=
-# Note: command line options --rainbow, --random and --foreground
-# are priority.
 
 # DIGITS
+#
 # Semicolon separated list of 0s and 1s.
 # 
 # 0=11111;11011;11011;11011;11111
@@ -99,12 +108,14 @@ foreground=
 9=
 
 # SEPARATOR AND BLANK
+#
 # Semicolon separated list of 0s and 1s.
 # If omitted, left empty or if its value is equal to
 # false, no or off, this paramater is ignored.
 #
 # separator=0000;0110;0000;0110;0000
 separator=
+#
 # If separator is set, blank must also be set.
 #
 # blank=0000;0000;0000;0000;0000

@@ -42,17 +42,17 @@ Here are some examples along with their associated commands
 ## STANDARD
 ![standard](img/standard.png)
 
-`bigtime [master] bigtime`
+`bigtime`
 
 ## SIMPLE
 ![screencast](img/bigtime.gif)
 
-`bigtime [master] bigtime --file simple --big-seconds --rainbow`
+`bigtime --file simple --big-seconds --rainbow`
 
 ## BASIC
 ![basic](img/basic.png)
 
-`bigtime [master] bigtime --file basic --random`
+`bigtime --file basic --random`
 
 ## BLOCK
 
@@ -64,13 +64,13 @@ Here are some examples along with their associated commands
 
 ![digital](img/digital.png)
 
-`bigtime [master] bigtime --file digital --date -f --rainbow --small-seconds --vertical`
+`bigtime --file digital --date -f --rainbow --small-seconds --vertical`
 
 ## BLOCK2
 
 ![block2](img/block2.png)
 
-`bigtime [master] bigtime --file block2 --foreground 125`
+`bigtime --file block2 --foreground 125`
 
 # INSTALLATION <a name="installation"></a>
 
@@ -326,6 +326,11 @@ Are you sure?
 * Last but not least: [Pure Bash Bible](https://github.com/dylanaraps/pure-bash-bible)
 
 # CHANGELOG <a name="changelog"></a>
+
+## Version 2020923-2.3.1
+
+* Added more info to **--preview** option.
+* Removed some useless warnings.
 
 ## Version 20200921-2.3
 

@@ -1248,6 +1248,10 @@ activate_timer() {
   unset __T_t_sec
   _t_active=1
   unset __i_timer
+  [[ ${__o[n]} || ${__o[r]} ]] && {
+    random_color
+    _t_color=$__color
+  }
   return 0
 }
 
@@ -1255,6 +1259,7 @@ reset_timer() {
   [[ ${__o[q]} ]] && return 1
   unset __o["t"] _t_active _t_time _t_sec _t_time_left
   unset _t_ring _t_ring_dur __i_timer
+  unset _t_color
   erase_timer_line
   return 0
 }
@@ -1284,7 +1289,9 @@ print_timer() {
       [[ $h == "00" ]] && [[ $m == "00" ]] && t="     :$s"
       ((y=__pos_y+__clock_h)); ((x=__pos_x+__clock_w-${#t}))
       loc $((y)) $((x))
-      echo "$t" | print_rainbow
+      [[ ${__o[n]} || ${__o[r]} ]] && tput setaf "$_t_color"
+      echo "$t"
+      [[ ${__o[n]} || ${__o[r]} ]] && tput sgr0
       return 0
     }
     [[ ${__o[v]} ]] && {

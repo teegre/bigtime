@@ -486,11 +486,13 @@ read_param() {
     continue
     elif [[ $__v =~ ^$__p=.*$ ]]; then
       IFS=$'\n' read -d "" -ra __a <<< "${__v//=/$'\n'}"
+      [[ ${__a[1]} =~ ^\".*\"$ ]] && __a[1]="${__a[1]//\"}"
+      [[ ${__a[1]} =~ ^\'.*\'$ ]] && __a[1]="${__a[1]//\'}"
       if [[ ! ${__a[1]} ]]; then
         echo "null"
         return 1
       else
-        echo "${__a[1]}"
+        echo $"${__a[1]}"
         return 0
       fi
     fi
@@ -1296,9 +1298,9 @@ print_timer() {
     }
     [[ ${__o[v]} ]] && {
       ((y=__pos_y+__clock_h-__digit_h)); ((x=__pos_x-3))
-      loc $((y)) $((x)); [[ $TH != "$h" ]] && { echo "$h" | print_rainbow; TH=$h; }; ((y++))
-      loc $((y)) $((x)); [[ $TM != "$m" ]] && { echo "$m" | print_rainbow; TM=$m; }; ((y++))
-      loc $((y)) $((x)); [[ $TS != "$s" ]] && { echo "$s" | print_rainbow; TS=$s; }
+      loc $((y)) $((x)); [[ $TH != "$h" ]] && { random_color; echo "$h" | print_rainbow; TH=$h; }; ((y++))
+      loc $((y)) $((x)); [[ $TM != "$m" ]] && { random_color; echo "$m" | print_rainbow; TM=$m; }; ((y++))
+      loc $((y)) $((x)); [[ $TS != "$s" ]] && { random_color; echo "$s" | print_rainbow; TS=$s; }
       return 0
     }
   }

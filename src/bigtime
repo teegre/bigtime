@@ -486,8 +486,12 @@ read_param() {
     continue
     elif [[ $__v =~ ^$__p=.*$ ]]; then
       IFS=$'\n' read -d "" -ra __a <<< "${__v//=/$'\n'}"
-      [[ ${__a[1]} =~ ^\".*\"$ ]] && __a[1]="${__a[1]//\"}"
-      [[ ${__a[1]} =~ ^\'.*\'$ ]] && __a[1]="${__a[1]//\'}"
+      # taking care of quotes and double quotes...
+      [[ ${__a[1]} == "\"" ]] && { _err "warning: $__f_digits: $__p: invalid character."; return 1; }
+      [[ ${__a[1]} =~ ^\".*[^\"]$ ]] && { _err "warning: $__f_digits: $__p: missing \"."; return 1; }
+      [[ ${__a[1]} =~ ^\'.*[^\']$ ]] && { _err "warning: $__f_digits: $__p: missing \'."; return 1; }
+      [[ ${__a[1]} =~ ^\"(.*)\"$ ]] && __a[1]="${BASH_REMATCH[1]}"
+      [[ ${__a[1]} =~ ^\'(.*)\'$ ]] && __a[1]="${BASH_REMATCH[1]}"
       if [[ ! ${__a[1]} ]]; then
         echo "null"
         return 1

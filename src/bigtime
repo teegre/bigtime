@@ -334,7 +334,10 @@ random_color() {
 ## FiLE
 
 check_file() {
-  [[ $1 =~ \.digits$ ]] && __f_digits="$1" || __f_digits="$1.digits"
+  local f
+  f="$1"
+  [[ $f =~ ^.*?/.*? ]] && f="${f##*/}"
+  [[ $f =~ \.digits$ ]] && __f_digits="$f" || __f_digits="$f.digits"
   [[ $2 == "--edit" ]] && {
     [[ -a "$__path_digits/$__f_digits" ]] && {
       _err "error: cannot edit files in $__path_digits directory."

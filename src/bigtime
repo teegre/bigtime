@@ -192,7 +192,7 @@ toggle_display() {
   ((__display==2)) && [[ ${__o[a]} || $_a_set ]] && {
     erase_clock_line
     display_snooze
-    unset __i_alarm
+    unset __i_alarm S1 S2
     [[ $_a_set ]] && { __digit_sel=0; unset H1; }
     mode_display
     return 0
@@ -298,6 +298,10 @@ print_colors() {
   [[ $__c == "null" ]] && { echo "null"; return 0; }
   IFS=$'\n' read -d "" -ra _c <<< "${__c//;/$'\n'}"
   off="$(tput sgr0)"
+  if [[ ${_c[*]} == "rainbow" || ${_c[*]} == "random" ]]; then
+    echo "${_c[*]}"
+    return 0
+  fi
   for ((i=0;i<${#_c[@]};i++)); do
     if [[ ${_c[$i]} =~ ^0(0+)?$ ]]; then
       txt="$(tput setaf $((__color_count-1)))"

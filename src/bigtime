@@ -184,13 +184,14 @@ toggle_display() {
 
   __u_date=1
 
-  ((__display==2)) && [[ ! $1 ]] && unset __i_alarm
+  ((__display==2)) && [[ ! $1 ]] && { unset __i_alarm; display_snooze --erase; }
 
   if [[ $_a_set || $_t_set ]] && [[ ! $1 ]]; then __display=4
   elif [[ $1 ]]; then __display=$1; __idle=0; else ((__display++)); fi
 
   ((__display==2)) && [[ ${__o[a]} || $_a_set ]] && {
-    erase_clock_line 
+    erase_clock_line
+    display_snooze
     unset __i_alarm
     [[ $_a_set ]] && { __digit_sel=0; unset H1; }
     mode_display
@@ -207,7 +208,7 @@ toggle_display() {
     mode_display
     return 0
   }
-  [[ $__display -gt 2 || $1 ]] && erase_clock_line
+  [[ $__display -gt 2 || $1 ]] && { erase_clock_line; display_snooze --erase; }
   __display=1
   __i_mode=1
   unset __i_alarm __i_timer
@@ -221,7 +222,7 @@ toggle_display() {
 mode_display() {
   local y x mode
   case $__display in
-    1) mode="TIME"  ;;
+    1) mode="TIME" ;;
     2) if [[ $_a_set ]]; then mode="SET ALARM"; else mode="ALARM"; fi ;;
     3) if [[ $_t_set ]]; then mode="SET TIMER"; else mode="TIMER"; fi ;;
   esac
@@ -761,12 +762,16 @@ display_clock() {
       ((X+=__sep_w))
     }
 
+    [[ $_a_set ]] && ((__digit_sel==4)) && smso
     [[ $s1 != "$S1" ]] && print_digit $((Y)) $((X)) "$s1"
+    [[ $_a_set ]] && ((__digit_sel==4)) && rmso
 
     S1=$s1
     ((X+=__digit_w+1))
 
+    [[ $_a_set ]] && ((__digit_sel==5)) && smso
     [[ $s2 != "$S2" ]] && print_digit $((Y)) $((X)) "$s2"
+    [[ $_a_set ]] && ((__digit_sel==5)) && rmso
 
     S2=$s2
     ((X+=__digit_w+1))
@@ -775,7 +780,7 @@ display_clock() {
     [[ ! $__separator ]] && print_separator $((Y)) $((SX))
   fi
 
-  [[ ${__o[s]} ]] || [[ $__display -eq 3 || $_t_set ]] && [[ ! ${__o[S]} ]] && {
+  [[ ${__o[s]} ]] || [[ $__display -gt 1 ]] && [[ ! ${__o[S]} ]] && {
     if [[ ! ${__o[v]} && ! ${__o[N]} ]]; then
       [[ ! $__separator ]] && print_separator $((Y)) $((SX))
       if [[ $S1 != "$s1" ]]; then
@@ -792,11 +797,15 @@ display_clock() {
     fi
 
     random_color
+    [[ $_a_set ]] && ((__digit_sel==4)) && smso
     [[ $S1 != "$s1" ]] && echo "$s1" | print_rainbow
+    [[ $_a_set ]] && ((__digit_sel==4)) && rmso
     S1="$s1"
 
     random_color
+    [[ $_a_set ]] && ((__digit_sel==5)) && smso
     [[ $S2 != "$s2" ]] && echo "$s2" | print_rainbow
+    [[ $_a_set ]] && ((__digit_sel==5)) && rmso
     S2="$s2"
 
     S="$_S"
@@ -804,7 +813,7 @@ display_clock() {
 
   [[ ! ${__o[b]} || $__display -eq 2 || $_a_set ]] && __separator=1
 
-  [[ ! ${__o[s]} ]] && [[ $__display -ne 3 || ! $_t_set ]] && [[ ! ${__o[S]} ]] && {
+  [[ ! ${__o[s]} ]] && [[ $__display -ne 1 || ! $_a_set || ! $_t_set ]] && [[ ! ${__o[S]} ]] && {
     [[ ! $S ]] && { loc $((Y)) $((X)); tput el; }
     unset S
   }
@@ -1040,6 +1049,7 @@ toggle_ampm() {
 ## /--\|_/--\| \|  |
 ## ALARM
 
+
 set_alarm() {
   [[ $1 == "cmdline" ]] && {
     [[ $_a_time == "now" ]] && {
@@ -1085,17 +1095,21 @@ set_snooze() {
   }
   _snooze_dur=$1
   [[ $_snooze_dur =~ ^[0-9]?[0-9]$ ]] || return 1
+  [[ $_snooze_dur =~ ^0([0-9])$ ]] && _snooze_dur="${BASH_REMATCH[1]}"
   ((_snooze_dur<5 || _snooze_dur>15)) && return 1
   ((_snooze_dur*=60))
   return 0
 }
 
 display_alarm() {
+  local _snooze_dur_mn
+  _snooze_dur_mn="$(printf "%02i" "$((_snooze_dur/60))")"
+  local _a_format="%I:%p:%H:%M:${_snooze_dur_mn}:%a:%d:%m:%z"
   ((__display!=2)) && return 1
   if [[ $_a_set ]]; then
-    _split_time "$(LC_TIME=C _from_epoch "$__T_a_sec" "$__format")"
+    _split_time "$(LC_TIME=C _from_epoch "$__T_a_sec" "$_a_format")"
   elif [[ $_a_sec ]]; then
-    _split_time "$(LC_TIME=C _from_epoch "$_a_sec" "$__format")"
+    _split_time "$(LC_TIME=C _from_epoch "$_a_sec" "$_a_format")"
   fi
   return 0
 }
@@ -1146,6 +1160,7 @@ toggle_alarm() {
     set_alarm
     _a_set=1
     toggle_display 2
+    unset S1 S2
     return 0
   }
 
@@ -1165,6 +1180,7 @@ toggle_alarm() {
     _a_time="00:00:00"; set_alarm
     _a_set=1
     toggle_display 2
+    unset S1 S2
     return 0
   }
   return 1
@@ -1181,6 +1197,30 @@ toggle_alarm_ampm() {
     return 0
   }
   return 1
+}
+
+display_snooze() {
+  [[ ${__o[v]} ]] && {
+    [[ ${__o[S]} ]] && {
+      loc $((__pos_y+(__digit_h*2)+1)) $((__pos_x))
+      if [[ $1 == "--erase" ]]; then tput el; else echo "SNOOZE"; fi
+      loc $((__pos_y+(__digit_h*3)+1)) $((__pos_x+__clock_w+1))
+      if [[ $1 == "--erase" ]]; then tput el; else echo "M"; fi
+      return 0
+    }
+    loc $((__pos_y+__clock_h-2)) $((__pos_x+__clock_w+1))
+    if [[ $1 == "--erase" ]]; then tput el; else echo "SNZ"; fi
+    loc $((__pos_y+__clock_h-1)) $((__pos_x+__clock_w+4))
+    if [[ $1 == "--erase" ]]; then tput el; else echo "M"; fi
+    return 0
+  }
+  [[ ${__o[S]} ]] && loc $((__pos_y)) $((__pos_x+__clock_w+1))
+  [[ ${__o[S]} ]] || loc $((__pos_y+1)) $((__pos_x+__clock_w+1))
+  if [[ $1 == "--erase" ]]; then tput el; else echo "SNZ"; fi
+  [[ ${__o[S]} ]] && loc $((__pos_y+1)) $((__pos_x+__clock_w+1))
+  [[ ${__o[S]} ]] || loc $((__pos_y)) $((__pos_x+__clock_w+4))
+  if [[ $1 == "--erase" ]]; then tput el; else echo "M"; fi
+  return 0
 }
 
 manage_alarm() {
@@ -1568,21 +1608,27 @@ select_digit() {
           0) unset H1 H2 ;;
           1) unset H2 M1 ;;
           2) unset M1 M2 ;;
-          3) unset M2 H1
+          3) if [[ $_a_set ]]; then unset M2 S1; else unset M2 H1; fi ;;
+          4) [[ $_a_set ]] && unset S1 S2 ;;
+          5) [[ $_a_set ]] && unset S2 H1
         esac
-        ((__digit_sel=__digit_sel==3?0:__digit_sel+1))
+        [[ $_a_set ]] && ((__digit_sel=__digit_sel==5?0:__digit_sel+1))
+        [[ $_a_set ]] || ((__digit_sel=__digit_sel==3?0:__digit_sel+1))
         play_sound digit
       }
     ;;
     prev)
       [[ $_a_set || $_t_set ]] && {
         case $__digit_sel in
-          0) unset H1 M2 ;;
+          0) if [[ $_a_set ]]; then unset H1 S2; else unset H1 M2; fi ;;
           1) unset H1 H2 ;;
           2) unset H2 M1 ;;
-          3) unset M1 M2
+          3) unset M1 M2 ;;
+          4) [[ $_a_set ]] && unset M2 S1 ;;
+          5) [[ $_a_set ]] && unset S1 S2
         esac
-        ((__digit_sel=__digit_sel==0?3:__digit_sel-1))
+        [[ $_a_set ]] && ((__digit_sel=__digit_sel==0?5:__digit_sel-1))
+        [[ $_a_set ]] || ((__digit_sel=__digit_sel==0?3:__digit_sel-1))
         play_sound digit
       }
   esac
@@ -1593,22 +1639,37 @@ digit_input() {
   local offset
   case $__digit_sel in
     [0-1]) ((offset=__digit_sel)) ;;
-    [2-3]) ((offset=__digit_sel+1))
+    [2-3]) ((offset=__digit_sel+1)) ;;
+    [4-5]) [[ $_a_set ]] && ((offset=__digit_sel+2))
   esac
   [[ $_a_set ]] && {
-    local saved_alarm="$_a_time"
-    _a_time="${_a_time:0:$((offset))}${1}${_a_time:$((offset+1))}"
-    if set_alarm; then
-      __changed=1
-      __u_date=1
-      select_digit next
+    if ((__digit_sel < 4)); then
+      local saved_alarm="$_a_time"
+      _a_time="${_a_time:0:$((offset))}${1}${_a_time:$((offset+1))}"
+      if set_alarm; then
+        __changed=1
+        __u_date=1
+        select_digit next
+      else
+        play_sound error
+        _a_time="$saved_alarm"
+        set_alarm
+        return 1
+      fi
+      return 0
     else
-      play_sound error
-      _a_time="$saved_alarm"
-      set_alarm
-      return 1
+      local saved_snooze_dur snooze_dur_mn
+      ((saved_snooze_dur=_snooze_dur))
+      ((__digit_sel==4)) && snooze_dur_mn="${1}${S2}"
+      ((__digit_sel==5)) && snooze_dur_mn="${S1}${1}"
+      if set_snooze "$snooze_dur_mn"; then
+        select_digit next
+      else
+        play_sound error
+        snooze_dur_mn="$saved_snooze_dur"
+        set_snooze "$snooze_dur_mn"
+      fi
     fi
-    return 0
   }
   [[ $_t_set ]] && {
     local saved_timer="$_t_time"

@@ -187,7 +187,7 @@ toggle_display() {
   ((__display==2)) && [[ ! $1 ]] && { unset __i_alarm __separator; display_snooze --erase; }
 
   if [[ $_a_set || $_t_set ]] && [[ ! $1 ]]; then __display=4
-  elif [[ $1 ]]; then ((__display==2)) && unset __separator; __display=$1; __idle=0; else ((__display++)); fi
+  elif [[ $1 ]]; then ((__display==2)) && unset __separator S1 S2; __display=$1; __idle=0; else ((__display++)); fi
 
   ((__display==2)) && [[ ${__o[a]} || $_a_set ]] && {
     erase_clock_line
@@ -229,10 +229,10 @@ mode_display() {
   if [[ $1 == "--erase" ]]; then
     case $__previous_display in
       1) mode="TIME" ;;
-      2) mode="ALARM" ;;
-      3) mode="TIMER" ;;
-      4) mode="SET ALARM" ;;
-      5) mode="SET TIMER"
+      2) [[ $short ]] && mode="ALR" || mode="ALARM" ;;
+      3) [[ $short ]] && mode="TMR" || mode="TIMER" ;;
+      4) [[ $short ]] && mode="SET-A" || mode="SET ALARM" ;;
+      5) [[ $short ]] && mode="SET-T" || mode="SET TIMER"
     esac
     unset __previous_display
   else
@@ -241,7 +241,7 @@ mode_display() {
     case $__display in
       1) mode="TIME" ;;
       2) [[ $_a_set ]] && { [[ $short ]] && mode="SET-A" || mode="SET ALARM"; } || { [[ $short ]] && mode="ALR" || mode="ALARM"; } ;;
-      3) [[ $_a_set ]] && { [[ $short ]] && mode="SET-T" || mode="SET TIMER"; } || { [[ $short ]] && mode="TMR" || mode="TIMER"; }
+      3) [[ $_t_set ]] && { [[ $short ]] && mode="SET-T" || mode="SET TIMER"; } || { [[ $short ]] && mode="TMR" || mode="TIMER"; }
     esac
   }
     [[ $_a_set || $_t_set ]] && ((__previous_display=__display+2))
@@ -1227,9 +1227,9 @@ display_snooze() {
   [[ ${__o[v]} ]] && {
     [[ ${__o[S]} ]] && {
       loc $((__pos_y+(__digit_h*2)+1)) $((__pos_x))
-      if [[ $1 == "--erase" ]]; then tput el; else echo "SNOOZE"; fi
+      if [[ $1 == "--erase" ]]; then tput el; else random_color; echo "SNOOZE" | print_rainbow; fi
       loc $((__pos_y+(__digit_h*3)+1)) $((__pos_x+__clock_w+1))
-      if [[ $1 == "--erase" ]]; then tput el; else echo "M"; fi
+      if [[ $1 == "--erase" ]]; then tput el; else random_color; echo "M" | print_rainbow; fi
       return 0
     }
     loc $((__pos_y+__clock_h-2)) $((__pos_x+__clock_w+1))
@@ -1239,11 +1239,8 @@ display_snooze() {
     return 0
   }
   [[ ${__o[S]} ]] && loc $((__pos_y)) $((__pos_x+__clock_w+1))
-  [[ ${__o[S]} ]] || loc $((__pos_y+1)) $((__pos_x+__clock_w+1))
-  if [[ $1 == "--erase" ]]; then tput el; else echo "SNZ"; fi
-  [[ ${__o[S]} ]] && loc $((__pos_y+1)) $((__pos_x+__clock_w+1))
   [[ ${__o[S]} ]] || loc $((__pos_y)) $((__pos_x+__clock_w+4))
-  if [[ $1 == "--erase" ]]; then tput el; else echo "M"; fi
+  if [[ $1 == "--erase" ]]; then tput el; else random_color; echo "M" | print_rainbow; fi
   return 0
 }
 

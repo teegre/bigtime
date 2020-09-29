@@ -31,7 +31,7 @@ am_indicator=a
 pm_indicator=p
 signal_indicator=╺
 alarm_indicator=╺
-snooze_indicator=╺
+snooze_indicator=╍
 timer_indicator=╺
 
 ## COLORS

@@ -352,9 +352,10 @@ check_file() {
   [[ $f =~ \.digits$ ]] && __f_digits="$f" || __f_digits="$f.digits"
   [[ $2 == "--edit" ]] && {
     [[ -a "$__path_digits/$__f_digits" ]] && {
-      #TODO: duplicate file to edit.
-      _err "error: cannot edit files in $__path_digits directory."
-      exit 1
+      __f_digits="$(duplicate_file "$__path_digits/$__f_digits")" || {
+        _err "edit: error: cannot duplicate file."
+        exit 1
+      } && { __duplicate=1; return 0; }
     }
     __f_digits="$__path_digits_custom/$__f_digits"
     [[ -a "$__f_digits" ]] && return 0 || return 1
@@ -364,6 +365,22 @@ check_file() {
   else __f_digits="$__path_digits_custom/$__f_digits"
   fi
   return 0
+}
+
+duplicate_file() {
+  local src name dst idx=2
+  src="$1"
+  name="${src##*/}"
+  name="${name%%.*}"
+  _err "edit: duplicating $name..."
+  while :; do
+    dst="${__path_digits_custom}/${name}$((idx)).digits"
+    [[ -a "$dst" ]] && { ((idx++)); continue; }
+    cp "$src" "$dst" 2> /dev/null || return 1
+    _err "edit: done."
+    break
+  done
+  echo "$dst"
 }
 
 list_files() {
@@ -526,24 +543,37 @@ read_param() {
   return 1
 }
 
+
 edit_file() {
+  exec_editor() { "${EDITOR:-nano}" "$1"; }
   if check_file "$1" --edit; then
     _err "edit: $__f_digits"
-    "${EDITOR:-nano}" "$__f_digits"
+    if [[ $__duplicate ]]; then
+      local size1 size2
+      size1="$(wc -c "$__f_digits")"
+      exec_editor "$__f_digits"
+      size2="$(wc -c "$__f_digits")"
+      [[ $size1 == "$size2" ]] && {
+        rm "$__f_digits"
+        _err "edit: no change: removed file."
+      }
+    else
+      exec_editor "$__f_digits"
+    fi
   else
     local size1 size2
-    _err "create new file: $__f_digits"
+    _err "edit: create new file: $__f_digits"
     cp "$__path_config/digits.template" "$__f_digits" 2> /dev/null || {
-      _err "error: template file not found."
+      _err "edit: error: template file not found."
       return 1
     }
     size1="$(wc -c "$__f_digits")"
     _err "edit: $__f_digits"
-    "${EDITOR:-nano}" "$__f_digits"
+    exec_editor "$__f_digits"
     size2="$(wc -c "$__f_digits")"
     [[ $size1 == "$size2" ]] && {
       rm "$__f_digits"
-      _err "edit: no change, file $__f_digits removed."
+      _err "edit: no change: removed file."
     }
   fi
 }

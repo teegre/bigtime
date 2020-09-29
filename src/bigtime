@@ -1864,7 +1864,7 @@ _color_fg="$(read_param "foreground")"
 unset _color_fg
 
 [[ ${__o[v]} && ${__o[d]} && $__digit_h -lt 4 ]] && {
-  _err "warning: digit height <= date height; date disabled."
+  _err "warning: date doesn't fit."
   unset __o["d"]
 }
 

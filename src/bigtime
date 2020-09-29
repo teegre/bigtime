@@ -184,15 +184,15 @@ toggle_display() {
 
   __u_date=1
 
-  ((__display==2)) && [[ ! $1 ]] && { unset __i_alarm; display_snooze --erase; }
+  ((__display==2)) && [[ ! $1 ]] && { unset __i_alarm __separator; display_snooze --erase; }
 
   if [[ $_a_set || $_t_set ]] && [[ ! $1 ]]; then __display=4
-  elif [[ $1 ]]; then __display=$1; __idle=0; else ((__display++)); fi
+  elif [[ $1 ]]; then ((__display==2)) && unset __separator; __display=$1; __idle=0; else ((__display++)); fi
 
   ((__display==2)) && [[ ${__o[a]} || $_a_set ]] && {
     erase_clock_line
     display_snooze
-    unset __i_alarm S1 S2
+    unset __i_alarm S1 S2 __separator
     [[ $_a_set ]] && { __digit_sel=0; unset H1; }
     mode_display --erase
     mode_display
@@ -778,7 +778,8 @@ display_clock() {
   if [[ ${__o[S]} ]]; then
     [[ ! ${__o[v]} && ! ${__o[N]} ]] && {
       [[ ! $__separator ]] && print_separator $((Y)) $((SX))
-      [[ ! $__separator ]] && print_separator $((Y)) $((X))
+      [[ ! $__separator && $__display -ne 2 ]] && print_separator $((Y)) $((X))
+      [[ ! $__separator && $__display -eq 2 ]] && print_separator $((Y)) $((X)) --force-blank
       ((X+=__sep_w))
     }
 
@@ -1595,9 +1596,9 @@ print_separator() {
   random_color 10
   for ((i=0;i<__digit_h;i++)); do
     [[ ${__o[r]} ]] && random_color
-    [[ ${__o[b]} ]] && {
+    [[ ${__o[b]} || $1 == "--force-blank" ]] && {
       ba=("${__d_s[$i]}" "${__d_k[$i]}")
-      s="${ba[$__tick_idx]}"
+      [[ $1 == "--force-blank" ]] && s="${ba[1]}" || s="${ba[$__tick_idx]}"
     } || s="${__d_s[$i]}"
     loc $((y)) $((x))
     echo "$s" | print_rainbow

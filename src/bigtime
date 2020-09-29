@@ -1661,16 +1661,39 @@ select_digit() {
 
 digit_input() {
   ! [[ $_a_set || $_t_set ]] && return 1
-  local offset
+  local d
+  ((d=$1))
   case $__digit_sel in
-    [0-1]) ((offset=__digit_sel)) ;;
-    [2-3]) ((offset=__digit_sel+1)) ;;
-    [4-5]) [[ $_a_set ]] && ((offset=__digit_sel+2))
+    0)
+      [[ $_a_set ]] && {
+        [[ ${__o[f]} ]] && ((d==2 && H2>3)) && H2=0
+        [[ ${__o[f]} ]] || ((d==1 && H2>2)) && H2=0
+        ((H1=d))
+      }
+      [[ $_t_set ]] && {
+        ((d==2 && H2>3)) && H2=0
+        ((H1=d))
+      } ;;
+    1)
+      [[ $_a_set ]] && {
+        [[ ${__o[f]} ]] && ((H1==2 && d>3)) && unset H1
+        [[ ${__o[f]} ]] || ((H1==1 && d>2)) && unset H1
+        ((H2=d))
+      }
+      [[ $_t_set ]] && {
+        ((H1==2 && d>3)) && unset H1
+        ((H2=d))
+      } ;;
+    2)
+      ((M1=d)) ;;
+    3)
+      ((M2=d)) ;;
   esac
+
   [[ $_a_set ]] && {
     if ((__digit_sel < 4)); then
       local saved_alarm="$_a_time"
-      _a_time="${_a_time:0:$((offset))}${1}${_a_time:$((offset+1))}"
+      _a_time="${H1}${H2}:${M1}${M2} $p"
       if set_alarm; then
         __changed=1
         __u_date=1
@@ -1685,8 +1708,8 @@ digit_input() {
     else
       local saved_snooze_dur snooze_dur_mn
       ((saved_snooze_dur=_snooze_dur))
-      ((__digit_sel==4)) && snooze_dur_mn="${1}${S2}"
-      ((__digit_sel==5)) && snooze_dur_mn="${S1}${1}"
+      ((__digit_sel==4)) && { ((d==1 && S2>5)) && S2=0; ((d==0 && S2<5)) && S2=5; snooze_dur_mn="${d}${S2}"; }
+      ((__digit_sel==5)) && snooze_dur_mn="${S1}${d}"
       if set_snooze "$snooze_dur_mn"; then
         select_digit next
       else
@@ -1698,7 +1721,7 @@ digit_input() {
   }
   [[ $_t_set ]] && {
     local saved_timer="$_t_time"
-    _t_time="${_t_time:0:$((offset))}${1}${_t_time:$((offset+1))}"
+    _t_time="${H1}${H2}:${M1}${M2}"
     if set_timer; then
       __changed=1
       select_digit next

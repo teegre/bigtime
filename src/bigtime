@@ -2017,6 +2017,9 @@ echo "  * time:      $((__display==1?1:0))"
 tput el; echo "  * alarm:     $((__display==2?1:0)) | set: ${_a_set:-0} | time: ${_a_time:-"not set"}"
 tput el; echo "  * snooze:    $_snooze_dur sec."
 tput el; echo "  * timer:     $((__display==3?1:0)) | set: ${_t_set:-0} | dur:  ${_t_time:-"not set"}"
+[[ $_a_set || $_t_set ]] && {
+tput el; echo "  * digit:     $__digit_sel"
+}
 }
 
 done

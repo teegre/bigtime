@@ -341,6 +341,11 @@ Are you sure?
 
 # CHANGELOG <a name="changelog"></a>
 
+### Version 20200930-2.4.1
+
+* Fixed a bug where "SNOOZE" indicator in alarm mode was not cleared when switching
+to another mode.
+
 ## Version 20200930-2.4
 
 * New digits file: basic2.

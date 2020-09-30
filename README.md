@@ -343,6 +343,7 @@ Are you sure?
 
 ## Version 20200930-2.4
 
+* New digits file: basic2.
 * New digits file: reverse.
 * basic.digits: changed snooze indicator.
 * --edit: duplicate stock digits file to config dir.

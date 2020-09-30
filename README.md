@@ -156,13 +156,27 @@ Press <kbd>space</kbd> to stop the alarm.
 
 ## From within the application
 
+```
+                               SET ALARM
+   ∎    ∎∎∎     ∎∎∎   ∎∎∎     ∎∎∎   ∎∎∎  M
+  ∎∎   ∎   ∎   ∎   ∎ ∎   ∎   ∎   ∎ ∎   ∎
+   ∎      ∎    ∎ ∎ ∎ ∎ ∎ ∎   ∎ ∎ ∎  ∎∎∎∎
+   ∎     ∎   ∎ ∎   ∎ ∎   ∎   ∎   ∎    ∎
+  ∎∎∎  ∎∎∎∎∎ ∎  ∎∎∎   ∎∎∎     ∎∎∎    ∎   AM
+ 12:52p
+```
+
 Press <kbd>a</kbd> to set a new alarm.  
 To modify an existing alarm, press <kbd>space</kbd> and <kbd>a</kbd>.  
 Enter the desired time.  
 Press <kbd>j</kbd> or <kbd>k</kbd> to select next/previous digit.  
-Press <kbd>f</kbd> to toggle AM/PM.
+*The last two digits are snooze duration in minutes (from 5 to 15)*  
+*Note: as opposed to alarm setting, when snooze duration is modified,  
+changes are applied immediately.*
 
-When done, press <kbd>a</kbd> to enable the alarm.
+Press <kbd>f</kbd> to toggle AM/PM if necessary.
+
+When done, press <kbd>a</kbd> to activate alarm.
 
 Or press <kbd>space</kbd> to cancel.
 
@@ -308,7 +322,7 @@ You can find more examples in "/etc/bigtime/digits" directory
 Custom **digits files** must be stored in **bigtime** configuration directory:  
 `$HOME/.config/bigtime`
 
-You can use the **--edit** option to create a new file from a template and edit it.
+You can use the **--edit** option to create a new file from a template and edit it.  
 
 **Note**: Whenever **bigtime** encounters a mistake in a **digits file**,  
 it will throw an error and a useful description.
@@ -326,6 +340,23 @@ Are you sure?
 * Last but not least: [Pure Bash Bible](https://github.com/dylanaraps/pure-bash-bible)
 
 # CHANGELOG <a name="changelog"></a>
+
+## Version 20200930-2.4
+
+* New digits file: reverse.
+* basic.digits: changed snooze indicator.
+* --edit: duplicate stock digits file to config dir.
+* print_time: format is now [H]H:MM[a|p].
+* display: better mode and snooze display.
+* digit_input: even smarter hours input.
+* alarm: hide 2nd separator (snooze duration).
+* digit_input: smarter hours input.
+* mode_display: added short form for smaller clocks.
+* preview: colors now display correct color mode.
+* digit select/input: snooze duration can now be set.
+* read_param: handling of ' and " in digits file.
+* Tiny timer (vertical) has different colors.
+* Tiny timer (horizontal) has now a unique color.
 
 ## Version 2020923-2.3.1
 

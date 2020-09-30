@@ -663,15 +663,12 @@ erase_screen() {
 make_grid() {
   local space
   space="$(read_param "space")"
-  [[ $space == "null" ]] && return 0
-  [[ $space != $' ' ]] && {
-    local line i j
-    for ((i=0;i<__clock_w;i++)); do
-      line+="$space"
-    done
-    __grid="$line"
-    unset line
-  }
+  [[ $space == "null" ]] && space=$' '
+  local line i j
+  for ((i=0;i<__clock_w;i++)); do
+    line+="$space"
+  done
+  __grid="$line"
 }
 
 draw_grid() {

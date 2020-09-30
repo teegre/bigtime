@@ -1259,10 +1259,16 @@ toggle_alarm_ampm() {
 display_snooze() {
   [[ ${__o[v]} ]] && {
     [[ ${__o[S]} ]] && {
+      random_color
       loc $((__pos_y+(__digit_h*2)+1)) $((__pos_x))
-      if [[ $1 == "--erase" ]]; then tput el; else random_color; echo "SNOOZE" | print_rainbow; fi
+      if [[ $1 == "--erase" ]]; then echo "$__grid" | print_rainbow
+      else echo "SNOOZE" | print_rainbow
+      fi
+      random_color
       loc $((__pos_y+(__digit_h*3)+1)) $((__pos_x+__clock_w+1))
-      if [[ $1 == "--erase" ]]; then tput el; else random_color; echo "M" | print_rainbow; fi
+      if [[ $1 == "--erase" ]]; then tput el
+      else echo "M" | print_rainbow
+      fi
       return 0
     }
     loc $((__pos_y+__clock_h-2)) $((__pos_x+__clock_w+1))

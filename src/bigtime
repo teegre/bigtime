@@ -689,7 +689,7 @@ splash() {
   term_h="$(tput lines)"
   term_w="$(tput cols)"
   if [[ ! ${__o[v]} ]]; then
-    local logo="-B!GT!ME-"
+    local logo="-B!GT!ME $__version-"
     ((y=(term_h-1)/2))
     ((x=(term_w-${#logo})/2))
     random_color
@@ -697,7 +697,7 @@ splash() {
     echo "$logo" | print_rainbow
   else
     local l1 l2 l3 l4
-    l1="B!"; l2="-G"; l3="T!"; l4="ME"
+    l1="B"; l2="!G"; l3="T!"; l4="ME"
     ((y=(term_h-4)/2))
     ((x=(term_w-2)/2))
     random_color
@@ -712,13 +712,15 @@ splash() {
     random_color
     loc $((y+3)) $((x))
     echo "$l4" | print_rainbow
+    random_color
+    loc $((y+4)) $((x))
+    echo "$__version" | print_rainbow
   fi
   pause 0.25
   play_sound welcome
   pause 0.75
   loc $((y)) $((x))
-  [[ ${__o[v]} ]] && tput el1
-  [[ ! ${__o[v]} ]] && tput el
+  tput el1
 }
 
 print_indicator() {

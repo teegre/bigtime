@@ -1,0 +1,56 @@
+# NAME: BLOCKZ
+# AUTHOR: TEEGRE
+# LAST MODIFIED: 2020-10-01
+#
+# GEOMETRY
+#
+height=4
+width=6
+sep_width=3
+
+# PARAMETERS
+#
+## Filled space
+char=█
+## Empty space
+space=
+
+## LAYOUT
+# 
+layout=
+
+## SECONDS
+#
+seconds=big
+
+## INDICATORS
+#
+am_indicator="█ "
+pm_indicator="██"
+signal_indicator=█
+alarm_indicator=█
+snooze_indicator="+"
+timer_indicator=█
+
+## COLORS
+#
+colors=
+background=
+foreground=
+
+# DIGITS
+#
+0=111111;111111;001111;111111
+9=111111;111111;111111;001111
+8=111111;111111;001111;110011
+7=111111;111111;001111;001100
+6=111111;111111;001100;000011
+5=111111;111100;001111;000000
+4=111100;111111;001100;000000
+3=110011;111100;001100;000000
+2=001100;111100;001100;000000
+1=110000;001100;001100;000000
+
+# SEPARATOR AND BLANK
+# separator=000;000;010;000;010
+# blank=000;000;000;000;000

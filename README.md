@@ -343,6 +343,7 @@ Are you sure?
 
 ## Version 20201001-2.4.2
 
+* New digits file: blockz.
 * Minor improvement.
 
 ## Version 20200930-2.4.1

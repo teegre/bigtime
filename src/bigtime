@@ -564,7 +564,8 @@ edit_file() {
     local size1 size2
     _err "edit: create new file: $__f_digits"
     cp "$__path_config/digits.template" "$__f_digits" 2> /dev/null || {
-      _err "edit: error: template file not found."
+      [[ ! -a "$__path_config/digits.template" ]] && _err "edit: error: template file not found."
+      [[ ! -f "$__f_digits" ]] && _err "edit: error: file already exists (maybe a symlink?)."
       return 1
     }
     size1="$(wc -c "$__f_digits")"

@@ -1537,7 +1537,7 @@ manage_timer() {
 # shellcheck disable=SC2155
 declare -r progname="$(basename "$0")"
 declare -r PROGNAME="${progname^^}"
-declare -r __version="2.4.1"
+declare -r __version="2.4.2"
 
 _opts=$(LC_ALL=C getopt                     \
   --long "alarm:"                           \

@@ -608,7 +608,7 @@ clock_geometry() {
   term_h="$(tput lines)"
   term_w="$(tput cols)"
 
-  ((__clock_h>=term_h || __clock_w>=term_w)) && return 1
+  ((__clock_h+1>=term_h || __clock_w+5>=term_w)) && return 1
 
   ((__pos_y=(term_h-__clock_h)/2))
   ((__pos_x=(term_w-__clock_w)/2))
@@ -2047,6 +2047,7 @@ tput sgr0
 loc 0 0;
 ((__tick_idx==0)) && echo "/" || echo "\\"
 echo "geometry:"
+echo "  * term:      $(tput cols)x$(tput lines)"
 echo "  * digit:     ${__digit_w}x${__digit_h}"
 [[ ${__o[N]} || ${__o[v]} ]] || echo "  * separator: ${__sep_w}x${__digit_h}"
 echo "  * clock:     ${__clock_w}x${__clock_h}"

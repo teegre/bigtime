@@ -547,6 +547,7 @@ read_param() {
 
 edit_file() {
   exec_editor() { "${EDITOR:-nano}" "$1"; }
+
   if check_file "$1" --edit; then
     _err "edit: $__f_digits"
     if [[ $__duplicate ]]; then
@@ -562,18 +563,18 @@ edit_file() {
       exec_editor "$__f_digits"
     fi
   else
-    local size1 size2
+    local time1 time2
     _err "edit: create new file: $__f_digits"
     cp "$__path_config/digits.template" "$__f_digits" 2> /dev/null || {
       [[ ! -a "$__path_config/digits.template" ]] && _err "edit: error: template file not found."
       [[ ! -f "$__f_digits" ]] && _err "edit: error: file already exists (maybe a symlink?)."
       return 1
     }
-    size1="$(wc -c "$__f_digits")"
+    time1="$(stat -c "%Y" "$__f_digits")"
     _err "edit: $__f_digits"
     exec_editor "$__f_digits"
-    size2="$(wc -c "$__f_digits")"
-    [[ $size1 == "$size2" ]] && {
+    time2="$(stat -c "%Y" "$__f_digits")"
+    [[ $time1 == "$time2" ]] && {
       rm "$__f_digits"
       _err "edit: no change: removed file."
     }

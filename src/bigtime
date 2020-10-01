@@ -358,11 +358,12 @@ check_file() {
       } && { __duplicate=1; return 0; }
     }
     __f_digits="$__path_digits_custom/$__f_digits"
-    [[ -a "$__f_digits" ]] && return 0 || return 1
+    [[ -f "$__f_digits" ]] && return 0 || return 1
   }
-  if [[ ! -a "$__path_digits/$__f_digits" && ! -a "$__path_digits_custom/$__f_digits" ]]; then return 1
+  if [[ ! -a "$__path_digits/$__f_digits" && ! -f "$__path_digits_custom/$__f_digits" ]]; then return 1
   elif [[ -a "$__path_digits/$__f_digits" ]]; then __f_digits="$__path_digits/$__f_digits"
-  else __f_digits="$__path_digits_custom/$__f_digits"
+  elif [[ -f "$__path_digits_custom/$__f_digits" ]]; then __f_digits="$__path_digits_custom/$__f_digits"
+  else return 1
   fi
   return 0
 }

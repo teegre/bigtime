@@ -1537,7 +1537,7 @@ manage_timer() {
 # shellcheck disable=SC2155
 declare -r progname="$(basename "$0")"
 declare -r PROGNAME="${progname^^}"
-declare -r __version="2.4.2"
+declare -r __version="2.4.3"
 
 _opts=$(LC_ALL=C getopt                     \
   --long "alarm:"                           \
@@ -1917,7 +1917,7 @@ done
   unset __p ___p i j
 }
 
-unset __sp __ch
+unset __ch __sp
 
 ## INDICATORS
 _i="$(read_param "am_indicator")"

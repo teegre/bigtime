@@ -341,6 +341,10 @@ Are you sure?
 
 # CHANGELOG <a name="changelog"></a>
 
+## Version 20201006-2.4.3
+
+* **--foreground** is now priority.
+
 ## Version 20201001-2.4.2
 
 * New digits file: blockz.

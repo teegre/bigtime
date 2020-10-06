@@ -1644,7 +1644,7 @@ print_separator() {
 
 print_rainbow() {
   local line
-  [[ ! ${__o[r]} && ! ${__o[n]} && ! ${__o[c]} ]] && {
+  [[ ! ${__o[c]} && ! ${__o[n]} && ! ${__o[r]} ]] && {
     while IFS= read -r line; do 
       printf "%s" $"$line"
     done
@@ -1863,7 +1863,7 @@ _cc="$(read_param "colors")"
 unset _cc
 
 _color_fg="$(read_param "foreground")"
-[[ $_color_fg != "null" ]] && {
+[[ $_color_fg != "null"  && ! $__color_fg ]] && {
   set_color --fg "$_color_fg" || {
     _err "error: $__f_digits: invalid foreground color."
     __f_error=1

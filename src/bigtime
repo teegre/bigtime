@@ -1059,7 +1059,8 @@ print_date() {
 print_time() {
   local t
   [[ ${__o[f]} ]] && t="$(_time "%_H:%M")" || t="$(LC_TIME=C _time "%_I:%M %p")"
-  [[ ${__o[f]} ]] || { t="${t//$' '}"; t="${t/M}"; t="${t,,}"; }
+  t="${t//$' '}"
+  [[ ${__o[f]} ]] || { t="${t/M}"; t="${t,,}"; }
   [[ $t != "$__time" ]] && echo -ne "\033]0;bigtime: $t\007"
   if ((__display>1)); then
     [[ $t != "$__time" ]] && {

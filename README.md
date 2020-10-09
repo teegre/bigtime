@@ -341,6 +341,10 @@ Are you sure?
 
 # CHANGELOG <a name="changelog"></a>
 
+## Version 20201009-2.4.4
+
+* fixed time alignment issue in alarm and timer mode.
+
 ## Version 20201006-2.4.3
 
 * **--foreground** is now priority.

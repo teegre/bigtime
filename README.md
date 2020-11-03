@@ -341,6 +341,10 @@ Are you sure?
 
 # CHANGELOG <a name="changelog"></a>
 
+## Version 20201103-2.4.5
+
+* Update timezone display when a change occurs (DST).
+
 ## Version 20201009-2.4.4
 
 * fixed time alignment issue in alarm and timer mode.

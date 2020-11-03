@@ -1076,10 +1076,12 @@ print_time() {
 
 print_timezone() {
   [[ ! ${__o[z]} ]] && return 1
+  [[ $_Z != "$Z" ]] && unset __timezone
   if ((__display==1)) && [[ ! $__timezone ]]; then
     loc $((__pos_y+__digit_h)) $((__pos_x))
     printf "%s" "$_Z"
     __timezone=1
+    Z=$_Z
     return 0
   fi
   return 1
@@ -1583,7 +1585,7 @@ do
     -C | --list-colors  ) list_colors; exit 0 ;;
     -d | --date         ) __o[d]=1; shift ;;
     --DEBUG             ) __o[DEBUG]=1; shift ;;
-    -e | --edit         ) edit_file "$2"; exit 1 ;;
+    -e | --edit         ) edit_file "$2"; exit 0 ;;
     -F | --foreground   ) set_color --fg "$2" || { _err "error: invalid foreground color."; exit 1; }; shift 2 ;;
     --file              ) check_file "$2" || { _err "error: --file $__f_digits not found."; exit 1; }; shift 2 ;;
     -f                  ) __o[f]=1; shift ;;

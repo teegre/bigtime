@@ -72,6 +72,16 @@ Here are some examples along with their associated commands
 
 `bigtime --file block2 --foreground 125`
 
+## FLIP
+
+![flip](img/flip.png)
+
+`bigtime -S --file flip --foreground 214`
+
+![flipv](img/flipv.png)
+
+`bigtime -nSv --file flip`
+
 # INSTALLATION <a name="installation"></a>
 
 You can find **bigtime** in the [Arch User Repository](https://aur.archlinux.org/packages/bigtime).
@@ -340,6 +350,10 @@ Are you sure?
 * Last but not least: [Pure Bash Bible](https://github.com/dylanaraps/pure-bash-bible)
 
 # CHANGELOG <a name="changelog"></a>
+
+## Version 20210213-2.4.6
+
+* New digits file: flip.
 
 ## Version 20201103-2.4.5
 

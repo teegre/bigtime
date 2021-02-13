@@ -1,0 +1,59 @@
+# NAME: FLIP
+# AUTHOR: TEEGRE
+# LAST MODIFIED: 2021-02-13
+# 
+# GEOMETRY
+#
+height=3
+width=8
+sep_width=4
+
+# PARAMETERS
+#
+## FILLED SPACE (1)
+char=█
+## EMPTY SPACE (0)
+space=
+
+## LAYOUT
+#
+layout=
+
+## SECONDS
+#
+seconds=
+
+## INDICATORS
+#
+am_indicator="> "
+pm_indicator=">>"
+signal_indicator=<
+alarm_indicator=<
+snooze_indicator=>
+timer_indicator=<
+
+## COLORS
+#
+colors=
+#
+background=
+foreground=
+
+# DIGITS
+# 
+0=11111111;11000011;11111111
+1=11111111;00110000;00000000
+2=11111011;11011011;11011111
+3=11111111;11011011;11011011
+4=11111111;00011000;11111000
+5=11011111;11011011;11111011
+6=11011111;11011011;11111111
+7=11111111;11000000;11000000
+8=11111111;11011011;11111111
+9=11111111;11011011;11111011
+
+# SEPARATOR AND BLANK
+#
+separator=0110;0000;0000
+blank=0000;0000;0000
+

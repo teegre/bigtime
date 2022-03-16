@@ -139,7 +139,7 @@ EOB
 
 _version() ( echo "$PROGNAME version $__version" )
 
-loc() ( tput cup "$@" )
+loc() ( tput cup "$@" 2> /dev/null || redraw_clock)
 
 _sync() {
   declare -i n=1
@@ -162,15 +162,15 @@ notify() {
 play_sound() {
   [[ ${__o[q]} ]] && return
   case $1 in
-    welcome) aplay "$__f_snd_welcome" & ;;
-    key    ) aplay "$__f_snd_key" & ;;
-    digit  ) aplay "$__f_snd_digit" & ;;
-    alarm  ) aplay "$__f_snd_alarm" & ;;
-    timer  ) aplay "$__f_snd_timer" & ;;
-    beep   ) aplay "$__f_snd_beep" & ;;
-    error  ) aplay "$__f_snd_err" & ;;
-    confirm) aplay "$__f_snd_yes" & ;;
-    quit   ) aplay "$__f_snd_quit" ;;
+    welcome) aplay -q "$__f_snd_welcome" & ;;
+    key    ) aplay -q "$__f_snd_key" & ;;
+    digit  ) aplay -q "$__f_snd_digit" & ;;
+    alarm  ) aplay -q "$__f_snd_alarm" & ;;
+    timer  ) aplay -q "$__f_snd_timer" & ;;
+    beep   ) aplay -q "$__f_snd_beep" & ;;
+    error  ) aplay -q "$__f_snd_err" & ;;
+    confirm) aplay -q "$__f_snd_yes" & ;;
+    quit   ) aplay -q "$__f_snd_quit" ;;
   esac
 }
 
@@ -1540,7 +1540,7 @@ manage_timer() {
 # shellcheck disable=SC2155
 declare -r progname="$(basename "$0")"
 declare -r PROGNAME="${progname^^}"
-declare -r __version="2.4.7"
+declare -r __version="2.4.8"
 
 _opts=$(LC_ALL=C getopt                     \
   --long "alarm:"                           \

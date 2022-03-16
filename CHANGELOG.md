@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## Version 20220316-2.4.8
+
+* Fixed issue: aplay --quiet option has NOT been deprecated.
+
 ## Version 20210420-2.4.7
 
 * Fixed issue: aplay --quiet option has been deprecated.

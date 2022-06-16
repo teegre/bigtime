@@ -145,7 +145,7 @@ _sync() {
   declare -i n=1
   local N
   while ((n!=0)); do
-    N="${EPOCHREALTIME#*,}"
+    LC_NUMERIC=C N="${EPOCHREALTIME#*.}"
     n=${N:0:1}
     pause 0.0625
   done
@@ -1540,7 +1540,7 @@ manage_timer() {
 # shellcheck disable=SC2155
 declare -r progname="$(basename "$0")"
 declare -r PROGNAME="${progname^^}"
-declare -r __version="2.4.8"
+declare -r __version="2.4.9"
 
 _opts=$(LC_ALL=C getopt                     \
   --long "alarm:"                           \

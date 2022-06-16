@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## Version 20220616-2.4.9
+
+* Fixed a bug that was right here from the start of this project: for locales that do not use a comma as a decimal separator, **bigtime** did not display anything...
+
 ## Version 20220316-2.4.8
 
 * Fixed issue: aplay --quiet option has NOT been deprecated.

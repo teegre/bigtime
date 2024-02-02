@@ -642,6 +642,7 @@ redraw_clock() {
   __u_date=1
   unset __s_date
   unset TH TM TS
+  [[ $__color_bg ]] && tput setab "$__color_bg"
   make_grid
   clear
   draw_grid
@@ -727,6 +728,7 @@ print_indicator() {
   local pos ind
   pos="$1"
   ind="$2"
+  [[ $__color_bg ]] && tput setab "$__color_bg"
   random_color
   loc $((__pos_y+pos)) $((__pos_x-4))
   echo "$ind" | print_rainbow
@@ -751,6 +753,7 @@ display_clock() {
 
   _tick
 
+  [[ $__color_bg ]] && tput setab "$__color_bg"
   [[ $_a_set || $_t_set ]] && ((__digit_sel==0)) && smso
   [[ $h1 != "$H1" ]] && print_digit $((Y)) $((X)) "$h1"
   [[ $_a_set || $_t_set ]] && ((__digit_sel==0)) && rmso
@@ -1540,7 +1543,7 @@ manage_timer() {
 # shellcheck disable=SC2155
 declare -r progname="$(basename "$0")"
 declare -r PROGNAME="${progname^^}"
-declare -r __version="2.4.9"
+declare -r __version="2.4.9.2"
 
 _opts=$(LC_ALL=C getopt                     \
   --long "alarm:"                           \
@@ -2030,6 +2033,7 @@ do
 
 ((__idle==20 && __display!=1)) && toggle_display 1
 
+
 _sync
 
 display_time || display_alarm || display_timer
@@ -2049,6 +2053,7 @@ pause 0.5
 [[ ${__o[DEBUG]} ]] && {
 tput sgr0
 loc 0 0;
+[[ $__color_bg ]] && tput setab "$__color_bg"
 ((__tick_idx==0)) && echo "/" || echo "\\"
 echo "geometry:"
 echo "  * term:      $(tput cols)x$(tput lines)"

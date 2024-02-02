@@ -1,4 +1,7 @@
 # CHANGELOG
+## Version 20240202-2.4.9.1
+
+* aplay does not work anymore (at least  on my system). Switched to paplay. Updated list of dependencies.
 
 ## Version 20220616-2.4.9
 

@@ -162,15 +162,15 @@ notify() {
 play_sound() {
   [[ ${__o[q]} ]] && return
   case $1 in
-    welcome) aplay -q "$__f_snd_welcome" & ;;
-    key    ) aplay -q "$__f_snd_key" & ;;
-    digit  ) aplay -q "$__f_snd_digit" & ;;
-    alarm  ) aplay -q "$__f_snd_alarm" & ;;
-    timer  ) aplay -q "$__f_snd_timer" & ;;
-    beep   ) aplay -q "$__f_snd_beep" & ;;
-    error  ) aplay -q "$__f_snd_err" & ;;
-    confirm) aplay -q "$__f_snd_yes" & ;;
-    quit   ) aplay -q "$__f_snd_quit" ;;
+    welcome) paplay "$__f_snd_welcome" & ;;
+    key    ) paplay "$__f_snd_key" & ;;
+    digit  ) paplay "$__f_snd_digit" & ;;
+    alarm  ) paplay "$__f_snd_alarm" & ;;
+    timer  ) paplay "$__f_snd_timer" & ;;
+    beep   ) paplay "$__f_snd_beep" & ;;
+    error  ) paplay "$__f_snd_err" & ;;
+    confirm) paplay "$__f_snd_yes" & ;;
+    quit   ) paplay "$__f_snd_quit" ;;
   esac
 }
 

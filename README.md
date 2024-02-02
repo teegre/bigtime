@@ -4,7 +4,7 @@
 
 **bigtime** is a customizable clock for the terminal, written in bash.
 
-*depends on: alsa-utils, bash, coreutils, libnotify, ncurses*
+*depends on: bash, coreutils, libpulse, libnotify, ncurses*
 
 Tested on these terminals:  
 st, xterm, urxvt, sakura and alacritty (font used: TerminessTTF Nerd Font Mono).

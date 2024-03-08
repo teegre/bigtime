@@ -294,7 +294,7 @@ blank=000;000;000;000;000
 * char=char  - character to display as filled space (1).
 * space=char - character to display as empty space (0).
 
-By default, when **bigtime** parses a file, 0s are replaced by whitespaces and 1s by "∎".  
+By default, when **bigtime** parses a file, 0s are replaced with whitespaces and 1s with "∎".  
 But one can define characters as shown below:
 
 ```
